@@ -1,20 +1,14 @@
-# editors
+# OS / editors
+.DS_Store
+*.swp
 .idea/
 .vscode/
-*.swp
 
-# OS
-.DS_Store
-Thumbs.db
+# Python / node (reserve)
+__pycache__/
+node_modules/
 
-# kube
-.kube/
-*.kubeconfig
-*.crt
-*.key
-*.pem
-
-# secrets/templates
-k8s/**/secrets*.yaml
-.env
+# kubectl dumps / logs / local secrets (avoid leaking)
+*.log
 *.bak
+secrets*.yaml

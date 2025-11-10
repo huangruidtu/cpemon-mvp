@@ -1,12 +1,24 @@
 controller:
-  kind: DaemonSet
-  hostNetwork: true
-  dnsPolicy: ClusterFirstWithHostNet
+  kind: Deployment
+  replicaCount: 1
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
   nodeSelector:
-    ingress-worker: "true"
+    ingress-worker: "true"           # 只在 worker 跑
   service:
-    enabled: false
+    enabled: true
+    type: LoadBalancer
+    externalTrafficPolicy: Local     # 尽量保留源 IP（单 worker 没问题）
+  ingressClass: nginx
+  ingressClassResource:
+    enabled: true                    # 让 Helm 新建 IngressClass/nginx
   admissionWebhooks:
     enabled: true
     patch:
-      enabled: true
+      enabled: true                  # 让 Helm 的 patch Job 自己处理证书/Webhook
+
+# 关键：由 Helm 创建并管理整套 RBAC/SA
+rbac:
+  create: true
+# （不再复用旧 SA）
+# controller.serviceAccount.create: true（chart 默认即为 true）

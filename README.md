@@ -1,21 +1,18 @@
-# CPE Monitoring MVP (cpemon-mvp)
+# cpemon-mvp
 
-A one-week SRE/DevOps demo project: ACS → Webhook → MySQL queue → Writer → Status/History,
-with Prom+Grafana, ELK, and Velero.
+**Day 1 — Cluster base & ingress ready**
 
-## Topology
-- Master: 10.0.0.100 (control-plane; tainted)
-- Worker: 10.0.0.101 (ingress, workloads)
-- VM3:    10.0.0.13 (GenieACS, CPE simulator)
+- K8s: master=10.0.0.100, worker=10.0.0.101, VM3=10.0.0.13
+- Ingress-NGINX: **Deployment + LoadBalancer (MetalLB)**, worker-only
+- MetalLB IP pool: 10.0.0.200–10.0.0.210 (L2Advertisement enabled)
+- Hostnames → LB IP: `api.local`, `admin.local`, `grafana.local`, `kibana.local`
 
-## Day 1 Status
-- Kubernetes Ready; Calico v3.27.3 installed (podCIDR 192.168.0.0/16)
-- Ingress-NGINX: DaemonSet + hostNetwork(80/443) on worker
-- Namespaces + PDB presets
+## Quick smoke
+    ./scripts/smoke.sh
+    # expect: http(s)://api.local -> 404
+    #         https://api.local/echo -> 200
 
-## Quick commands
-```bash
-kubectl get nodes -o wide
-kubectl -n ingress-nginx get pods -o wide
-curl -I -k https://api.local  # expect 404
-
+## Key manifests
+- k8s/ingress-nginx/values.yaml
+- k8s/pdb/ — PDBs for `cpemon-api`, `acs-ingest` (minAvailable=1)
+- k8s/samples/echo/ — echo Deployment/Service/Ingress (for 200 OK)
