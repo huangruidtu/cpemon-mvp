@@ -1,7 +1,13 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
-metadata: { name: cpemon-api-pdb, namespace: cpemon }
+metadata:
+  name: cpemon-api-pdb
+  namespace: cpemon
 spec:
+  # 目标：1+1 时允许最多中断 1 个副本；至少保持 1 个在跑
   minAvailable: 1
   selector:
-    matchLabels: { app: cpemon-api }
+    matchLabels:
+      app.kubernetes.io/part-of: cpemon
+      app.kubernetes.io/name: cpemon-api
+

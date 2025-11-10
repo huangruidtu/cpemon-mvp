@@ -1,7 +1,11 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
-metadata: { name: acs-ingest-pdb, namespace: cpemon }
+metadata:
+  name: acs-ingest-pdb
+  namespace: cpemon
 spec:
   minAvailable: 1
   selector:
-    matchLabels: { app: acs-ingest }
+    matchLabels:
+      app.kubernetes.io/part-of: cpemon
+      app.kubernetes.io/name: acs-ingest
