@@ -1,0 +1,12 @@
+controller:
+  kind: DaemonSet
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  nodeSelector:
+    ingress-worker: "true"
+  service:
+    enabled: false
+  admissionWebhooks:
+    enabled: true
+    patch:
+      enabled: true

@@ -1,0 +1,20 @@
+# editors
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# kube
+.kube/
+*.kubeconfig
+*.crt
+*.key
+*.pem
+
+# secrets/templates
+k8s/**/secrets*.yaml
+.env
+*.bak
