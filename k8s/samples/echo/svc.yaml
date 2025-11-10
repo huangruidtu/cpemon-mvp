@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"echo","namespace":"platform"},"spec":{"ports":[{"port":80,"targetPort":80}],"selector":{"app":"echo"}}}
+  creationTimestamp: "2025-11-10T20:01:05Z"
+  name: echo
+  namespace: platform
+  resourceVersion: "689345"
+  uid: a4eaa703-b8c6-42ce-9600-46917300caf7
+spec:
+  clusterIP: 10.101.216.195
+  clusterIPs:
+  - 10.101.216.195
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: echo
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.ingress.kubernetes.io/rewrite-target":"/"},"name":"echo","namespace":"platform"},"spec":{"ingressClassName":"nginx","rules":[{"host":"api.local","http":{"paths":[{"backend":{"service":{"name":"echo","port":{"number":80}}},"path":"/echo","pathType":"Prefix"}]}}]}}
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  creationTimestamp: "2025-11-10T20:01:05Z"
+  generation: 1
+  name: echo
+  namespace: platform
+  resourceVersion: "689352"
+  uid: d5f0f80b-7c9b-43a8-9e2e-5e80b1bf165f
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: echo
+            port:
+              number: 80
+        path: /echo
+        pathType: Prefix
+status:
+  loadBalancer: {}
