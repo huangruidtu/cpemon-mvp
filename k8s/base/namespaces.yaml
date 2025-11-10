@@ -1,15 +1,31 @@
 apiVersion: v1
 kind: Namespace
-metadata: { name: cpemon }
+metadata:
+  name: cpemon
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: cpemon
 ---
 apiVersion: v1
 kind: Namespace
-metadata: { name: platform }
+metadata:
+  name: platform
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: platform
 ---
 apiVersion: v1
 kind: Namespace
-metadata: { name: backup }
+metadata:
+  name: backup
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: backup
 ---
 apiVersion: v1
 kind: Namespace
-metadata: { name: ingress-nginx }
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: ingress-nginx
