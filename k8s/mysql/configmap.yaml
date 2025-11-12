@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: cpemon
+data:
+  zz-custom.cnf: |
+    [mysqld]
+    innodb_buffer_pool_size=256M
+    innodb_flush_log_at_trx_commit=1
+    binlog_format=ROW
+    skip-name-resolve
+    max_connections=200

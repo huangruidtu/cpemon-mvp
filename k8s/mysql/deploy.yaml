@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: cpemon
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: mysql }
+  template:
+    metadata:
+      labels: { app: mysql }
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.4
+        imagePullPolicy: IfNotPresent
+        ports: [{ containerPort: 3306, name: mysql }]
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom: { secretKeyRef: { name: mysql-auth, key: mysql-root-password } }
+        - name: MYSQL_USER
+          valueFrom: { secretKeyRef: { name: mysql-auth, key: mysql-username } }
+        - name: MYSQL_PASSWORD
+          valueFrom: { secretKeyRef: { name: mysql-auth, key: mysql-password } }
+        - name: MYSQL_DATABASE
+          valueFrom: { secretKeyRef: { name: mysql-auth, key: mysql-database } }
+        readinessProbe: { tcpSocket: { port: 3306 }, initialDelaySeconds: 10, periodSeconds: 5 }
+        livenessProbe:  { tcpSocket: { port: 3306 }, initialDelaySeconds: 20, periodSeconds: 10 }
+        resources:
+          requests: { cpu: 100m, memory: 512Mi }
+          limits:   { memory: 1Gi }
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+        - name: config
+          mountPath: /etc/mysql/conf.d/zz-custom.cnf
+          subPath: zz-custom.cnf
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: data-mysql-0
+      - name: config
+        configMap:
+          name: mysql-config
