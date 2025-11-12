@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: platform
+spec:
+  replicas: 1                     # MVP 单实例
+  strategy:
+    type: Recreate                # 覆盖升级时不并发，避免两个实例争抢同一PVC
+  selector:
+    matchLabels: { app: minio }   # 与 Pod 标签匹配
+  template:
+    metadata:
+      labels: { app: minio }      # Service 与本标签对接
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:latest # 官方镜像；MVP 使用 latest，后续可 pin 固定版本
+        imagePullPolicy: IfNotPresent
+        args:                     # MinIO 启动参数
+          - server                # 子命令：server 模式
+          - /data                 # 数据目录（挂载到 PVC）
+          - "--console-address"   # 控制台监听在 9001
+          - ":9001"
+        env:                      # Root 账户来自 Secret
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: minio-auth
+              key: root-user
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minio-auth
+              key: root-password
+        ports:
+        - containerPort: 9000     # S3
+          name: s3
+        - containerPort: 9001     # Console
+          name: console
+        readinessProbe:           # 就绪探针（官方健康检查路径）
+          httpGet: { path: /minio/health/ready, port: 9000 }
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:            # 存活探针
+          httpGet: { path: /minio/health/live, port: 9000 }
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:                # MVP 配额
+          requests: { cpu: 100m, memory: 256Mi }
+          limits:   { memory: 512Mi }
+        volumeMounts:
+        - name: data
+          mountPath: /data        # 数据目录挂载 PVC
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: minio-data   # 下面会创建同名 PVC
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+  namespace: platform
+spec:
+  accessModes: [ "ReadWriteOnce" ]  # 单节点读写
+  resources:
+    requests:
+      storage: 20Gi                 # 容量（可按需调整）
+  storageClassName: local-path      # 你当前集群的默认SC（Day 2 已验证）
+
