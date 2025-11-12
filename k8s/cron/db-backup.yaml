@@ -1,0 +1,135 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  namespace: cpemon
+  labels:
+    app: db-backup
+spec:
+  schedule: "30 3 * * *"              # 每天 03:30 触发（本地业务低峰可随需调整）
+  timeZone: "Europe/Copenhagen"       # Kubernetes 1.27+ 支持；你的集群版本足够新
+  concurrencyPolicy: Forbid           # 防止上一次未完成时并发执行
+  startingDeadlineSeconds: 900        # 15 分钟容错窗口（控制器短暂异常时仍可补跑）
+  successfulJobsHistoryLimit: 3       # 保留最近 3 个成功记录
+  failedJobsHistoryLimit: 3           # 保留最近 3 个失败记录
+  jobTemplate:
+    spec:
+      backoffLimit: 0                 # 失败不自动重试（便于观察错误；也可设为 1–2）
+      template:
+        metadata:
+          labels: { app: db-backup }
+        spec:
+          restartPolicy: Never
+          # 共享卷：两个容器之间传递 dump 文件
+          volumes:
+          - name: backup-tmp
+            emptyDir: { sizeLimit: 1Gi }
+          # 容器 1：执行 mysqldump 并写入共享卷
+          containers:
+          - name: dumper
+            image: mysql:8.4
+            imagePullPolicy: IfNotPresent
+            env:                         # 从 mysql-auth 注入连接信息
+            - name: DB_HOST
+              value: "mysql"             # Service 名
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: mysql-auth, key: mysql-database } }
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: mysql-auth, key: mysql-username } }
+            - name: DB_PASS
+              valueFrom: { secretKeyRef: { name: mysql-auth, key: mysql-password } }
+            - name: TZ
+              value: "Europe/Copenhagen" # 让容器内日期按本地时区格式化
+            command: ["sh","-lc"]
+            args:
+              - |
+                set -euo pipefail
+                # 等待 MySQL 就绪（最多 60 次 * 5s = 5 分钟）
+                for i in $(seq 1 60); do
+                  if mysqladmin ping -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASS" --silent; then
+                    break
+                  fi
+                  echo "[dumper] waiting mysql ($i/60) ..."
+                  sleep 5
+                done
+
+                # 时间戳与路径（按本地时区）
+                DATE=$(date +%F)
+                TS=$(date +%F-%H%M%S)
+                OUT="/backup/mysql-${DB_NAME}-${TS}.sql.gz"
+
+                echo "[dumper] dumping $DB_NAME -> $OUT"
+                mysqldump -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASS" \
+                  --single-transaction \
+                  --routines --events \
+                  --default-character-set=utf8mb4 \
+                  "$DB_NAME" | gzip -9 > "$OUT"
+
+                # 基本校验
+                test -s "$OUT" || { echo "[dumper] dump empty!"; exit 1; }
+                echo "[dumper] done."
+            volumeMounts:
+            - name: backup-tmp
+              mountPath: /backup
+
+          # 容器 2：用 MinIO 客户端上传，并做保留策略清理
+          - name: uploader
+            image: minio/mc:latest
+            imagePullPolicy: IfNotPresent
+            env:                         # 从 minio-conn 注入 MinIO 连接
+            - name: ENDPOINT
+              valueFrom: { secretKeyRef: { name: minio-conn, key: endpoint } }
+            - name: BUCKET
+              valueFrom: { secretKeyRef: { name: minio-conn, key: bucket } }
+            - name: ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: minio-conn, key: accessKey } }
+            - name: SECRET_KEY
+              valueFrom: { secretKeyRef: { name: minio-conn, key: secretKey } }
+            - name: TZ
+              value: "Europe/Copenhagen"
+            # 可调参数：保留天数与目标前缀
+            - name: RETENTION_DAYS
+              value: "7"
+            - name: PREFIX
+              value: "mysql"             # 备份在桶内的一级目录：mysql/YYYY-MM-DD/xxx.sql.gz
+            command: ["sh","-lc"]
+            args:
+              - |
+                set -euo pipefail
+
+                # 等待 dumper 产物出现（最多 30 分钟，每 10s 检测一次）
+                for i in $(seq 1 180); do
+                  FILE=$(ls -1 /backup/*.sql.gz 2>/dev/null || true)
+                  if [ -n "$FILE" ]; then
+                    break
+                  fi
+                  echo "[uploader] waiting dump file ($i/180) ..."
+                  sleep 10
+                done
+                test -n "${FILE:-}" || { echo "[uploader] dump file not found"; exit 1; }
+
+                DATE=$(date +%F)
+                DEST_DIR="${PREFIX}/${DATE}"
+                DEST_URI="local/${BUCKET}/${DEST_DIR}/"
+
+                echo "[uploader] configure mc alias"
+                mc alias set local "$ENDPOINT" "$ACCESS_KEY" "$SECRET_KEY" --api S3v4
+
+                echo "[uploader] uploading $(basename "$FILE") -> ${DEST_URI}"
+                mc mb --ignore-existing "local/${BUCKET}/${PREFIX}"
+                mc mb --ignore-existing "local/${BUCKET}/${DEST_DIR}"
+                mc cp "$FILE" "$DEST_URI"
+
+                echo "[uploader] upload done."
+
+                # 清理过期备份（older-than=RETENTION_DAYS）
+                if [ -n "${RETENTION_DAYS:-}" ]; then
+                  echo "[uploader] pruning backups older than ${RETENTION_DAYS}d under local/${BUCKET}/${PREFIX}/"
+                  mc find "local/${BUCKET}/${PREFIX}/" --older-than "${RETENTION_DAYS}d" \
+                    --exec "mc rm --force {}"
+                fi
+
+                echo "[uploader] all done."
+            volumeMounts:
+            - name: backup-tmp
+              mountPath: /backup
