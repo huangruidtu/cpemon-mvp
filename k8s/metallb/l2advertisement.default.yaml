@@ -1,0 +1,15 @@
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"metallb.io/v1beta1","kind":"L2Advertisement","metadata":{"annotations":{},"name":"default","namespace":"metallb-system"},"spec":{"ipAddressPools":["default-pool"]}}
+  creationTimestamp: "2025-11-10T19:04:17Z"
+  generation: 1
+  name: default
+  namespace: metallb-system
+  resourceVersion: "684570"
+  uid: 55798c56-78a2-42cb-b6bd-940569048477
+spec:
+  ipAddressPools:
+  - default-pool
