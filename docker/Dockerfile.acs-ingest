@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:1
+
+############################
+# 1) Build stage
+############################
+FROM golang:1.23-alpine AS builder
+
+# 安装 git 等工具（部分依赖可能需要）
+RUN apk add --no-cache git
+
+# 为 Go 编译设置环境变量：生成 Linux/amd64 静态二进制
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+
+# 在容器内的工作目录
+WORKDIR /src
+
+# 先复制 go.mod/go.sum 并下载依赖（利用缓存）
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 再把剩余代码复制进去
+COPY . .
+
+# 编译 acs-ingest 二进制
+RUN go build -o /bin/acs-ingest ./app/acs-ingest
+
+############################
+# 2) Runtime stage
+############################
+FROM alpine:3.20
+
+# 创建一个非 root 用户
+RUN adduser -D -u 10001 cpemon
+
+# 工作目录
+WORKDIR /app
+
+# 从 builder 阶段拷贝编译好的二进制
+COPY --from=builder /bin/acs-ingest /app/acs-ingest
+
+# 暴露 HTTP 端口（代码里默认 :8080）
+EXPOSE 8080
+
+# 切换到非 root 用户
+USER cpemon
+
+# 入口命令
+ENTRYPOINT ["/app/acs-ingest"]
