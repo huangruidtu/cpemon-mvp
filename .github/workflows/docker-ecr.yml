@@ -1,0 +1,77 @@
+name: Build & Push Docker images to ECR
+
+on:
+  push:
+    branches: [ main ]   # 如果你主分支不是 main，就改成 master / develop
+
+jobs:
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+    steps:
+      # 1) 拉代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2) 配置 AWS 凭证
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3) 登录 ECR，拿到 registry 地址
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4) 构建并推送 acs-ingest 镜像
+      - name: Build & push acs-ingest image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_NAME: acs-ingest
+        run: |
+          echo "Building $ECR_REGISTRY/$IMAGE_NAME"
+          docker build \
+            -f docker/Dockerfile.acs-ingest \
+            -t $ECR_REGISTRY/$IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            .
+          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }}
+
+      # 5) 构建并推送 cpemon-api 镜像
+      - name: Build & push cpemon-api image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_NAME: cpemon-api
+        run: |
+          echo "Building $ECR_REGISTRY/$IMAGE_NAME"
+          docker build \
+            -f docker/Dockerfile.cpemon-api \
+            -t $ECR_REGISTRY/$IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            .
+          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }}
+
+      # 6) 构建并推送 cpemon-writer 镜像
+      - name: Build & push cpemon-writer image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_NAME: cpemon-writer
+        run: |
+          echo "Building $ECR_REGISTRY/$IMAGE_NAME"
+          docker build \
+            -f docker/Dockerfile.cpemon-writer \
+            -t $ECR_REGISTRY/$IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            .
+          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }}
