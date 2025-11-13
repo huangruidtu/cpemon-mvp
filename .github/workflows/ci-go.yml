@@ -1,0 +1,36 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) 拉取你的代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2) 安装 Go（这里用 1.22，你也可以改成 1.21/1.23）
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      # 3) 打印 go env（调试用，可删）
+      - name: Show Go version
+        run: go version
+
+      # 4) 编译检查：确保所有 package 都能成功 build
+      - name: Go build
+        run: go build ./...
+
+      # 5) 运行 go test（当前即使没有测试文件也会成功通过）
+      - name: Go test
+        run: go test ./...
