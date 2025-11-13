@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpemon-api
+  namespace: cpemon
+  labels:
+    app: cpemon-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpemon-api
+  template:
+    metadata:
+      labels:
+        app: cpemon-api
+    spec:
+      imagePullSecrets:
+        - name: cpemon-ecr-regcred
+      containers:
+        - name: cpemon-api
+          image: 701573843911.dkr.ecr.eu-north-1.amazonaws.com/cpemon-api:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_DSN
+              value: "cpemon:17U5to6DFosEfVjOGPIdP99A9HGACRK@tcp(mysql.cpemon.svc.cluster.local:3306)/cpemon?parseTime=true"
+            - name: HTTP_ADDR
+              value: ":8080"
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpemon-api
+  namespace: cpemon
+  labels:
+    app: cpemon-api
+spec:
+  selector:
+    app: cpemon-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

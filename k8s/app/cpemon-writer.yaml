@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpemon-writer
+  namespace: cpemon
+  labels:
+    app: cpemon-writer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpemon-writer
+  template:
+    metadata:
+      labels:
+        app: cpemon-writer
+    spec:
+      imagePullSecrets:
+        - name: cpemon-ecr-regcred
+      containers:
+        - name: cpemon-writer
+          image: 701573843911.dkr.ecr.eu-north-1.amazonaws.com/cpemon-writer:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_DSN
+              value: "cpemon:17U5to6DFosEfVjOGPIdP99A9HGACRK@tcp(mysql.cpemon.svc.cluster.local:3306)/cpemon?parseTime=true"
+            - name: HTTP_ADDR
+              value: ":8080"
+            - name: WORKER_INTERVAL
+              value: "1s"
+            - name: BATCH_SIZE
+              value: "50"
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpemon-writer
+  namespace: cpemon
+  labels:
+    app: cpemon-writer
+spec:
+  selector:
+    app: cpemon-writer
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
