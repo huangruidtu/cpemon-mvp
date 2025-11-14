@@ -19,7 +19,7 @@ spec:
         - name: cpemon-ecr-regcred
       containers:
         - name: cpemon-writer
-          image: 701573843911.dkr.ecr.eu-north-1.amazonaws.com/cpemon-writer:latest
+          image: 701573843911.dkr.ecr.eu-north-1.amazonaws.com/cpemon-writer:__IMAGE_TAG__
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_DSN
