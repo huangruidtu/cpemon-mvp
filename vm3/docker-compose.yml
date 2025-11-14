@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: genieacs-mongo
+    restart: unless-stopped
+    command: ["mongod", "--bind_ip_all"]
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - genieacs-net
+
+  genieacs:
+    image: drumsergio/genieacs:1.2.13
+    container_name: genieacs
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    # 这里用 host 的 3000 / 7547 / 7557 / 7567 直接映射出来
+    ports:
+      - "3000:3000" # UI
+      - "7547:7547" # CWMP (TR-069)
+      - "7557:7557" # NBI REST API
+      - "7567:7567" # File server
+    environment:
+      # 时区随便填一个你习惯的，主要是日志时间好看一点
+      - TZ=Europe/Copenhagen
+      # 👇 关键一：让 GenieACS 连接到“mongo”这个服务，而不是错误的 127.0.0.1
+      - GENIEACS_MONGODB_CONNECTION_URL=mongodb://mongo:27017/genieacs
+      # 👇 关键二：UI 的 JWT Secret（签名 cookie 用），随便给个长一点的字符串
+      - GENIEACS_UI_JWT_SECRET=cpemon-mvp-super-secret-please-change
+      - CPEMON_WEBHOOK_URL=http://api.local/acs/webhook
+      - CPEMON_WEBHOOK_SECRET=cpemon-demo-secret
+    volumes:
+      # 把 /opt 挂出来，内部会放一些配置与日志，将来要调优方便一点
+      - genieacs-opt:/opt
+      - ./ext:/opt/genieacs/ext
+    networks:
+      - genieacs-net
+    extra_hosts:
+      # 如果你已有 extra_hosts，就在里面追加这一行
+      - "api.local:10.0.0.200"
+
+volumes:
+  mongo-data:
+  genieacs-opt:
+
+networks:
+  genieacs-net:
+    driver: bridge
