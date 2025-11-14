@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cpemon-ingress
+  namespace: cpemon
+  annotations:
+    # 可选：限制 body 大小、以后再慢慢加
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+spec:
+  # 对应你 Helm values.yaml 里的 ingressClass: nginx
+  ingressClassName: nginx
+  rules:
+    - host: api.local
+      http:
+        paths:
+          # 1) ACS webhook → acs-ingest
+          - path: /acs/webhook
+            pathType: Prefix
+            backend:
+              service:
+                name: acs-ingest        # 这里换成你真实的 svc 名
+                port:
+                  number: 8080          # 换成 acs-ingest 暴露的端口
+
+          # 2) CPE 心跳 → cpemon-api
+          - path: /cpe
+            pathType: Prefix
+            backend:
+              service:
+                name: cpemon-api        # 这里换成你的 api svc 名
+                port:
+                  number: 8080
+
+          # 3) 其他 REST API → cpemon-api
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: cpemon-api
+                port:
+                  number: 8080
+

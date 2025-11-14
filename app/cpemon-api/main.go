@@ -38,6 +38,24 @@ type heartbeatPayload struct {
 	MemPct    *int    `json:"mem_pct,omitempty"`
 }
 
+// 独立的 metrics server，监听 :9100
+func startMetricsServer() {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+
+	srv := &http.Server{
+		Addr:    ":9100",
+		Handler: mux,
+	}
+
+	go func() {
+		log.Printf("[metrics] starting metrics server on %s", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("[metrics] metrics server error: %v", err)
+		}
+	}()
+}
+
 func main() {
 	// 1. Load configuration (DB_DSN, HTTP_ADDR, etc.)
 	cfg := appconfig.Load()
@@ -49,6 +67,9 @@ func main() {
 
 	// 3. Register Prometheus metrics.
 	prometheus.MustRegister(apiRequestsTotal)
+
+	// 👉 启动 9100 metrics server
+	startMetricsServer()
 
 	// 4. Create Gin router.
 	r := gin.Default()

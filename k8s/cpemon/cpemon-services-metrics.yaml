@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: acs-ingest
+  namespace: cpemon
+  labels:
+    app: acs-ingest
+spec:
+  selector:
+    app: acs-ingest
+  ports:
+    - name: http
+      port: 8080        # 你的业务 HTTP 端口（示例）
+      targetPort: 8080
+    - name: metrics
+      port: 9100        # 暴露给 Prometheus 抓 metrics
+      targetPort: 9100
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpemon-writer
+  namespace: cpemon
+  labels:
+    app: cpemon-writer
+spec:
+  selector:
+    app: cpemon-writer
+  ports:
+    - name: http
+      port: 8080        # 你的业务 HTTP 端口（示例）
+      targetPort: 8080
+    - name: metrics
+      port: 9100
+      targetPort: 9100
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpemon-api
+  namespace: cpemon
+  labels:
+    app: cpemon-api
+spec:
+  selector:
+    app: cpemon-api
+  ports:
+    - name: http
+      port: 8080        # 或你实际用的 HTTP 端口
+      targetPort: 8080
+    - name: metrics
+      port: 9100
+      targetPort: 9100
+

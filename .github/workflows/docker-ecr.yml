@@ -2,7 +2,9 @@ name: Build & Push Docker images to ECR
 
 on:
   push:
-    branches: [ main ]   # 如果你主分支不是 main，就改成 master / develop
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
 
 jobs:
   build-and-push:

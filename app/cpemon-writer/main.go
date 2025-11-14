@@ -73,6 +73,24 @@ func backoffDuration(attempts int) time.Duration {
 	return delay
 }
 
+// 独立的 metrics server，监听 :9100
+func startMetricsServer() {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+
+	srv := &http.Server{
+		Addr:    ":9100",
+		Handler: mux,
+	}
+
+	go func() {
+		log.Printf("[metrics] starting metrics server on %s", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("[metrics] metrics server error: %v", err)
+		}
+	}()
+}
+
 func main() {
 	// 1. 加载配置（DBDSN, HTTPAddr, WorkerInterval, BatchSize）
 	cfg := appconfig.Load()
@@ -94,6 +112,9 @@ func main() {
 		writerEventsFailedTotal,
 		writerEventsDeadTotal,
 	)
+
+	// 👉 启动 9100 metrics server
+	startMetricsServer()
 
 	// 4. 启动后台 worker 循环
 	go func() {

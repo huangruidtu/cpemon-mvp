@@ -45,6 +45,24 @@ type acsWebhookPayload struct {
 	// Other fields from ACS can exist in the JSON; we keep them in raw payload.
 }
 
+// 独立的 metrics server，监听 :9100
+func startMetricsServer() {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+
+	srv := &http.Server{
+		Addr:    ":9100",
+		Handler: mux,
+	}
+
+	go func() {
+		log.Printf("[metrics] starting metrics server on %s", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("[metrics] metrics server error: %v", err)
+		}
+	}()
+}
+
 func main() {
 	// 1. Load configuration (from environment variables with defaults).
 	cfg := appconfig.Load()
@@ -56,6 +74,9 @@ func main() {
 
 	// 3. Register Prometheus metrics.
 	prometheus.MustRegister(webhookRequestsTotal, webhookErrorsTotal)
+
+	// 👉 在这里启动 9100 端口的 metrics server
+	startMetricsServer()
 
 	// 4. Create Gin router.
 	r := gin.Default()

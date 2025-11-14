@@ -1,0 +1,49 @@
+# k8s/monitoring/kube-prometheus-stack-values.yaml
+
+# 尽量小一点资源，方便你单机 K8s 跑
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+# Grafana 配置：用 Ingress 通过 ingress-nginx 访问
+grafana:
+  adminUser: admin
+  adminPassword: admin123   # 本地环境随便设一个，记得别传公网
+  service:
+    type: ClusterIP
+
+  ingress:
+    enabled: true
+    ingressClassName: nginx      # 你的 ingress-nginx 的 className
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    hosts:
+      - grafana.local     # 等会 /etc/hosts 里指到 ingress IP
+    path: /
+    pathType: Prefix
+
+# Alertmanager 暂时用默认配置，Slack 集成稍后单独写
+alertmanager:
+  enabled: true
+  config: {}      # 先占位，后面 DAY5-7 我们会用 configMap 覆盖
+
+# 关闭一些你暂时用不到的 feature（根据需要可以继续精简）
+kubeControllerManager:
+  enabled: true
+kubeScheduler:
+  enabled: true
+kubeProxy:
+  enabled: true
+
+# 这些组件会帮 Prometheus 探测 k8s 资源，保留即可
+kubeEtcd:
+  enabled: false  # 你访问不到宿主 etcd，就先关掉，减少告警噪音

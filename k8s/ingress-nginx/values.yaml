@@ -15,7 +15,14 @@ controller:
   admissionWebhooks:
     enabled: true
     patch:
-      enabled: true                  # 让 Helm 的 patch Job 自己处理证书/Webhook
+      enabled: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring     # ServiceMonitor 创建在哪个 namespace
+      additionalLabels:
+        release: kps            # 让 kube-prometheus-stack 这套 Prometheus 来抓# 让 Helm 的 patch Job 自己处理证书/Webhook
 
 # 关键：由 Helm 创建并管理整套 RBAC/SA
 rbac:

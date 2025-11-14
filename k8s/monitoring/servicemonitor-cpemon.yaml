@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cpemon-services
+  namespace: monitoring
+  labels:
+    release: kps    # 非常关键：告诉 kps-prometheus 来 pick 这个 SM
+spec:
+  namespaceSelector:
+    matchNames:
+      - cpemon
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - acs-ingest
+          - cpemon-writer
+          - cpemon-api
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+
