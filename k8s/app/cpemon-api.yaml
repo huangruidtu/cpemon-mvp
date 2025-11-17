@@ -26,6 +26,15 @@ spec:
               value: "cpemon:17U5to6DFosEfVjOGPIdP99A9HGACRK@tcp(mysql.cpemon.svc.cluster.local:3306)/cpemon?parseTime=true"
             - name: HTTP_ADDR
               value: ":8080"
+            - name: GRAFANA_HOME_URL
+              value: "https://grafana.local/"
+            - name: GRAFANA_SN_DASHBOARD_URL_TEMPLATE
+              value: "https://grafana.local/d/cpemon_cpe_detail?var_sn=%s"
+            - name: KIBANA_HOME_URL
+              value: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:''))"
+            - name: KIBANA_SN_LOGS_URL_TEMPLATE
+              value: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:'message:\"sn=%s\"'))"
+
           ports:
             - name: http
               containerPort: 8080
