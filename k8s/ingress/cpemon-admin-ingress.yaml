@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cpemon-admin
+  namespace: cpemon
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # 关键：Ingress NGINX 的源 IP 白名单
+    # 先放一个你实验网段的例子：10.0.0.0/24,10.244.0.0/16
+    # 后面你可以改成 10.0.0.1/32 这种单个 IP
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/24,10.244.0.0/16"
+spec:
+  rules:
+    - host: admin.local
+      http:
+        paths:
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: cpemon-api
+                port:
+                  number: 8080

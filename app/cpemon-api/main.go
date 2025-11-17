@@ -375,6 +375,17 @@ func main() {
 	// 4. Create Gin router.
 	r := gin.Default()
 
+	// ---- Admin Basic Auth 设置 ----
+	adminUser := os.Getenv("ADMIN_USER")
+	adminPass := os.Getenv("ADMIN_PASSWORD")
+	useAdminAuth := adminUser != "" && adminPass != ""
+
+	if useAdminAuth {
+		log.Printf("[admin] /admin protected with Basic Auth, user=%s", adminUser)
+	} else {
+		log.Printf("[admin] WARNING: ADMIN_USER or ADMIN_PASSWORD not set, /admin is NOT protected")
+	}
+
 	// 5. Health endpoint.
 	r.GET("/healthz", func(c *gin.Context) {
 		apiRequestsTotal.WithLabelValues("200").Inc()
@@ -394,8 +405,17 @@ func main() {
 	// 8. heartbeat endpoint.
 	r.POST("/cpe/heartbeat", handleHeartbeat)
 
-	// 9. Admin page
-	r.GET("/admin", handleAdmin)
+	// 9. Admin page（根据是否配置了管理员账号决定是否加 BasicAuth）
+	if useAdminAuth {
+		accounts := gin.Accounts{
+			adminUser: adminPass,
+		}
+		authorized := r.Group("/", gin.BasicAuth(accounts))
+		authorized.GET("/admin", handleAdmin)
+	} else {
+		// 无账号配置时，不加保护（仅用于开发环境）
+		r.GET("/admin", handleAdmin)
+	}
 
 	log.Printf("cpemon-api listening on %s\n", cfg.HTTPAddr)
 
@@ -404,6 +424,7 @@ func main() {
 		log.Fatalf("failed to start cpemon-api: %v", err)
 	}
 }
+
 
 // handleListCPE returns a paginated list of current CPE statuses.
 //
