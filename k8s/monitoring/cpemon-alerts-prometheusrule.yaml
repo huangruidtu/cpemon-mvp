@@ -1,0 +1,61 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cpemon-alerts
+  namespace: monitoring
+  labels:
+    # 这行很重要：要和 kube-prometheus-stack 的 release 一致
+    # 你之前的 Prometheus Pod 是 prometheus-kps-kube-prometheus-stack-prometheus-0
+    # 所以这里用 release: kps，Prometheus 才会捡到这条规则
+    release: kps
+spec:
+  groups:
+    - name: cpemon.rules
+      rules:
+        # 1) CPEmonServiceDown: 关键服务不可用 Pod
+        - alert: CPEmonServiceDown
+          expr: kube_deployment_status_replicas_available{
+                  namespace="cpemon",
+                  deployment=~"acs-ingest|cpemon-writer"
+                } < 1
+          for: 1m
+          labels:
+            severity: critical
+            service: cpemon
+          annotations:
+            summary: "CPEmon deployment {{ $labels.namespace }}/{{ $labels.deployment }} has no available replicas"
+            description: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has 0 available pods for more than 1 minute."
+
+        # 2) CPEmonHighErrorRate：cpemon 相关 ingress 5xx 错误率过高
+        - alert: CPEmonHighErrorRate
+          expr: |
+            (
+              sum(rate(nginx_ingress_controller_requests{
+                exported_namespace="cpemon",
+                status=~"5.."
+              }[5m]))
+              /
+              sum(rate(nginx_ingress_controller_requests{
+                exported_namespace="cpemon"
+              }[5m]))
+            ) * 100 > 5
+          for: 10m
+          labels:
+            severity: warning
+            service: cpemon
+          annotations:
+            summary: "High HTTP 5xx error rate for CPEmon"
+            description: "More than 5% of HTTP requests to CPEmon ingresses are failing with 5xx over the last 10 minutes."
+
+        # 3) MySQLDown：cpemon 命名空间里的 mysql deployment 没有可用 Pod
+        - alert: MySQLDown
+          expr: kube_deployment_status_replicas_available{namespace="cpemon", deployment="mysql"} < 1
+          for: 2m
+          labels:
+            severity: critical
+            service: cpemon
+            component: mysql
+          annotations:
+            summary: "MySQL deployment is down in namespace {{ $labels.namespace }}"
+            description: "MySQL deployment {{ $labels.namespace }}/{{ $labels.deployment }} has no available pods for more than 2 minutes."
+

@@ -1,0 +1,75 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: logging
+  labels:
+    app: kibana
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5601
+      targetPort: http
+  selector:
+    app: kibana
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: logging
+  labels:
+    app: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+        - name: kibana
+          image: docker.io/kibana:7.17.27
+          ports:
+            - containerPort: 5601
+              name: http
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: "http://elasticsearch.logging.svc.cluster.local:9200"
+            - name: NODE_OPTIONS               # ★ 新增：限制 Node.js 最大堆内存
+              value: "--max-old-space-size=768"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana-ingress
+  namespace: logging
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  ingressClassName: nginx               # 用 ingress-nginx
+  rules:
+    - host: kibana.local                # 你 /etc/hosts 指向 10.0.0.200 的域名
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana
+                port:
+                  number: 5601

@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: logging
+  labels:
+    app: elasticsearch
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+  selector:
+    app: elasticsearch
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: logging
+  labels:
+    app: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          # ✅ 改成官方镜像
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.17.27
+          ports:
+            - name: http
+              containerPort: 9200
+            - name: transport
+              containerPort: 9300
+          env:
+            # 单节点模式
+            - name: discovery.type
+              value: "single-node"
+            # ✅ JVM 内存 + 关闭容器感知，绕过 cgroup 的 JMX bug
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m -XX:-UseContainerSupport"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+            limits:
+              cpu: "500m"
+              memory: "1.5Gi"
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: es-data
+          emptyDir: {}
+

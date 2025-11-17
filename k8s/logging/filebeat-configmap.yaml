@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: logging
+data:
+  filebeat.yml: |-
+    # ==================== Filebeat inputs ====================
+    filebeat.inputs:
+      - type: container
+        enabled: true
+
+        # 标准 K8s 容器日志 symlink 位置
+        paths:
+          - /var/log/containers/*.log
+
+        # 只对这个 input 生效的处理器：解析 JSON 日志
+        processors:
+          - decode_json_fields:
+              fields: ["message"]
+              target: ""
+              overwrite_keys: true
+              process_array: false
+              max_depth: 1
+
+    # ==================== Global processors ====================
+    processors:
+      - add_kubernetes_metadata:
+          # ★ 告诉它当前 Filebeat Pod 是跑在哪个 K8s Node 上
+          host: ${NODE_NAME}
+          matchers:
+            - logs_path:
+                # ★ 和上面的 paths 保持一致：/var/log/containers
+                logs_path: "/var/log/containers/"
+
+    # ==================== Elasticsearch output ====================
+    output.elasticsearch:
+      hosts: ["http://elasticsearch.logging.svc.cluster.local:9200"]
+      # 先用默认的 filebeat-7.17.27-YYYY.MM.DD 索引名，稳定为主
+
+    # ==================== Index management / ILM ====================
+    setup.ilm.enabled: false
+    setup.template.enabled: false
+
+    # ==================== Kibana (可选) ====================
+    setup.kibana:
+      host: "kibana.logging.svc.cluster.local:5601"
+
+    # ==================== Filebeat logging ====================
+    logging.json: true
+    logging.metrics.enabled: false
+    logging.level: debug
+    logging.selectors: ["input", "harvester"]
+
