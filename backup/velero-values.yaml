@@ -1,0 +1,15 @@
+# Velero + AWS S3 configuration for the cpemon cluster.
+
+s3:
+  # S3 bucket used by Velero (create this in AWS console)
+  bucket: "cpemon-velero"
+  # Region of the bucket, e.g. eu-north-1 / eu-west-1 / us-east-1
+  region: "eu-north-1"
+
+credentials:
+  # Local path to the credentials file used by 'velero install --secret-file'
+  file: "./backup/velero-credentials"
+
+backupDefaults:
+  # Default backup TTL (retention) — 14 days
+  ttl: "336h"

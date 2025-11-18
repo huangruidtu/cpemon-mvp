@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup-sync
+  namespace: backup
+spec:
+  # 每天 03:30 同步一次，你可以按照自己习惯改
+  schedule: "30 3 * * *"
+  # 避免并发多个 job
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: mc-mirror
+              image: minio/mc:latest
+              env:
+                # MinIO 服务地址 & bucket（前面 Day5 我们用的是 mysql-backup）
+                - name: MINIO_ENDPOINT
+                  value: "http://minio.platform.svc.cluster.local:9000"
+                - name: MINIO_BUCKET
+                  value: "mysql-backup"
+
+                # S3 bucket 名称 & 可选 region
+                - name: S3_BUCKET
+                  value: "cpemon-mysql-backup"
+                - name: AWS_REGION
+                  value: "eu-north-1"
+              envFrom:
+                - secretRef:
+                    name: mysql-backup-sync-credentials
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+
+                  echo "== Configure mc aliases =="
+                  mc alias set minio "$MINIO_ENDPOINT" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+                  # 标准 S3 endpoint，用 AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+                  mc alias set s3 https://s3.amazonaws.com "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY"
+
+                  echo "== List source bucket (MinIO) =="
+                  mc ls minio/"$MINIO_BUCKET" || echo "WARN: minio/$MINIO_BUCKET is empty or not found"
+
+                  echo "== Mirror minio/$MINIO_BUCKET -> s3/$S3_BUCKET =="
+                  # --overwrite: 覆盖同名对象；--remove: 目标端多出来的文件会被删，按需保留/去掉
+                  mc mirror --overwrite minio/"$MINIO_BUCKET" s3/"$S3_BUCKET"
+
+                  echo "== Done: mirror finished =="

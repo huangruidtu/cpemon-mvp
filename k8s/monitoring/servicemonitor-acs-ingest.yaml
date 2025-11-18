@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: acs-ingest
+  namespace: monitoring        # 你的 kube-prometheus-stack 所在 namespace
+  labels:
+    release: kps    # ⬅️ 很关键：改成你自己 Prometheus release 的 label
+spec:
+  namespaceSelector:
+    matchNames:
+      - cpemon
+  selector:
+    matchLabels:
+      app: acs-ingest          # 要和 Service 上的 label 一致
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      scheme: http
+

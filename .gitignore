@@ -12,3 +12,5 @@ node_modules/
 *.log
 *.bak
 secrets*.yaml
+backup/velero-credentials
+k8s/cron/mysql-backup-sync-secret.yaml
