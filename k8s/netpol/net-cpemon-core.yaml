@@ -1,0 +1,78 @@
+# 1) 默认拒绝 cpemon namespace 所有 Pod 的 egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-default-deny-egress
+  namespace: cpemon
+spec:
+  podSelector: {}          # 选中 cpemon 里的所有 Pod
+  policyTypes:
+  - Egress
+  egress: []               # 没有 egress 规则 => 全部出站拒绝
+
+---
+# 2) 允许核心服务（cpemon-api / acs-ingest / cpemon-writer）
+#    出站访问 MySQL + Prometheus + Elasticsearch + DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-allow-core-egress
+  namespace: cpemon
+spec:
+  podSelector:
+    matchExpressions:
+    - key: app
+      operator: In
+      values:
+      - cpemon-api
+      - acs-ingest
+      - cpemon-writer
+
+  policyTypes:
+  - Egress
+  egress:
+  # 2.1 允许访问 kube-dns（否则域名解析都会挂）
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+  # 2.2 允许访问 cpemon namespace 里的 MySQL（端口 3306）
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: cpemon
+      podSelector:
+        matchLabels:
+          app: mysql
+    ports:
+    - protocol: TCP
+      port: 3306
+
+  # 2.3 允许访问 monitoring namespace 里的 Prometheus（端口 9090）
+  # 如果你的 Prometheus 端口或 namespace 不一样，可以自己对应改一下
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9090
+
+  # 2.4 允许访问 logging namespace 里的 Elasticsearch（端口 9200）
+  # 同样，如果 ES 端口不是 9200，可以对应调整
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: logging
+    ports:
+    - protocol: TCP
+      port: 9200

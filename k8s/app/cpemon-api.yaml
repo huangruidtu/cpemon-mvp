@@ -6,7 +6,7 @@ metadata:
   labels:
     app: cpemon-api
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: cpemon-api
@@ -15,6 +15,35 @@ spec:
       labels:
         app: cpemon-api
     spec:
+      # --- 调度 & 亲和性 ---
+      affinity:
+        # 1) Pod 反亲和：同一个服务的副本尽量不要落在同一台节点
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: cpemon-api
+        # 2) 节点亲和：优先调度到 cpemon-role=worker 的节点
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cpemon-role
+                    operator: In
+                    values:
+                      - worker
+      # 3) 容忍 master 上的 taint，必要时可以调度到 master
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: cpemon-ecr-regcred
       containers:
