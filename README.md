@@ -62,31 +62,7 @@ High-level flow:
 
 ### 2.2 Mermaid diagram (optional in GitHub)
 
-```mermaid
-flowchart LR
-  CPE[CPE simulator\n(vm3)] --> ACS[GenieACS]
-  ACS -->|/acs/webhook| Ingress[Ingress-NGINX]
-  CPE -->|/cpe/heartbeat| Ingress
-
-  Ingress --> ACSI[acs-ingest]
-  Ingress --> API[cpemon-api]
-
-  ACSI --> Q[(MySQL\nqueue tables)]
-  API --> Q
-  Q --> WR[cpemon-writer]
-  WR --> DB[(MySQL\nbusiness tables)]
-
-  DB --> DashAPI[cpemon-api\n(dashboards)]
-
-  subgraph Observability
-    Prom[Prometheus] --> Graf[Grafana]
-    Logs[Filebeat] --> ES[Elasticsearch] --> Kib[Kibana]
-  end
-
-  K8s[(Kubernetes)] --- Prom
-  DB --- MinIO[(MinIO / S3)]
-  K8s --- Velero[Velero]
-```
+<img width="4152" height="2531" alt="MVP-CPEmon-ADR-001" src="https://github.com/user-attachments/assets/b14e3915-e63a-4cfd-9f9a-f2ea99c653a2" />
 
 ---
 
