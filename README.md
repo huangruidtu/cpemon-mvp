@@ -1,90 +1,68 @@
-MVP-CPEmon – Cloud-Native CPE Monitoring Demo
+# MVP-CPEmon – Cloud-Native CPE Monitoring Demo
 
-Goal:
-Give a reviewer enough context to go from zero to “can deploy and run the MVP-CPEmon demo” using only this README and basic Kubernetes knowledge.
+**Goal:**  
+Give a reviewer enough context to go from **zero** to **“can deploy and run the MVP-CPEmon demo”** using only this README and basic Kubernetes knowledge.
 
-1. Project overview
+---
+
+## 1. Project overview
 
 MVP-CPEmon is a small “telco-style” lab project that simulates how an ISP monitors CPE (home router) devices end-to-end.
 
 It glues together:
 
-CPE heartbeat simulators (Python, on a separate VM)
+- CPE heartbeat simulators (Python, on a separate VM)
+- GenieACS (TR-069 ACS, also on that VM)
+- A Kubernetes-hosted ingest pipeline (`acs-ingest`, `cpemon-writer`)
+- An API / dashboard service (`cpemon-api`)
+- A full observability stack (Prometheus, Grafana, Elasticsearch/Kibana)
+- Backup & disaster recovery (Velero + MinIO/S3)
 
-GenieACS (TR-069 ACS, also on that VM)
+The result is a **small but realistic** pipeline you can demo in interviews:
 
-A Kubernetes-hosted ingest pipeline (acs-ingest, cpemon-writer)
+> CPE → GenieACS → Ingress → acs-ingest → MySQL queues → cpemon-writer → cpemon-api → Grafana / Kibana / Velero.
 
-An API / dashboard service (cpemon-api)
+---
 
-A full observability stack (Prometheus, Grafana, Elasticsearch/Kibana)
+## 2. Architecture
 
-Backup & disaster recovery (Velero + MinIO/S3)
-
-The result is a small but realistic pipeline you can demo in interviews:
-
-CPE → GenieACS → Ingress → acs-ingest → MySQL queues → cpemon-writer → cpemon-api → Grafana / Kibana / Velero.
-
-2. Architecture
-2.1 Data flow
+### 2.1 Data flow
 
 High-level flow:
 
-CPE simulator (vm3)
+- **CPE simulator (vm3)**
+  - Sends TR-069 traffic to **GenieACS**.
+  - Sends HTTP heartbeats to `/cpe/heartbeat` on **cpemon-api**.
 
-Sends TR-069 traffic to GenieACS.
+- **GenieACS (vm3)**
+  - Manages CPEs.
+  - For important events, calls a webhook `/acs/webhook` exposed by the cluster.
 
-Sends HTTP heartbeats to /cpe/heartbeat on cpemon-api.
+- **Kubernetes cluster**
+  - **Ingress-NGINX** exposes:
+    - `https://api.local` → `cpemon-api`
+    - `https://api.local/acs/webhook` → `acs-ingest`
+  - **acs-ingest**
+    - Validates / normalises ACS events.
+    - Writes them into **MySQL queue tables**.
+    - Exposes Prometheus metrics (including `acs_webhook_requests_total`, `acs_webhook_errors_total`).
+  - **cpemon-api**
+    - Ingests CPE heartbeat (`/cpe/heartbeat`).
+    - Exposes REST APIs for dashboards.
+  - **cpemon-writer**
+    - Consumes queue tables and writes into **business tables**.
+  - **Prometheus + Grafana**
+    - Scrapes metrics from all above components.
+    - Provides the main **“CPEmon Pipeline Overview”** dashboard.
+  - **Filebeat + Elasticsearch + Kibana**
+    - Collect and visualise logs.
+  - **Velero + MinIO/S3**
+    - Back up `cpemon` namespace + MySQL state.
+    - Restore for DR demo.
 
-GenieACS (vm3)
+### 2.2 Mermaid diagram (optional in GitHub)
 
-Manages CPEs.
-
-For important events, calls a webhook /acs/webhook exposed by the cluster.
-
-Kubernetes cluster
-
-Ingress-NGINX exposes:
-
-https://api.local → cpemon-api
-
-https://api.local/acs/webhook → acs-ingest
-
-acs-ingest
-
-Validates / normalises ACS events.
-
-Writes them into MySQL queue tables.
-
-Exposes Prometheus metrics (including acs_webhook_requests_total, acs_webhook_errors_total).
-
-cpemon-api
-
-Ingests CPE heartbeat (/cpe/heartbeat).
-
-Exposes REST APIs for dashboards.
-
-cpemon-writer
-
-Consumes queue tables and writes into business tables.
-
-Prometheus + Grafana
-
-Scrapes metrics from all above components.
-
-Provides the main “CPEmon Pipeline Overview” dashboard.
-
-Filebeat + Elasticsearch + Kibana
-
-Collect and visualise logs.
-
-Velero + MinIO/S3
-
-Back up cpemon namespace + MySQL state.
-
-Restore for DR demo.
-
-2.2 Mermaid diagram (optional in GitHub)
+```mermaid
 flowchart LR
   CPE[CPE simulator\n(vm3)] --> ACS[GenieACS]
   ACS -->|/acs/webhook| Ingress[Ingress-NGINX]
@@ -108,282 +86,285 @@ flowchart LR
   K8s[(Kubernetes)] --- Prom
   DB --- MinIO[(MinIO / S3)]
   K8s --- Velero[Velero]
+```
 
-3. Tech stack
+---
 
-Platform
+## 3. Tech stack
 
-Kubernetes (kubeadm lab cluster)
+### Platform
 
-MetalLB (LoadBalancer on bare-metal)
+- Kubernetes (kubeadm lab cluster)
+- MetalLB (LoadBalancer on bare-metal)
+- ingress-nginx
 
-ingress-nginx
+### Application services
 
-Application services
+- `cpemon-api` (Go)
+- `cpemon-admin` web UI (served at `https://admin.local`, backed by `cpemon-api`)
+- `cpemon-writer` (Go)
+- `acs-ingest` (Go)
+- GenieACS (Node.js, Docker on vm3)
+- CPE heartbeat simulator (Python, Docker on vm3)
 
-cpemon-api (Go)
+### Data layer
 
-cpemon-admin web UI (served at https://admin.local, backed by cpemon-api)
+- MySQL (queue / business tables)
+- MinIO / S3 (MySQL dumps, Velero backup storage)
+- Elasticsearch (logs)
 
-cpemon-writer (Go)
+### Observability
 
-acs-ingest (Go)
+- Prometheus + kube-prometheus-stack
+- Grafana (dashboards in `dashboards/`)
+- Filebeat + Elasticsearch + Kibana
 
-GenieACS (Node.js, Docker on vm3)
+### Backup & DR
 
-CPE heartbeat simulator (Python, Docker on vm3)
+- Velero
+- MinIO / S3-compatible object storage
 
-Data layer
+---
 
-MySQL (queue/business tables)
+## 4. How to run in your lab cluster
 
-MinIO / S3 (MySQL dumps, Velero backup storage)
+> Assumption: you already have a running cluster and `kubectl` access.
 
-Elasticsearch (logs)
+### 4.1 Prerequisites
 
-Observability
+On your **Kubernetes admin node**:
 
-Prometheus + kube-prometheus-stack
+- `kubectl`, `helm`, `docker`, `velero` installed.
+- `~/.kube/config` points to the target cluster.
+- `/etc/hosts` on your laptop (and vm3) contains something like:
 
-Grafana (dashboards in dashboards/)
+  ```text
+  10.0.0.200 api.local grafana.local kibana.local admin.local
+  ```
 
-Filebeat + Elasticsearch + Kibana
+On **vm3** (CPE/ACS host):
 
-Backup & DR
+- Docker engine installed.
+- Same `/etc/hosts` entry so vm3 can resolve `api.local` to ingress IP.
 
-Velero
-
-MinIO / S3-compatible object storage
-
-4. How to run in your lab cluster
-
-Assumption: you already have a running cluster and kubectl access.
-
-4.1 Prerequisites
-
-On your Kubernetes admin node:
-
-kubectl, helm, docker, velero installed.
-
-~/.kube/config points to the target cluster.
-
-/etc/hosts on your laptop (and vm3) contains something like:
-
-10.0.0.200 api.local grafana.local kibana.local admin.local
-
-
-On vm3 (CPE/ACS host):
-
-Docker engine installed.
-
-Same /etc/hosts entry so vm3 can resolve api.local to ingress IP.
-
-4.2 Deploy the Kubernetes stack
+### 4.2 Deploy the Kubernetes stack
 
 From repo root:
 
+```bash
 cd ~/cpemon-mvp
+```
 
+**Namespaces**
 
-Namespaces
-
+```bash
 kubectl create namespace cpemon     || true
 kubectl create namespace monitoring || true
 kubectl create namespace logging    || true
 kubectl create namespace backup     || true
 kubectl create namespace genieacs   || true
+```
 
+**Data services**
 
-Data services
-
+```bash
 kubectl apply -R -f k8s/mysql/
 kubectl apply -R -f k8s/minio/
+```
 
+**Ingress / MetalLB (if not already present)**
 
-Ingress / MetalLB (if not already present)
-
+```bash
 kubectl apply -R -f k8s/ingress-nginx/
 kubectl apply -R -f k8s/metallb/
+```
 
+**CPEmon apps**
 
-CPEmon apps
-
+```bash
 kubectl apply -R -f k8s/cpemon/
+```
 
+**Observability & cronjobs**
 
-Observability & cronjobs
-
+```bash
 kubectl apply -R -f k8s/monitoring/
 kubectl apply -R -f k8s/logging/
 kubectl apply -R -f k8s/cron/
+```
 
-
-(Check directory names against your repo; adjust if they differ.)
+> Check directory names against your repo; adjust if they differ.
 
 Verify everything is running:
 
+```bash
 kubectl get pods -A
+```
 
-4.3 Start GenieACS + CPE simulator on vm3
+### 4.3 Start GenieACS + CPE simulator on vm3
 
-On vm3:
+On **vm3**:
 
+```bash
 cd ~/cpemon-mvp/vm3
 NUM_CPE=5 ./start-vm3-stack.sh
-
+```
 
 The script will:
 
-Use acs/docker-compose.yml to start GenieACS, MongoDB, Redis.
-
-Build cpe-sim/Dockerfile into cpemon-cpe-sim:latest.
-
-Run cpe-sim-N containers that send periodic heartbeats to https://api.local/cpe/heartbeat.
+- Use `acs/docker-compose.yml` to start GenieACS, MongoDB, Redis.
+- Build `cpe-sim/Dockerfile` into `cpemon-cpe-sim:latest`.
+- Run `cpe-sim-N` containers that send periodic heartbeats to `https://api.local/cpe/heartbeat`.
 
 Check:
 
+```bash
 docker ps
 docker logs -f cpe-sim-1
+```
 
+You should see:
 
-You should see [OK] sent heartbeat ... status=202.
+```text
+[OK] sent heartbeat ... status=202
+```
 
-5. Demo scenarios (interview-ready)
+---
 
-All helper scripts live in scripts/. Make them executable:
+## 5. Demo scenarios (interview-ready)
 
+All helper scripts live in `scripts/`. Make them executable:
+
+```bash
 cd ~/cpemon-mvp
 chmod +x scripts/*.sh
+```
 
-5.1 Quick smoke test – scripts/smoke.sh
+### 5.1 Quick smoke test – `scripts/smoke.sh`
 
-Goal: verify cluster + core services are healthy.
+**Goal:** verify cluster + core services are healthy.
 
+```bash
 scripts/smoke.sh
+```
 
+Roughly checks:
 
-What it roughly checks:
+- Key namespaces & Pods are running.
+- Ingress / MetalLB are listening on ports **80/443**.
+- `https://api.local` responds.
+- `cpemon-api` health endpoint.
 
-Key namespaces & Pods are running.
+Use this at the start of a demo: *“environment is clean and working”*.
 
-Ingress / MetalLB are listening on 80/443.
+---
 
-https://api.local responds.
+### 5.2 Backlog scenario – `scripts/make_backlog.sh` + Grafana
 
-cpemon-api health endpoint.
+**Goal:** show what happens when the writer is down and queues build up, then recover.
 
-Use this at the start of a demo: “environment is clean and working”.
-
-5.2 Backlog scenario – scripts/make_backlog.sh + Grafana
-
-Goal: show what happens when the writer is down and queues build up, then recover.
-
-HEARTBEAT_COUNT=300 PAUSE_BEFORE_RESUME=30 \
-  scripts/make_backlog.sh
-
+```bash
+HEARTBEAT_COUNT=300 PAUSE_BEFORE_RESUME=30   scripts/make_backlog.sh
+```
 
 The script will:
 
-Scale cpemon-writer to 0 (simulate consumer outage).
+1. Scale `cpemon-writer` to `0` (simulate consumer outage).  
+2. Hit `/cpe/heartbeat` many times to build up queue backlog.  
+3. Sleep for a while so you can see backlog rising in Grafana.  
+4. Scale `cpemon-writer` back to its original replica count and watch backlog drain.
 
-Hit /cpe/heartbeat many times to build up queue backlog.
+In Grafana’s **CPEmon Pipeline Overview** dashboard, focus on:
 
-Sleep for a while so you can see backlog rising in Grafana.
+- `cpemon-api: HTTP Requests by Status`
+- `cpemon-writer: Events (processed / dead)`
+- Any queue / lag panels you defined.
 
-Scale cpemon-writer back to its original replica count and watch backlog drain.
+---
 
-In Grafana’s CPEmon Pipeline Overview dashboard, focus on:
+### 5.3 Backup / Restore DR scenario – `scripts/backup_restore.sh` + Velero
 
-cpemon-api: HTTP Requests by Status
+**Goal:** demonstrate using Velero to back up and restore `cpemon-api` and related resources.
 
-cpemon-writer: Events (processed / dead)
-
-Any queue / lag panels you defined.
-
-5.3 Backup / Restore DR scenario – scripts/backup_restore.sh + Velero
-
-Goal: demonstrate using Velero to back up and restore cpemon-api and related resources.
-
+```bash
 scripts/backup_restore.sh
-
-5.4 Admin Web UI demo – https://admin.local
-
-Goal: show a simple web UI on top of cpemon-api, so reviewers see both APIs and a small product-style UI.
-
-How to use:
-
-Make sure your /etc/hosts on your laptop contains:
-
-10.0.0.200 admin.local
-
-
-(replace 10.0.0.200 with your ingress IP if different).
-
-After the cluster is up and cpemon-api is running, open a browser on your laptop and visit:
-
-https://admin.local
-
-
-If you are using a self-signed certificate, the browser will show a warning — accept it for this lab.
-
-In the admin UI you can, for example:
-
-See a list of CPE devices and their latest heartbeat status;
-
-Click into a CPE to see details (SN, WAN IP, SW version, last-seen timestamp);
-
-Cross-check what you see here with:
-
-Grafana’s “CPEmon Pipeline Overview” dashboard;
-
-Kibana logs for the same CPE SN.
+```
 
 The script:
 
-Creates a Velero backup for the cpemon namespace (name with timestamp).
+- Creates a Velero backup for the `cpemon` namespace (name with timestamp).
+- Deletes `cpemon-api` Deployment / Service / Ingress to simulate a failure.
+- Restores from the backup.
+- Waits until restored resources are running again.
+- Optionally re-runs `scripts/smoke.sh` as final verification.
 
-Deletes cpemon-api Deployment/Service/Ingress to simulate a failure.
+This is your DR story: *“we can lose cpemon-api and get it back from backup”*.
 
-Restores from the backup.
+---
 
-Waits until restored resources are running again.
+### 5.4 Admin Web UI demo – `https://admin.local`
 
-Optionally re-runs scripts/smoke.sh as final verification.
+**Goal:** show a simple web UI on top of `cpemon-api`, so reviewers see both APIs and a small product-style UI.
 
-This is your DR story: “we can lose cpemon-api and get it back from backup”.
+**How to use:**
 
-5.5 Extra demos (optional)
+1. Make sure your `/etc/hosts` on your laptop contains:
 
-CPE heartbeat demo – scripts/demo_cpe_acs.sh
-Focused on “CPE → cpemon-api → MySQL → cpemon-writer” without ACS.
-Good if you want a shorter story.
+   ```text
+   10.0.0.200 admin.local
+   ```
 
-ACS webhook + error metrics – scripts/acs-webhook-demo.sh
-Sends:
+   (Replace `10.0.0.200` with your ingress IP if different.)
 
-valid webhooks (202)
+2. After the cluster is up and `cpemon-api` is running, open a browser on your laptop and visit:
 
-invalid_json
+   ```bash
+   https://admin.local
+   ```
 
-missing_sn
+   If you are using a self-signed certificate, the browser will show a warning — accept it for this lab.
 
-invalid_signature
+3. In the admin UI you can, for example:
 
-and drives:
+   - See a list of CPE devices and their latest heartbeat status.
+   - Click into a CPE to see details (SN, WAN IP, SW version, last-seen timestamp).
+   - Cross-check what you see here with:
+     - Grafana’s **“CPEmon Pipeline Overview”** dashboard.
+     - Kibana logs for the same CPE SN.
 
-acs_webhook_requests_total
+---
 
-acs_webhook_errors_total
+### 5.5 Extra demos (optional)
 
-Use this when showcasing the ACS side of the pipeline.
+- **CPE heartbeat demo – `scripts/demo_cpe_acs.sh`**  
+  Focused on **“CPE → cpemon-api → MySQL → cpemon-writer”** without ACS.  
+  Good if you want a shorter story.
 
-Ingress ports check – scripts/ingress-ports-check.sh
-Shows which process is listening on 80/443, useful when debugging ingress.
+- **ACS webhook + error metrics – `scripts/acs-webhook-demo.sh`**  
+  Sends:
 
-6. Repository structure
+  - valid webhooks (`202`)
+  - `invalid_json`
+  - `missing_sn`
+  - `invalid_signature`
+
+  and drives:
+
+  - `acs_webhook_requests_total`
+  - `acs_webhook_errors_total`
+
+  Use this when showcasing the ACS side of the pipeline.
+
+- **Ingress ports check – `scripts/ingress-ports-check.sh`**  
+  Shows which process is listening on 80/443, useful when debugging ingress.
+
+---
+
+## 6. Repository structure
 
 At a glance:
 
+```text
 .
 ├── app/              # Go services: cpemon-api, cpemon-writer, acs-ingest
 ├── k8s/              # All Kubernetes manifests (infra, cpemon, monitoring, logging, cronjobs)
@@ -399,23 +380,19 @@ At a glance:
 ├── docker/           # Dockerfiles for application images
 ├── Makefile          # Optional build / lint helpers
 └── README.md         # This file
+```
 
-7. What a reviewer should be able to do
+---
 
-After reading this README, someone with basic Kubernetes experience should be able to:
+## 7. What a reviewer should be able to do
 
-Understand the purpose and architecture of MVP-CPEmon.
+After reading this README, someone with **basic Kubernetes experience** should be able to:
 
-Deploy the stack on their lab cluster (K8s + vm3).
-
-Run at least these three demo scripts:
-
-scripts/smoke.sh
-
-scripts/make_backlog.sh
-
-scripts/backup_restore.sh
-
-Optionally run scripts/acs-webhook-demo.sh to showcase ACS-side metrics.
-
-Navigate the Grafana “CPEmon Pipeline Overview” dashboard and connect graphs to the underlying architecture.
+- Understand the purpose and architecture of MVP-CPEmon.  
+- Deploy the stack on their lab cluster (K8s + vm3).  
+- Run at least these three demo scripts:
+  - `scripts/smoke.sh`
+  - `scripts/make_backlog.sh`
+  - `scripts/backup_restore.sh`
+- Optionally run `scripts/acs-webhook-demo.sh` to showcase ACS-side metrics.  
+- Navigate the Grafana **“CPEmon Pipeline Overview”** dashboard and connect graphs to the underlying architecture.
