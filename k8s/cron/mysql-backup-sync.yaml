@@ -4,8 +4,8 @@ metadata:
   name: mysql-backup-sync
   namespace: backup
 spec:
-  # 每天 03:30 同步一次，你可以按照自己习惯改
-  schedule: "30 3 * * *"
+  # 每天 13:30 同步一次，你可以按照自己习惯改
+  schedule: "30 13 * * *"
   # 避免并发多个 job
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3

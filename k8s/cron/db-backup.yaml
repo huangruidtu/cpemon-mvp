@@ -6,7 +6,7 @@ metadata:
   labels:
     app: db-backup
 spec:
-  schedule: "30 3 * * *"              # 每天 03:30 触发（本地业务低峰可随需调整）
+  schedule: "30 13 * * *"              # 每天 13:30 触发（本地业务低峰可随需调整）
   timeZone: "Europe/Copenhagen"       # Kubernetes 1.27+ 支持；你的集群版本足够新
   concurrencyPolicy: Forbid           # 防止上一次未完成时并发执行
   startingDeadlineSeconds: 900        # 15 分钟容错窗口（控制器短暂异常时仍可补跑）
