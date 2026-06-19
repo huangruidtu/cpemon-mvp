@@ -1,0 +1,43 @@
+flowchart LR
+  dev["Developer"]
+  pr["GitHub PR"]
+  ci["PR quality gates<br/>Go, Docker, Trivy, Helm, kubeconform, kube-linter, Terraform plan"]
+  oidc["GitHub OIDC"]
+  humanid["Federated human access<br/>IAM Identity Center / enterprise IdP"]
+  aws["AWS account"]
+  ecr["ECR"]
+  eks["EKS"]
+  tf["Terraform state and modules"]
+  argocd["Argo CD"]
+  helm["Helm charts"]
+  eso["External Secrets Operator"]
+  kyverno["Kyverno minimal policies"]
+  kafka["Kafka"]
+  rollouts["Argo Rollouts"]
+  prom["Prometheus / Grafana"]
+  opencost["OpenCost"]
+  apps["CPEmon services<br/>cpemon-api, acs-ingest, cpemon-writer"]
+  mysql["MySQL / managed DB candidate"]
+  cpe["CPE simulator / GenieACS"]
+
+  dev --> pr --> ci
+  ci --> oidc --> aws
+  dev --> humanid --> aws
+  ci --> ecr
+  ci --> tf
+  tf --> eks
+  helm --> argocd
+  argocd --> eks
+  eks --> apps
+  eks --> eso
+  eks --> kyverno
+  eks --> kafka
+  eks --> rollouts
+  eks --> prom
+  eks --> opencost
+  cpe --> apps
+  apps --> kafka
+  kafka --> apps
+  apps --> mysql
+  apps --> prom
+  rollouts --> prom

@@ -372,3 +372,19 @@ After reading this README, someone with **basic Kubernetes experience** should b
   - `scripts/backup_restore.sh`
 - Optionally run `scripts/acs-webhook-demo.sh` to showcase ACS-side metrics.  
 - Navigate the Grafana **“CPEmon Pipeline Overview”** dashboard and connect graphs to the underlying architecture.
+
+---
+
+## 8. CPEmon Cloud Platform Upgrade
+
+This documentation set describes the upgrade path from the current YAML-first MVP architecture to an EKS-based GitOps cloud platform version.
+
+Start here:
+
+- `docs/cloud-platform-upgrade-roadmap.md` - Step 1 and Step 2 roadmap boundary.
+- `docs/cloud-platform-upgrade-step1-architecture.md` - Step 1 architecture, current limitations, target platform, migration path, scope, diagram, and incident drill.
+- `docs/cloud-platform-upgrade-step1-architecture.mmd` - Mermaid source for the Step 1 target architecture diagram.
+- `docs/cloud-platform-upgrade-jira-story-template.md` - reusable Jira Story template for the remaining upgrade stories.
+- `ADR/cloud-platform-upgrade-from-yaml-first-mvp.md`
+- `ADR/cloud-platform-upgrade-eks-terraform-gitops-kafka.md`
+- `ADR/cloud-platform-upgrade-step2-crossplane-k8sgpt.md`
