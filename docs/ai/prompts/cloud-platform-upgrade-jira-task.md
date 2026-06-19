@@ -72,6 +72,7 @@ Execution notes:
 ## Style Rules
 
 - Keep titles short and action-oriented.
+- Use `CCPU-XXX` for Jira issue examples in this project.
 - Do not use numeric prefixes such as `001` or `002`.
 - Keep Step 1 and Step 2 boundaries explicit.
 - Do not reintroduce OpenTelemetry or Backstage into Step 1.

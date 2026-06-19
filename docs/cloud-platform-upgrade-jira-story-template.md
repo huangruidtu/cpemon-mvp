@@ -2,7 +2,7 @@
 
 ## Story Title
 
-CPM-XXX: Short action-oriented title
+CCPU-XXX: Short action-oriented title
 
 ## Story Goal
 
@@ -66,6 +66,19 @@ Update:
 - `docs/ai/prompts/cloud-platform-upgrade-jira-task.md` if the reusable Jira task workflow changes
 - `ADR/` if needed
 - Runbooks if operational behavior changes
+
+## Execution Comment
+
+After implementation, add a Jira comment:
+
+```markdown
+Execution notes:
+
+- Reviewed:
+- Changed:
+- Validation:
+- Remaining follow-up:
+```
 
 ## Interview Story
 
