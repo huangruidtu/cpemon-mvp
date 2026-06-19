@@ -375,16 +375,35 @@ After reading this README, someone with **basic Kubernetes experience** should b
 
 ---
 
-## 8. CPEmon Cloud Platform Upgrade
+## 8. CPEmon Cloud Platform Upgrade: Evolution From Current MVP
 
-This documentation set describes the upgrade path from the current YAML-first MVP architecture to an EKS-based GitOps cloud platform version.
+This documentation set describes the upgrade path from the current YAML-first MVP architecture to an EKS-based GitOps cloud platform version. It is an evolution track, not a replacement for the current MVP story above.
+
+Branch boundary:
+
+| Branch | Purpose |
+| --- | --- |
+| `main` | Current YAML-first MVP baseline. |
+| `codex/cpemon-cloud-platform-upgrade` | Cloud Platform Upgrade evolution track. |
 
 Start here:
 
+Roadmap:
+
 - `docs/cloud-platform-upgrade-roadmap.md` - Step 1 and Step 2 roadmap boundary.
+
+Architecture:
+
 - `docs/cloud-platform-upgrade-step1-architecture.md` - Step 1 architecture, current limitations, target platform, migration path, scope, diagram, and incident drill.
 - `docs/cloud-platform-upgrade-step1-architecture.mmd` - Mermaid source for the Step 1 target architecture diagram.
-- `docs/cloud-platform-upgrade-jira-story-template.md` - reusable Jira Story template for the remaining upgrade stories.
+
+Architecture decisions:
+
 - `ADR/cloud-platform-upgrade-from-yaml-first-mvp.md`
 - `ADR/cloud-platform-upgrade-eks-terraform-gitops-kafka.md`
 - `ADR/cloud-platform-upgrade-step2-crossplane-k8sgpt.md`
+
+Jira and AI workflow templates:
+
+- `docs/cloud-platform-upgrade-jira-story-template.md` - reusable Jira Story template for the remaining upgrade stories.
+- `docs/ai/prompts/cloud-platform-upgrade-jira-task.md` - reusable prompt for generating consistent Jira task descriptions and execution comments.
