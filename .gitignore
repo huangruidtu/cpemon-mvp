@@ -14,3 +14,11 @@ node_modules/
 secrets*.yaml
 backup/velero-credentials
 k8s/cron/mysql-backup-sync-secret.yaml
+
+# Terraform local state, plugins, plans, and private input values
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+terraform.tfvars.json
