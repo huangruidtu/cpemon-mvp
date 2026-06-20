@@ -34,6 +34,15 @@ terraform validate
 terraform plan
 ```
 
+Before committing Terraform changes, run:
+
+```bash
+terraform fmt -recursive
+terraform validate
+```
+
+`terraform fmt` rewrites Terraform files into the standard style. `terraform validate` checks that the configuration is syntactically valid and matches the provider schema after initialization.
+
 ## Scope
 
 The Terraform foundation starts with:
@@ -56,6 +65,19 @@ The `dev` backend uses the classic Terraform S3 remote state pattern:
 Current Terraform versions warn that the S3 backend `dynamodb_table` argument is deprecated in favor of S3-native lock files. For this foundation step, the DynamoDB lock table is intentionally kept because the goal is to practice and document the traditional remote-state locking model that is still common in existing Terraform estates.
 
 If this project later chooses to remove the warning and use the newer S3 lock-file model, the backend can be migrated separately after the state workflow is stable.
+
+## GitHub Actions Workflow
+
+The repository includes `.github/workflows/terraform.yml` for Terraform pull-request checks.
+
+The workflow has two jobs:
+
+- `validate` runs `terraform fmt -check -recursive`, `terraform init -backend=false`, and `terraform validate`. This job does not need AWS credentials because it skips the remote backend.
+- `plan` runs `terraform init` and `terraform plan` against the real dev backend only when the repository secret `CPEMON_TERRAFORM_ROLE_ARN` is configured.
+
+The plan job is intentionally OIDC-based. GitHub should assume a short-lived AWS role instead of storing long-lived AWS access keys in repository secrets.
+
+The plan command uses `terraform.tfvars.example` so CI has safe, committed input values. The private `terraform.tfvars` file remains local-only.
 
 The first foundation story does not include:
 

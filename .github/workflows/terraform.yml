@@ -1,0 +1,95 @@
+name: Terraform
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [ main, codex/cpemon-cloud-platform-upgrade ]
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_VAR_FILE: terraform.tfvars.example
+  AWS_REGION: eu-north-1
+  AWS_PROFILE_NAME: cpemon-terraform
+
+jobs:
+  validate:
+    name: Format and validate
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infra/terraform/envs/dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.0
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize Terraform without remote backend
+        run: terraform init -backend=false
+
+      - name: Validate Terraform configuration
+        run: terraform validate
+
+  plan:
+    name: Plan dev environment
+    runs-on: ubuntu-latest
+    needs: validate
+    env:
+      TERRAFORM_ROLE_ARN: ${{ secrets.CPEMON_TERRAFORM_ROLE_ARN }}
+
+    defaults:
+      run:
+        working-directory: infra/terraform/envs/dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Terraform role secret
+        if: env.TERRAFORM_ROLE_ARN == ''
+        run: |
+          echo "CPEMON_TERRAFORM_ROLE_ARN is not configured yet."
+          echo "Skipping terraform plan until the GitHub OIDC Terraform role is created."
+
+      - name: Configure AWS credentials through GitHub OIDC
+        if: env.TERRAFORM_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-profile: ${{ env.AWS_PROFILE_NAME }}
+          output-env-credentials: true
+
+      - name: Set up Terraform
+        if: env.TERRAFORM_ROLE_ARN != ''
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.0
+
+      - name: Initialize Terraform remote backend
+        if: env.TERRAFORM_ROLE_ARN != ''
+        run: terraform init
+
+      - name: Create Terraform plan
+        if: env.TERRAFORM_ROLE_ARN != ''
+        run: terraform plan -input=false -no-color -var-file="${{ env.TF_VAR_FILE }}"
