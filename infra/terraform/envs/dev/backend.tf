@@ -1,6 +1,14 @@
-# The S3 backend will be enabled after the remote state bucket and DynamoDB
-# lock table are created.
-#
-# Keeping this file as a placeholder makes the intended environment structure
-# visible without forcing `terraform init` to use backend resources that do not
-# exist yet.
+# Terraform state for the dev environment is stored in S3 and protected by a
+# DynamoDB lock table. The backend resources are bootstrapped before this
+# backend is initialized.
+
+terraform {
+  backend "s3" {
+    bucket         = "cpemon-terraform-state-dev-701573843911"
+    key            = "cpemon/dev/terraform.tfstate"
+    region         = "eu-north-1"
+    dynamodb_table = "cpemon-terraform-locks-dev"
+    encrypt        = true
+    profile        = "cpemon-terraform"
+  }
+}

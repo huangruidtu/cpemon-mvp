@@ -45,6 +45,18 @@ The Terraform foundation starts with:
 - Safe example input values.
 - Minimal outputs for validation.
 
+## Remote State Locking Decision
+
+The `dev` backend uses the classic Terraform S3 remote state pattern:
+
+- S3 stores the shared state file.
+- DynamoDB provides state locking through the `LockID` partition key.
+- The `cpemon-terraform` AWS SSO profile is used for local Terraform access.
+
+Current Terraform versions warn that the S3 backend `dynamodb_table` argument is deprecated in favor of S3-native lock files. For this foundation step, the DynamoDB lock table is intentionally kept because the goal is to practice and document the traditional remote-state locking model that is still common in existing Terraform estates.
+
+If this project later chooses to remove the warning and use the newer S3 lock-file model, the backend can be migrated separately after the state workflow is stable.
+
 The first foundation story does not include:
 
 - EKS cluster provisioning.

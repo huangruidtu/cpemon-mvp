@@ -1,4 +1,4 @@
 project_name = "cpemon"
 environment  = "dev"
 aws_region   = "eu-north-1"
-aws_profile  = "default"
+aws_profile  = "cpemon-terraform"
