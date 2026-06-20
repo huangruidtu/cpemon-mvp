@@ -175,16 +175,79 @@ What was the subtle IAM policy bug?
 
 `iam:ListAttachedRolePolicies` was accidentally grouped with `iam:AttachRolePolicy` under an `iam:PolicyARN` condition. That condition is valid for restricting which policy can be attached, but list operations do not use that same condition key. The fix was to separate read/list permissions from the conditional attach permission.
 
-## 12. What remains before the image publishing story is fully done?
+## 12. How did you validate the GitHub Actions image push?
 
 **Answer**
 
-The AWS infrastructure layer is done and verified with a clean Terraform plan. The remaining validation is the runtime CI/CD layer:
+The workflow was validated by pushing a test version tag:
 
-- Add the GitHub secret `CPEMON_ECR_PUSH_ROLE_ARN` if it is not already configured.
-- Trigger the Docker ECR workflow through a `v*.*.*` tag or manual dispatch.
-- Confirm GitHub Actions assumes the role through OIDC.
-- Confirm all three Docker images build and push to ECR.
-- Confirm ECR shows the expected immutable version tag.
+```bash
+git tag -a v0.0.0-ccpu3-test -m "CCPU-3 ECR push validation"
+git push origin v0.0.0-ccpu3-test
+```
 
-Only after images are successfully pushed to ECR should the image build/push validation subtask be marked done.
+That triggered the `Build & Push Docker images to ECR` workflow through the tag push path. The successful run was:
+
+```text
+GitHub Actions run: 27871227136
+Trigger: push tag v0.0.0-ccpu3-test
+Commit: f6c80047ad7db3029359798d6f2433d966592bf2
+Result: success
+```
+
+All three matrix jobs succeeded:
+
+- `acs-ingest`
+- `cpemon-api`
+- `cpemon-writer`
+
+Each job completed the same critical path:
+
+- Configure AWS credentials through GitHub OIDC.
+- Login to Amazon ECR.
+- Build Docker image.
+- Push Docker image.
+
+**Deep follow-up**
+
+Why use a tag instead of manually dispatching from the upgrade branch?
+
+**Strong response**
+
+The IAM trust policy intentionally allowed only `main` and `refs/tags/v*`. A manual dispatch from the upgrade branch failed because its OIDC `sub` claim did not match the trusted refs. Instead of widening the trust policy for convenience, the validation used a test `v*` tag. That proved the secure release path without granting the upgrade branch AWS publishing access.
+
+## 13. What incident drill came out of the first failed run?
+
+**Answer**
+
+The first validation attempt used `workflow_dispatch` from the upgrade branch and failed at:
+
+```text
+Configure AWS credentials through GitHub OIDC
+```
+
+The error was:
+
+```text
+Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity
+```
+
+The root cause was an OIDC trust-policy mismatch. The GitHub token subject represented the upgrade branch, but the IAM role only trusted `main` and `v*` tags.
+
+The resolution was to trigger the workflow through a trusted tag ref instead of broadening the trust policy.
+
+**Interview-ready answer**
+
+I intentionally kept the AWS trust policy narrow. A manual workflow dispatch from the upgrade branch failed because that branch was not trusted by the role's OIDC `sub` condition. I treated that as an incident drill, confirmed the failure was caused by trust-policy scope, and reran the workflow through a trusted version tag. The tag run succeeded and pushed all three images to ECR.
+
+## 14. What remains after CCPU-3?
+
+**Answer**
+
+The CCPU-3 ECR/OIDC image publishing foundation is complete. Later hardening work should move into follow-up stories:
+
+- Replace `latest` as a deployment source of truth with immutable tags.
+- Build a multi-stage CI/CD model for feature, upgrade, main, and release paths.
+- Add Trivy image/filesystem/secret/IaC scans.
+- Add Helm-rendered manifest checks after Helm exists.
+- Add GitOps rollout and rollback automation.

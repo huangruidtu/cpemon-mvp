@@ -358,6 +358,67 @@ Learning:
 
 > A clean final plan is the strongest signal that Terraform state, Terraform configuration, and real AWS infrastructure are aligned.
 
+### 7. Workflow dispatch failed from an untrusted branch
+
+The first GitHub Actions validation run was triggered manually with `workflow_dispatch` from:
+
+```text
+codex/cpemon-cloud-platform-upgrade
+```
+
+That run failed at:
+
+```text
+Configure AWS credentials through GitHub OIDC
+```
+
+The error was:
+
+```text
+Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity
+```
+
+This was expected after inspecting the IAM trust policy. The role allowed only:
+
+```text
+repo:huangruidtu/cpemon-mvp:ref:refs/heads/main
+repo:huangruidtu/cpemon-mvp:ref:refs/tags/v*
+```
+
+It did not allow the upgrade branch. The fix was not to broaden the trust policy just for convenience. The validation was rerun by pushing a test tag:
+
+```bash
+git tag -a v0.0.0-ccpu3-test -m "CCPU-3 ECR push validation"
+git push origin v0.0.0-ccpu3-test
+```
+
+That tag matched the trusted `refs/tags/v*` pattern, so GitHub Actions received AWS credentials through OIDC and continued to ECR login, Docker build, and Docker push.
+
+Learning:
+
+> A failed OIDC run can be a useful security signal. In this case, the role correctly rejected an untrusted branch and accepted a trusted version tag.
+
+### 8. CCPU-35 image push validation succeeded
+
+The successful validation run was:
+
+```text
+GitHub Actions run: 27871227136
+Trigger: push tag v0.0.0-ccpu3-test
+Commit: f6c80047ad7db3029359798d6f2433d966592bf2
+Result: success
+```
+
+All three matrix jobs completed successfully:
+
+```text
+acs-ingest      -> OIDC success, ECR login success, Docker build success, Docker push success
+cpemon-api      -> OIDC success, ECR login success, Docker build success, Docker push success
+cpemon-writer   -> OIDC success, ECR login success, Docker build success, Docker push success
+```
+
+This validates the runtime CI/CD layer for CCPU-3.
+
 ## Common Failure Modes
 
 - The GitHub secret `CPEMON_ECR_PUSH_ROLE_ARN` is missing or points to the wrong role.
@@ -372,6 +433,7 @@ Learning:
 - IAM list/read permissions are mixed with conditional attach permissions, causing unexpected access denied errors.
 - The role exists in AWS but has not been imported into Terraform state.
 - Terraform can read the role but cannot update the GitHub OIDC trust policy because `iam:UpdateAssumeRolePolicy` is missing.
+- A workflow is manually dispatched from a branch that is not allowed by the IAM role trust policy.
 
 ## Commands to Remember
 
