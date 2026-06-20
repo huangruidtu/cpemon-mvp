@@ -109,6 +109,14 @@ In this project, the ECR repositories already existed in AWS before the Terrafor
 
 ```bash
 cd infra/terraform/envs/dev
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"acs-ingest\"]' acs-ingest
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-api\"]' cpemon-api
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-writer\"]' cpemon-writer
+```
+
+In Bash, the same imports can be written without escaping the inner quotes:
+
+```bash
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["acs-ingest"]' acs-ingest
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-api"]' cpemon-api
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-writer"]' cpemon-writer
@@ -258,6 +266,14 @@ terraform plan -input=false -no-color -var-file="terraform.tfvars.example"
 ```
 
 ECR repository import:
+
+```bash
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"acs-ingest\"]' acs-ingest
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-api\"]' cpemon-api
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-writer\"]' cpemon-writer
+```
+
+Bash:
 
 ```bash
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["acs-ingest"]' acs-ingest

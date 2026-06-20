@@ -32,7 +32,7 @@ Without state, Terraform cannot reliably know whether a resource already exists,
 That is why an existing AWS resource must be imported before Terraform manages it:
 
 ```bash
-terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-api"]' cpemon-api
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-api\"]' cpemon-api
 ```
 
 After import, Terraform state knows:
@@ -306,6 +306,14 @@ terraform plan -input=false -no-color -var-file="terraform.tfvars.example"
 ```
 
 Import existing ECR repositories:
+
+```bash
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"acs-ingest\"]' acs-ingest
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-api\"]' cpemon-api
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-writer\"]' cpemon-writer
+```
+
+Bash:
 
 ```bash
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["acs-ingest"]' acs-ingest

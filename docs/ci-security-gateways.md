@@ -59,10 +59,20 @@ The Kubernetes service manifests already reference the three ECR repositories wi
 
 ## Existing ECR Repositories
 
-The AWS account already has private ECR repositories for the three service images. Import them into Terraform before applying the ECR module:
+The AWS account already has private ECR repositories for the three service images. Import them into Terraform before applying the ECR module.
+
+PowerShell:
 
 ```bash
 cd infra/terraform/envs/dev
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"acs-ingest\"]' acs-ingest
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-api\"]' cpemon-api
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-writer\"]' cpemon-writer
+```
+
+Bash:
+
+```bash
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["acs-ingest"]' acs-ingest
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-api"]' cpemon-api
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-writer"]' cpemon-writer

@@ -87,10 +87,20 @@ The plan job is intentionally OIDC-based. GitHub should assume a short-lived AWS
 
 The plan command uses `terraform.tfvars.example` so CI has safe, committed input values. The private `terraform.tfvars` file remains local-only.
 
-The ECR repositories already exist in the AWS account. Import them before applying:
+The ECR repositories already exist in the AWS account. Import them before applying.
+
+PowerShell:
 
 ```bash
 cd infra/terraform/envs/dev
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"acs-ingest\"]' acs-ingest
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-api\"]' cpemon-api
+terraform import 'module.ecr_repositories.aws_ecr_repository.this[\"cpemon-writer\"]' cpemon-writer
+```
+
+Bash:
+
+```bash
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["acs-ingest"]' acs-ingest
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-api"]' cpemon-api
 terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-writer"]' cpemon-writer
