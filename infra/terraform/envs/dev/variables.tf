@@ -20,3 +20,14 @@ variable "aws_profile" {
   type        = string
   default     = "default"
 }
+
+variable "github_repository" {
+  description = "GitHub repository allowed to publish CPEmon images, in owner/repo format."
+  type        = string
+}
+
+variable "github_ecr_push_role_name" {
+  description = "IAM role name assumed by GitHub Actions for ECR image publishing."
+  type        = string
+  default     = "cpemon-ci-github-role"
+}

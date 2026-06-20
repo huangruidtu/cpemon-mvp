@@ -403,6 +403,13 @@ Architecture decisions:
 - `ADR/cloud-platform-upgrade-eks-terraform-gitops-kafka.md`
 - `ADR/cloud-platform-upgrade-step2-crossplane-k8sgpt.md`
 
+Knowledge base:
+
+- `docs/knowledge/README.md` - reusable learning notes captured during the Cloud Platform Upgrade.
+- `docs/knowledge/cloud-platform-architecture-migration.md` - mental model for moving from a YAML-first MVP to a managed cloud platform operating model.
+- `docs/knowledge/terraform-remote-state-workflow.md` - mental model for Terraform state, locking, validation, plan, and review.
+- `docs/knowledge/ecr-github-oidc-terraform-actions.md` - mental model for ECR, GitHub OIDC, Terraform, and GitHub Actions.
+
 Jira and AI workflow templates:
 
 - `docs/cloud-platform-upgrade-jira-story-template.md` - reusable Jira Story template for the remaining upgrade stories.

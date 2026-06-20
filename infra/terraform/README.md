@@ -2,7 +2,7 @@
 
 This directory contains the Terraform foundation for the CPEmon Cloud Platform Upgrade.
 
-The first implementation is intentionally simple. It starts with one environment root and does not introduce reusable Terraform modules yet. Modules can be added later when EKS, ECR, IAM, or shared platform resources create enough repetition to justify the abstraction.
+The current implementation starts with one environment root and adds small reusable modules for the ECR/GitHub Actions publishing boundary.
 
 For the full operating workflow, review `docs/cloud-platform-upgrade-terraform-workflow.md`.
 
@@ -15,11 +15,15 @@ infra/
     envs/
       dev/
         backend.tf
+        main.tf
         versions.tf
         providers.tf
         variables.tf
         outputs.tf
         terraform.tfvars.example
+    modules/
+      ecr_repositories/
+      github_ecr_push_role/
 ```
 
 ## Environment Root
@@ -47,14 +51,16 @@ terraform validate
 
 ## Scope
 
-The Terraform foundation starts with:
+The Terraform foundation includes:
 
 - Terraform and AWS provider version constraints.
 - AWS provider configuration for the `dev` environment.
 - S3 remote state configuration.
 - DynamoDB state locking configuration.
 - Safe example input values.
-- Minimal outputs for validation.
+- ECR repository declarations for the three service images.
+- A GitHub OIDC IAM role with least-privilege ECR push permissions.
+- Outputs for image repository URLs and the GitHub Actions role ARN.
 
 ## Remote State Locking Decision
 
@@ -81,13 +87,25 @@ The plan job is intentionally OIDC-based. GitHub should assume a short-lived AWS
 
 The plan command uses `terraform.tfvars.example` so CI has safe, committed input values. The private `terraform.tfvars` file remains local-only.
 
-The first foundation story does not include:
+The ECR repositories already exist in the AWS account. Import them before applying:
+
+```bash
+cd infra/terraform/envs/dev
+terraform import 'module.ecr_repositories.aws_ecr_repository.this["acs-ingest"]' acs-ingest
+terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-api"]' cpemon-api
+terraform import 'module.ecr_repositories.aws_ecr_repository.this["cpemon-writer"]' cpemon-writer
+```
+
+If `cpemon-ci-github-role` was created manually, import it before applying:
+
+```bash
+terraform import 'module.github_ecr_push_role.aws_iam_role.this' cpemon-ci-github-role
+```
+
+The current foundation story does not include:
 
 - EKS cluster provisioning.
-- ECR repositories.
 - VPC redesign.
-- GitHub OIDC IAM roles.
-- Reusable Terraform modules.
 - Multi-account or multi-region production hardening.
 
 ## Learning Goal

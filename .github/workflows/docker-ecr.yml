@@ -1,4 +1,4 @@
-name: Build & Push Docker images to ECR
+name: Build and push Docker images to ECR
 
 on:
   push:
@@ -7,88 +7,75 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write      # 允许 GitHub 为这个 workflow 签发 OIDC token
-  contents: read       # 允许读取代码仓库
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: eu-north-1
 
 jobs:
   build-and-push:
-    name: Build & Push to ECR
+    name: Build and push service images
     runs-on: ubuntu-latest
-
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      ECR_PUSH_ROLE_ARN: ${{ secrets.CPEMON_ECR_PUSH_ROLE_ARN }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: acs-ingest
+            dockerfile: docker/Dockerfile.acs-ingest
+          - name: cpemon-api
+            dockerfile: docker/Dockerfile.cpemon-api
+          - name: cpemon-writer
+            dockerfile: docker/Dockerfile.cpemon-writer
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1) 通过 OIDC + STS 配置 AWS 临时凭证（Assume cpemon-ci-github-role）
-      - name: Configure AWS credentials via OIDC
+      - name: Check ECR push role secret
+        if: env.ECR_PUSH_ROLE_ARN == ''
+        run: |
+          echo "CPEMON_ECR_PUSH_ROLE_ARN is not configured."
+          echo "Create/import the GitHub OIDC ECR push role with Terraform before publishing images."
+          exit 1
+
+      - name: Configure AWS credentials through GitHub OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/cpemon-ci-github-role
+          role-to-assume: ${{ env.ECR_PUSH_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 2) 调试：确认当前身份是 assumed-role/cpemon-ci-github-role
-      - name: Debug STS caller identity
-        run: aws sts get-caller-identity
-
-      # 3) 登录 ECR（使用上一步配置好的临时凭证）
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4) 计算镜像 tag（比如 v0.1.0）
-      - name: Set image tag
-        id: vars
-        run: echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+      - name: Set image tags
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "IMAGE_VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_VERSION=manual-${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+          fi
 
-      # 5) 构建并推送 cpemon-api 镜像（示例）
-      - name: Build & push cpemon-api image
+      - name: Build image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_NAME: cpemon-api
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          IMAGE_NAME: ${{ matrix.service.name }}
+          DOCKERFILE: ${{ matrix.service.dockerfile }}
         run: |
-          echo "Building $ECR_REGISTRY/$IMAGE_NAME"
           docker build \
-            -f docker/Dockerfile.cpemon-api \
-            -t $ECR_REGISTRY/$IMAGE_NAME:latest \
-            -t $ECR_REGISTRY/$IMAGE_NAME:${IMAGE_TAG} \
+            -f "$DOCKERFILE" \
+            -t "$ECR_REGISTRY/$IMAGE_NAME:latest" \
+            -t "$ECR_REGISTRY/$IMAGE_NAME:$IMAGE_VERSION" \
             .
-          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
-          docker push $ECR_REGISTRY/$IMAGE_NAME:${IMAGE_TAG}
 
-      # 6) 构建并推送 acs-ingest 镜像（如有）
-      - name: Build & push acs-ingest image
+      - name: Push image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_NAME: acs-ingest
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          IMAGE_NAME: ${{ matrix.service.name }}
         run: |
-          echo "Building $ECR_REGISTRY/$IMAGE_NAME"
-          docker build \
-            -f docker/Dockerfile.acs-ingest \
-            -t $ECR_REGISTRY/$IMAGE_NAME:latest \
-            -t $ECR_REGISTRY/$IMAGE_NAME:${IMAGE_TAG} \
-            .
-          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
-          docker push $ECR_REGISTRY/$IMAGE_NAME:${IMAGE_TAG}
-
-      # 7) 构建并推送 cpemon-writer 镜像
-      - name: Build & push cpemon-writer image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_NAME: cpemon-writer
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        run: |
-          echo "Building $ECR_REGISTRY/$IMAGE_NAME"
-          docker build \
-            -f docker/Dockerfile.cpemon-writer \
-            -t $ECR_REGISTRY/$IMAGE_NAME:latest \
-            -t $ECR_REGISTRY/$IMAGE_NAME:${IMAGE_TAG} \
-            .
-          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
-          docker push $ECR_REGISTRY/$IMAGE_NAME:${IMAGE_TAG}
-
+          docker push "$ECR_REGISTRY/$IMAGE_NAME:latest"
+          docker push "$ECR_REGISTRY/$IMAGE_NAME:$IMAGE_VERSION"
