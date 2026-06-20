@@ -4,6 +4,8 @@ This directory contains the Terraform foundation for the CPEmon Cloud Platform U
 
 The first implementation is intentionally simple. It starts with one environment root and does not introduce reusable Terraform modules yet. Modules can be added later when EKS, ECR, IAM, or shared platform resources create enough repetition to justify the abstraction.
 
+For the full operating workflow, review `docs/cloud-platform-upgrade-terraform-workflow.md`.
+
 ## Directory Layout
 
 ```text
