@@ -242,6 +242,122 @@ CCPU-3 is not complete just because `terraform validate` passes. It has three la
 
 Only after Layer 3 is successful should the image push validation subtask be considered done.
 
+## CCPU-3 Troubleshooting Log
+
+This section records the real problems hit while bringing the existing AWS resources under Terraform management. The important learning point is that each fix added the smallest permission required for the next Terraform operation, instead of granting broad administrative access.
+
+### 1. Terraform asked for `var.github_repository`
+
+During `terraform import`, Terraform still evaluates the root module input variables. If `github_repository` is not supplied, Terraform prompts:
+
+```text
+var.github_repository
+GitHub repository allowed to publish CPEmon images, in owner/repo format.
+```
+
+Fix:
+
+```bash
+terraform import -var-file="terraform.tfvars.example" ...
+```
+
+Learning:
+
+> `terraform import` is not isolated from configuration. It still loads providers, variables, data sources, and module configuration so it can understand the target resource address.
+
+### 2. ECR import needed read permissions
+
+The first ECR import failed because the Terraform bootstrap permission set did not allow:
+
+```text
+ecr:DescribeRepositories
+```
+
+Terraform needs to read the remote ECR repository before it can map the AWS object into state. Because tags were later managed by Terraform, these permissions were added only for the three CPEmon repositories:
+
+```text
+ecr:DescribeRepositories
+ecr:ListTagsForResource
+ecr:TagResource
+```
+
+Learning:
+
+> Importing an existing resource is still a read operation against AWS. Managing tags is a separate write operation and should be explicitly scoped.
+
+### 3. Existing IAM role had to be imported
+
+Terraform initially tried to create:
+
+```text
+cpemon-ci-github-role
+```
+
+AWS returned `EntityAlreadyExists`, which meant the role existed in AWS but was not in Terraform state. The correct fix was not to rename the role or delete it manually. The correct fix was to import it:
+
+```bash
+terraform import -var-file="terraform.tfvars.example" module.github_ecr_push_role.aws_iam_role.this cpemon-ci-github-role
+```
+
+Learning:
+
+> If a resource exists in AWS but not in Terraform state, Terraform will try to create it. Import connects the real object to the Terraform address.
+
+### 4. IAM import revealed read permissions one by one
+
+Importing and planning the IAM role required read permissions on the same role:
+
+```text
+iam:GetRole
+iam:ListRolePolicies
+iam:GetRolePolicy
+iam:ListAttachedRolePolicies
+iam:ListInstanceProfilesForRole
+```
+
+One subtle bug was putting `iam:ListAttachedRolePolicies` in the same statement as `iam:AttachRolePolicy` with an `iam:PolicyARN` condition. That condition is useful for restricting `AttachRolePolicy`, but it does not apply to list operations. The fix was to keep read/list permissions in the role-management statement and keep the attach permission in a separate conditional statement.
+
+Learning:
+
+> IAM conditions are evaluated per API action. A condition that makes sense for one action can accidentally deny another action in the same statement.
+
+### 5. IAM role update needed trust-policy permission
+
+After the IAM role was imported, Terraform planned an in-place update to the role trust policy:
+
+```text
+iam:UpdateAssumeRolePolicy
+```
+
+This was required because Terraform needed to set the GitHub OIDC trust policy to match the code, including allowed repository refs such as:
+
+```text
+repo:huangruidtu/cpemon-mvp:ref:refs/heads/main
+repo:huangruidtu/cpemon-mvp:ref:refs/tags/v*
+```
+
+Learning:
+
+> Trust policy changes are role changes, but they use a distinct IAM action. Creating a role and reading a role are not enough to update who can assume it.
+
+### 6. Final verification
+
+After importing the existing resources and adding only the missing permissions, the final verification command was:
+
+```bash
+terraform plan -input=false -no-color -var-file="terraform.tfvars.example"
+```
+
+Expected result:
+
+```text
+No changes. Your infrastructure matches the configuration.
+```
+
+Learning:
+
+> A clean final plan is the strongest signal that Terraform state, Terraform configuration, and real AWS infrastructure are aligned.
+
 ## Common Failure Modes
 
 - The GitHub secret `CPEMON_ECR_PUSH_ROLE_ARN` is missing or points to the wrong role.
@@ -252,6 +368,10 @@ Only after Layer 3 is successful should the image push validation subtask be con
 - Push permissions are scoped to the wrong repository ARN.
 - The ECR repository name does not match the Docker image name.
 - Terraform state does not know about existing ECR repositories, so `plan` tries to create them.
+- Terraform import or plan lacks AWS read permissions for the existing resource.
+- IAM list/read permissions are mixed with conditional attach permissions, causing unexpected access denied errors.
+- The role exists in AWS but has not been imported into Terraform state.
+- Terraform can read the role but cannot update the GitHub OIDC trust policy because `iam:UpdateAssumeRolePolicy` is missing.
 
 ## Commands to Remember
 
@@ -287,6 +407,23 @@ AWS-side check:
 aws ecr describe-repositories \
   --repository-names acs-ingest cpemon-api cpemon-writer \
   --region eu-north-1
+```
+
+Terraform state check:
+
+```bash
+terraform state list
+```
+
+Expected CCPU-3 managed resources include:
+
+```text
+module.ecr_repositories.aws_ecr_repository.this["acs-ingest"]
+module.ecr_repositories.aws_ecr_repository.this["cpemon-api"]
+module.ecr_repositories.aws_ecr_repository.this["cpemon-writer"]
+module.github_ecr_push_role.aws_iam_policy.ecr_push
+module.github_ecr_push_role.aws_iam_role.this
+module.github_ecr_push_role.aws_iam_role_policy_attachment.ecr_push
 ```
 
 ## References

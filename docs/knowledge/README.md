@@ -9,3 +9,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Cloud Platform Architecture Migration](cloud-platform-architecture-migration.md)
 - [Terraform Remote State and Workflow](terraform-remote-state-workflow.md)
 - [ECR, GitHub OIDC, Terraform, and GitHub Actions](ecr-github-oidc-terraform-actions.md)
+
+## Interview Prep
+
+- [Interview Q&A](interview/README.md)
