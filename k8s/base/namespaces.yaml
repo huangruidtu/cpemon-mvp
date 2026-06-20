@@ -5,6 +5,8 @@ metadata:
   labels:
     app.kubernetes.io/part-of: cpemon-mvp
     app.kubernetes.io/name: cpemon
+    cpemon.io/layer: application
+    cpemon.io/managed-by: gitops-ready-manifest
 ---
 apiVersion: v1
 kind: Namespace
@@ -13,6 +15,58 @@ metadata:
   labels:
     app.kubernetes.io/part-of: cpemon-mvp
     app.kubernetes.io/name: platform
+    cpemon.io/layer: platform
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: monitoring
+    cpemon.io/layer: observability
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: argocd
+    cpemon.io/layer: delivery
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: kafka
+    cpemon.io/layer: data-streaming
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: security
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: security
+    cpemon.io/layer: security
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cost
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: cost
+    cpemon.io/layer: finops
+    cpemon.io/managed-by: gitops-ready-manifest
 ---
 apiVersion: v1
 kind: Namespace
@@ -21,6 +75,8 @@ metadata:
   labels:
     app.kubernetes.io/part-of: cpemon-mvp
     app.kubernetes.io/name: backup
+    cpemon.io/layer: operations
+    cpemon.io/managed-by: gitops-ready-manifest
 ---
 apiVersion: v1
 kind: Namespace
@@ -29,3 +85,5 @@ metadata:
   labels:
     app.kubernetes.io/part-of: cpemon-mvp
     app.kubernetes.io/name: ingress-nginx
+    cpemon.io/layer: legacy-lab-ingress
+    cpemon.io/managed-by: gitops-ready-manifest

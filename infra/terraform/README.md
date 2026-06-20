@@ -24,6 +24,11 @@ infra/
     modules/
       ecr_repositories/
       github_ecr_push_role/
+      eks_cluster/
+      eks_cluster_access/
+      eks_managed_node_group/
+      vpc/
+      vpc_subnets/
 ```
 
 ## Environment Root
@@ -60,7 +65,14 @@ The Terraform foundation includes:
 - Safe example input values.
 - ECR repository declarations for the three service images.
 - A GitHub OIDC IAM role with least-privilege ECR push permissions.
+- A dev VPC module for the future EKS platform network boundary.
+- Public and private dev subnet declarations with EKS discovery tags.
+- An EKS cluster module for the dev control plane and cluster IAM role.
+- An EKS cluster access module based on EKS access entries and access policy associations.
+- An EKS managed node group module for the first private-subnet worker nodes.
 - Outputs for image repository URLs and the GitHub Actions role ARN.
+- Outputs for the dev VPC ID and CIDR block.
+- Outputs for the dev EKS cluster and managed node group.
 
 ## Remote State Locking Decision
 
@@ -114,8 +126,9 @@ terraform import 'module.github_ecr_push_role.aws_iam_role.this' cpemon-ci-githu
 
 The current foundation story does not include:
 
-- EKS cluster provisioning.
-- VPC redesign.
+- NAT, route tables, or internet gateway configuration.
+- Applying paid EKS or EC2 resources.
+- Kubernetes add-ons and access validation.
 - Multi-account or multi-region production hardening.
 
 ## Learning Goal

@@ -1,0 +1,87 @@
+# CCPU-152 candidate NetworkPolicy baseline.
+#
+# This file is prepared for review and dry-run first:
+#   make netpol-baseline-plan
+#
+# Do not apply until the EKS CNI/policy enforcement mode is confirmed.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-default-deny-egress
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: network-policy
+    cpemon.io/managed-by: gitops-ready-manifest
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress: []
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-allow-dns-egress
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: network-policy
+    cpemon.io/managed-by: gitops-ready-manifest
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-allow-core-app-egress
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: network-policy
+    cpemon.io/managed-by: gitops-ready-manifest
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - cpemon-api
+          - acs-ingest
+          - cpemon-writer
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cpemon
+          podSelector:
+            matchLabels:
+              app: mysql
+      ports:
+        - protocol: TCP
+          port: 3306
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090

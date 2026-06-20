@@ -1,0 +1,26 @@
+# CCPU-47 candidate default StorageClass for standard EKS node groups.
+#
+# This manifest is prepared but not applied yet. Apply it only after confirming:
+# - the EKS cluster exists
+# - the Amazon EBS CSI driver is installed
+# - the controller has IAM permission through EKS Pod Identity or IRSA
+# - no other StorageClass should remain the default
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: gp3-storageclass
+    cpemon.io/layer: storage
+    cpemon.io/managed-by: gitops-ready-manifest
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  fsType: ext4
+  encrypted: "true"
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer

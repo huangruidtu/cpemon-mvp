@@ -1,25 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "1"
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"echo"},"name":"echo","namespace":"platform"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"echo"}},"template":{"metadata":{"labels":{"app":"echo"}},"spec":{"containers":[{"image":"ealen/echo-server:latest","name":"echo","ports":[{"containerPort":80}]}]}}}}
-  creationTimestamp: "2025-11-10T20:01:05Z"
-  generation: 1
   labels:
-    app: echo
+    app.kubernetes.io/name: echo
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/component: platform-smoke-test
+    cpemon.io/layer: platform-test
+    cpemon.io/managed-by: gitops-ready-manifest
   name: echo
   namespace: platform
-  resourceVersion: "689391"
-  uid: baec5b11-1b77-4c65-98f2-df4febb0961e
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: echo
+      app.kubernetes.io/name: echo
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -28,39 +24,41 @@ spec:
   template:
     metadata:
       labels:
-        app: echo
+        app.kubernetes.io/name: echo
+        app.kubernetes.io/part-of: cpemon-mvp
+        app.kubernetes.io/component: platform-smoke-test
+        cpemon.io/layer: platform-test
     spec:
       containers:
-      - image: ealen/echo-server:latest
-        imagePullPolicy: Always
-        name: echo
-        ports:
-        - containerPort: 80
-          protocol: TCP
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
+        - args:
+            - -listen=:8080
+            - -text=cpemon platform echo ok
+          image: hashicorp/http-echo:1.0
+          imagePullPolicy: IfNotPresent
+          name: echo
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
-      securityContext: {}
       terminationGracePeriodSeconds: 30
-status:
-  availableReplicas: 1
-  conditions:
-  - lastTransitionTime: "2025-11-10T20:01:16Z"
-    lastUpdateTime: "2025-11-10T20:01:16Z"
-    message: Deployment has minimum availability.
-    reason: MinimumReplicasAvailable
-    status: "True"
-    type: Available
-  - lastTransitionTime: "2025-11-10T20:01:05Z"
-    lastUpdateTime: "2025-11-10T20:01:16Z"
-    message: ReplicaSet "echo-6f59665f5f" has successfully progressed.
-    reason: NewReplicaSetAvailable
-    status: "True"
-    type: Progressing
-  observedGeneration: 1
-  readyReplicas: 1
-  replicas: 1
-  updatedReplicas: 1

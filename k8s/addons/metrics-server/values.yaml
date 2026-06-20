@@ -1,0 +1,32 @@
+# Helm values for CCPU-44.
+#
+# Chart:
+#   repo: https://kubernetes-sigs.github.io/metrics-server/
+#   name: metrics-server/metrics-server
+#
+# This is intentionally small for the dev EKS cluster. Production can raise
+# replicaCount and resource requests after the node group is sized for add-ons.
+
+replicas: 1
+
+commonLabels:
+  app.kubernetes.io/part-of: cpemon-mvp
+  cpemon.io/layer: platform-metrics
+  cpemon.io/managed-by: helm
+
+podLabels:
+  app.kubernetes.io/part-of: cpemon-mvp
+  cpemon.io/layer: platform-metrics
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi
+  limits:
+    memory: 300Mi
+
+metrics:
+  enabled: true
+
+serviceMonitor:
+  enabled: false

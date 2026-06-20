@@ -1,0 +1,32 @@
+# Helm values for CCPU-45.
+#
+# Chart:
+#   repo: https://aws.github.io/eks-charts
+#   name: eks/aws-load-balancer-controller
+#
+# The service account is created by Helm, but the IAM role ARN must be supplied
+# at install time after the cluster OIDC provider and controller IAM policy
+# exist. See ops/runbooks/eks-platform-addons-helm.md.
+
+clusterName: cpemon-dev
+region: eu-north-1
+
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller
+  annotations: {}
+
+enableServiceMutatorWebhook: true
+
+podLabels:
+  app.kubernetes.io/part-of: cpemon-mvp
+  cpemon.io/layer: aws-load-balancing
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
