@@ -15,13 +15,15 @@ import (
 
 type kafkaMessageReader interface {
 	FetchMessage(ctx context.Context) (kafka.Message, error)
+	CommitMessages(ctx context.Context, msgs ...kafka.Message) error
 	Close() error
 }
 
 // KafkaConsumer consumes normalized CPEmon events from Kafka and exposes them
 // through the EventConsumer application boundary.
 type KafkaConsumer struct {
-	reader kafkaMessageReader
+	reader        kafkaMessageReader
+	commitTimeout time.Duration
 }
 
 type KafkaConsumerConfig struct {
@@ -29,6 +31,7 @@ type KafkaConsumerConfig struct {
 	GroupID          string
 	Topics           []string
 	ReadTimeout      time.Duration
+	CommitTimeout    time.Duration
 }
 
 type ConsumeErrorKind string
@@ -37,6 +40,7 @@ const (
 	ConsumeErrorInvalidConfig ConsumeErrorKind = "invalid_config"
 	ConsumeErrorFetch         ConsumeErrorKind = "fetch_error"
 	ConsumeErrorHandler       ConsumeErrorKind = "handler_error"
+	ConsumeErrorCommit        ConsumeErrorKind = "commit_error"
 )
 
 type KafkaConsumeError struct {
@@ -84,6 +88,7 @@ func NewKafkaConsumerFromConfig(cfg appconfig.Config) (*KafkaConsumer, error) {
 		GroupID:          cfg.KafkaConsumerGroupID,
 		Topics:           KafkaConsumerTopicsFromConfig(cfg),
 		ReadTimeout:      cfg.KafkaConsumerReadTimeout,
+		CommitTimeout:    cfg.KafkaConsumerCommitTimeout,
 	})
 }
 
@@ -114,6 +119,10 @@ func NewKafkaConsumer(cfg KafkaConsumerConfig) (*KafkaConsumer, error) {
 	if readTimeout <= 0 {
 		readTimeout = 5 * time.Second
 	}
+	commitTimeout := cfg.CommitTimeout
+	if commitTimeout <= 0 {
+		commitTimeout = 5 * time.Second
+	}
 
 	return &KafkaConsumer{
 		reader: kafka.NewReader(kafka.ReaderConfig{
@@ -127,6 +136,7 @@ func NewKafkaConsumer(cfg KafkaConsumerConfig) (*KafkaConsumer, error) {
 			CommitInterval:   0,
 			StartOffset:      kafka.FirstOffset,
 		}),
+		commitTimeout: commitTimeout,
 	}, nil
 }
 
@@ -134,7 +144,7 @@ func NewKafkaConsumerWithReader(reader kafkaMessageReader) (*KafkaConsumer, erro
 	if reader == nil {
 		return nil, newKafkaConsumeError(ConsumeErrorInvalidConfig, ConsumedEvent{}, errors.New("kafka consumer requires reader"))
 	}
-	return &KafkaConsumer{reader: reader}, nil
+	return &KafkaConsumer{reader: reader, commitTimeout: 5 * time.Second}, nil
 }
 
 func (c *KafkaConsumer) Consume(ctx context.Context, handler EventHandler) error {
@@ -162,6 +172,9 @@ func (c *KafkaConsumer) Consume(ctx context.Context, handler EventHandler) error
 		if err := handler(ctx, event); err != nil {
 			return newKafkaConsumeError(ConsumeErrorHandler, event, err)
 		}
+		if err := c.commit(ctx, msg); err != nil {
+			return newKafkaConsumeError(ConsumeErrorCommit, event, err)
+		}
 	}
 }
 
@@ -170,6 +183,12 @@ func (c *KafkaConsumer) Close() error {
 		return nil
 	}
 	return c.reader.Close()
+}
+
+func (c *KafkaConsumer) commit(ctx context.Context, msg kafka.Message) error {
+	commitCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), c.commitTimeout)
+	defer cancel()
+	return c.reader.CommitMessages(commitCtx, msg)
 }
 
 func consumedEventFromKafkaMessage(msg kafka.Message) ConsumedEvent {

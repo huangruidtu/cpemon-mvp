@@ -93,10 +93,19 @@ offset. An error means the event may need retry or dead-letter handling.
 After the event is decoded, validated, and written to MySQL. Committing earlier
 can lose messages if the process crashes before the database update.
 
+The concrete implementation keeps `kafka-go` auto-commit disabled and calls
+`CommitMessages` only after the writer handler returns success.
+
 ### What delivery guarantee does this design target?
 
 At-least-once processing. It avoids message loss but requires idempotent writes
 because duplicate processing is possible.
+
+### What happens if committing the offset fails after MySQL succeeds?
+
+The consumer returns a `commit_error` with topic, key, partition, and offset
+context. Kafka may redeliver the message because the committed offset is not
+guaranteed, so the database write path must tolerate duplicate events.
 
 ### Why keep the consumer disabled by default?
 
@@ -177,6 +186,19 @@ It gives the consumer loop one processing entry point. The router dispatches by
 topic, so heartbeat and WAN status keep separate validation/write logic while
 retry, dead-letter, offset commit, metrics, and logs can wrap one function.
 
+### Why use a bounded commit timeout?
+
+Offset commits are part of the reliability path, but they should not hang
+shutdown forever. A short `KAFKA_CONSUMER_COMMIT_TIMEOUT` gives an already
+processed message a chance to be acknowledged while keeping shutdown bounded.
+
+### Why not use the request cancellation context directly for commits?
+
+If shutdown arrives just after the handler succeeds, using the already-canceled
+context could skip the commit for a successfully written event. The adapter uses
+`context.WithoutCancel` plus a timeout so commit has a small independent window
+without becoming unbounded.
+
 ## Resume Bullet
 
 Defined the writer-side Kafka consumer boundary with a broker-independent
@@ -188,3 +210,8 @@ Implemented the first concrete Kafka consumer adapter with `kafka-go`,
 consumer-group topic subscription, app-config construction, structured consume
 errors, broker-free fake-reader tests, and an explicit offset-commit boundary
 for the later reliability subtask.
+
+Added explicit at-least-once offset commit behavior: auto-commit stays disabled,
+successful handler execution is followed by `CommitMessages`, handler failures
+are not committed, commit failures return contextual `commit_error` values, and
+the docs explain why idempotent MySQL writes are required.

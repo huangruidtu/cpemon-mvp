@@ -13,9 +13,12 @@ import (
 )
 
 type fakeKafkaReader struct {
-	messages []kafka.Message
-	err      error
-	closed   bool
+	messages       []kafka.Message
+	err            error
+	commitErr      error
+	committed      []kafka.Message
+	commitCtxError error
+	closed         bool
 }
 
 func (r *fakeKafkaReader) FetchMessage(ctx context.Context) (kafka.Message, error) {
@@ -31,6 +34,18 @@ func (r *fakeKafkaReader) FetchMessage(ctx context.Context) (kafka.Message, erro
 	msg := r.messages[0]
 	r.messages = r.messages[1:]
 	return msg, nil
+}
+
+func (r *fakeKafkaReader) CommitMessages(ctx context.Context, msgs ...kafka.Message) error {
+	if err := ctx.Err(); err != nil {
+		r.commitCtxError = err
+		return err
+	}
+	if r.commitErr != nil {
+		return r.commitErr
+	}
+	r.committed = append(r.committed, msgs...)
+	return nil
 }
 
 func (r *fakeKafkaReader) Close() error {
@@ -181,6 +196,15 @@ func TestKafkaConsumerConsumesMessageThroughBoundary(t *testing.T) {
 	if got.Partition != 3 || got.Offset != 77 {
 		t.Fatalf("event metadata partition=%d offset=%d, want 3/77", got.Partition, got.Offset)
 	}
+	if len(reader.committed) != 1 {
+		t.Fatalf("committed messages = %d, want 1", len(reader.committed))
+	}
+	if reader.committed[0].Topic != DeviceHeartbeatTopic || reader.committed[0].Offset != 77 {
+		t.Fatalf("committed message topic/offset = %q/%d", reader.committed[0].Topic, reader.committed[0].Offset)
+	}
+	if reader.commitCtxError != nil {
+		t.Fatalf("commit context error = %v, want nil", reader.commitCtxError)
+	}
 }
 
 func TestKafkaConsumerReturnsFetchError(t *testing.T) {
@@ -232,6 +256,49 @@ func TestKafkaConsumerReturnsHandlerErrorWithMessageContext(t *testing.T) {
 	}
 	text := err.Error()
 	for _, token := range []string{"kind=handler_error", "topic=" + WANStatusTopic, "key=CPE-002", "partition=4", "offset=99"} {
+		if !strings.Contains(text, token) {
+			t.Fatalf("error %q does not contain %q", text, token)
+		}
+	}
+	if len(reader.committed) != 0 {
+		t.Fatalf("committed messages = %d, want 0 after handler error", len(reader.committed))
+	}
+}
+
+func TestKafkaConsumerReturnsCommitErrorWithMessageContext(t *testing.T) {
+	commitErr := errors.New("offset commit failed")
+	reader := &fakeKafkaReader{
+		messages: []kafka.Message{
+			{
+				Topic:     DeviceHeartbeatTopic,
+				Key:       []byte("CPE-003"),
+				Value:     []byte(`{"event_type":"device.heartbeat"}`),
+				Partition: 5,
+				Offset:    101,
+			},
+		},
+		commitErr: commitErr,
+	}
+	consumer, err := NewKafkaConsumerWithReader(reader)
+	if err != nil {
+		t.Fatalf("NewKafkaConsumerWithReader returned error: %v", err)
+	}
+
+	err = consumer.Consume(context.Background(), func(ctx context.Context, event ConsumedEvent) error {
+		return nil
+	})
+	if !errors.Is(err, commitErr) {
+		t.Fatalf("Consume error = %v, want %v", err, commitErr)
+	}
+	var consumeErr *KafkaConsumeError
+	if !errors.As(err, &consumeErr) {
+		t.Fatalf("error type = %T, want *KafkaConsumeError", err)
+	}
+	if consumeErr.Kind != ConsumeErrorCommit {
+		t.Fatalf("kind = %q, want %q", consumeErr.Kind, ConsumeErrorCommit)
+	}
+	text := err.Error()
+	for _, token := range []string{"kind=commit_error", "topic=" + DeviceHeartbeatTopic, "key=CPE-003", "partition=5", "offset=101"} {
 		if !strings.Contains(text, token) {
 			t.Fatalf("error %q does not contain %q", text, token)
 		}

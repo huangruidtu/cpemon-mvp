@@ -309,13 +309,68 @@ Repository check:
 make cpemon-writer-event-processor-check
 ```
 
+## Offset Commit Strategy
+
+`CCPU-169` makes Kafka acknowledgement behavior explicit.
+
+Rule:
+
+> Fetch the message, process it through the writer handler, and commit the
+> Kafka offset only after the handler returns success.
+
+Why this order matters:
+
+* Committing before validation can skip malformed messages without an audit path.
+* Committing before the MySQL write can lose a status update if the process
+  crashes between the commit and the database update.
+* Returning a handler error without committing allows retry/dead-letter logic to
+  decide what should happen next.
+* A crash after MySQL success but before commit can replay the same message, so
+  the MySQL write path must remain idempotent.
+
+Implementation details:
+
+* `kafka.ReaderConfig.CommitInterval` remains `0`, which means auto-commit is
+  disabled.
+* The adapter calls `CommitMessages` only after `EventHandler` returns nil.
+* Commit failures are returned as `KafkaConsumeError` with kind
+  `commit_error`, including topic, key, partition, and offset context.
+* `KAFKA_CONSUMER_COMMIT_TIMEOUT` bounds commit latency.
+* The commit context uses `context.WithoutCancel` plus a timeout so a shutdown
+  signal does not cancel an already-successful in-flight acknowledgement before
+  the short commit window expires.
+
+Failure behavior:
+
+| Failure Point | Commit Offset? | Why |
+| --- | --- | --- |
+| Fetch fails | No message fetched | There is no message to acknowledge. |
+| Handler validation fails | No | The message needs retry/dead-letter classification. |
+| MySQL write fails | No | Retrying is safer than losing durable state. |
+| Commit fails after success | Unknown broker state | Return `commit_error`; replay must be safe. |
+| Crash after DB write before commit | No confirmed commit | Kafka may redeliver; idempotent writes absorb duplicates. |
+
+Repository check:
+
+```powershell
+make cpemon-writer-offset-commit-check
+```
+
+Interview framing:
+
+> I used at-least-once processing deliberately. The writer commits the Kafka
+> offset only after validation and MySQL writes succeed. That avoids message
+> loss, but it means duplicates are possible after crashes or commit failures,
+> so the database writes are idempotent.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:
 
 ```go
 type KafkaConsumer struct {
-    reader kafkaMessageReader
+    reader        kafkaMessageReader
+    commitTimeout time.Duration
 }
 ```
 
@@ -332,11 +387,9 @@ Runtime behavior:
 * Reads messages with `FetchMessage`.
 * Converts each `kafka.Message` to `ConsumedEvent`.
 * Passes the envelope to the `EventHandler`.
-* Returns structured `KafkaConsumeError` values for fetch and handler failures.
-
-Offset commit behavior is intentionally not finalized in `CCPU-87`.
-`FetchMessage` makes commit timing explicit, and `CCPU-169` owns the rule:
-commit offsets only after successful processing and MySQL write.
+* Commits the Kafka message only after the handler succeeds.
+* Returns structured `KafkaConsumeError` values for fetch, handler, and commit
+  failures.
 
 Broker-free tests cover:
 
@@ -346,6 +399,9 @@ Broker-free tests cover:
 * topic/key/value/time/partition/offset mapping
 * fetch error classification
 * handler error context
+* commit-after-success behavior
+* no-commit-on-handler-error behavior
+* commit error context
 * close lifecycle
 
 Interview framing:
