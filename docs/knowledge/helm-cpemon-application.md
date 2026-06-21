@@ -401,6 +401,126 @@ helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-d
 
 `helm lint` returned one informational recommendation about adding a chart icon, and no chart failures.
 
+## CCPU-54: Template Services, Config, and Secret References
+
+`CCPU-54` sharpens the boundary between service exposure, non-secret configuration, and secret references.
+
+The important implementation change is:
+
+```text
+deploy/helm/cpemon/templates/configmap.yaml
+```
+
+The chart now renders a ConfigMap named:
+
+```text
+cpemon-app-config
+```
+
+### What Goes Into the ConfigMap
+
+The ConfigMap stores non-secret runtime configuration:
+
+| ConfigMap key | Purpose |
+| --- | --- |
+| `HTTP_ADDR` | HTTP listen address used by the services. |
+| `GRAFANA_HOME_URL` | Link target for the Grafana home page. |
+| `GRAFANA_SN_DASHBOARD_URL_TEMPLATE` | Template used to build per-device Grafana links. |
+| `KIBANA_HOME_URL` | Link target for the Kibana discover page. |
+| `KIBANA_SN_LOGS_URL_TEMPLATE` | Template used to build per-device Kibana log links. |
+
+These values are safe to commit because they are configuration, not credentials.
+
+Workload env entries that use:
+
+```yaml
+valueFromConfig: grafanaHomeUrl
+```
+
+now render as:
+
+```yaml
+valueFrom:
+  configMapKeyRef:
+    name: cpemon-app-config
+    key: GRAFANA_HOME_URL
+```
+
+This is better than scattering the same literal values across every Deployment.
+
+### What Stays as Secret References
+
+Sensitive values are not rendered into the chart.
+
+The chart references these pre-existing Secrets:
+
+| Env var | Secret | Key | Used by |
+| --- | --- | --- | --- |
+| `DB_DSN` | `cpemon-db` | `dsn` | `cpemon-api`, `acs-ingest`, `cpemon-writer` |
+| `HMAC_SECRET` | `cpemon-acs-hmac` | `hmac-secret` | `acs-ingest` |
+
+The chart also references the image pull Secret:
+
+```text
+cpemon-ecr-regcred
+```
+
+That Secret is used by Kubernetes to pull private ECR images.
+
+### ConfigMap vs Secret vs Helm Values
+
+A good mental model is:
+
+```text
+Helm values decide what should be rendered.
+ConfigMaps hold non-sensitive runtime configuration.
+Secrets hold sensitive runtime configuration.
+External secret tooling decides how real secret material enters the cluster.
+```
+
+Helm values are not a safe place for production passwords because values can appear in Git, CI logs, rendered manifests, and Helm release history.
+
+For this project, the chart owns:
+
+- ConfigMap shape
+- env var wiring
+- Secret names and keys
+
+The chart does not own:
+
+- real DB passwords
+- real HMAC secrets
+- long-lived cloud credentials
+
+### Service Boundary
+
+The Service rendering from `CCPU-53` satisfies the service-facing part of `CCPU-54`.
+
+Each enabled workload renders a ClusterIP Service with:
+
+- `http` port `8080`
+- `metrics` port `9100`
+- selectors that match the Deployment pod labels
+
+This keeps application traffic and metrics discovery stable while the configuration model becomes more production-like.
+
+### Validation Result
+
+The chart passed:
+
+```powershell
+helm lint deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+The rendered output includes:
+
+- one ConfigMap: `cpemon-app-config`
+- three Services
+- three Deployments
+- `configMapKeyRef` for non-secret config
+- `secretKeyRef` for sensitive runtime inputs
+
 ## Helm Values Precedence
 
 When Helm renders a chart, values are merged from several sources.

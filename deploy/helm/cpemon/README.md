@@ -74,7 +74,7 @@ The chart values are grouped by responsibility:
 | Section | Purpose |
 | --- | --- |
 | `global` | Namespace override, registry, default tag, pull policy, image pull secrets, and shared labels. |
-| `appConfig` | Non-secret application URLs and simple runtime configuration. |
+| `appConfig` | Non-secret runtime configuration rendered through the chart ConfigMap. |
 | `database` | Database endpoint metadata and the Secret reference used for `DB_DSN`. |
 | `secretRefs` | Named Secret references for sensitive inputs that must not be committed as raw values. |
 | `defaults` | Shared service, port, probe, resource, annotation, and env defaults. |
@@ -149,3 +149,32 @@ The template keeps these concerns reusable through `_helpers.tpl`:
 The rendered workloads keep the old `app` label for compatibility with existing ServiceMonitor and PDB selectors, while also adding Kubernetes recommended `app.kubernetes.io/*` labels for clearer ownership.
 
 Secret-backed values are rendered with `valueFrom.secretKeyRef`; the chart does not render raw database passwords or HMAC secrets.
+
+## ConfigMap and Secret References
+
+`CCPU-54` adds a chart-owned ConfigMap for non-secret runtime configuration:
+
+```text
+cpemon-app-config
+```
+
+The ConfigMap stores values such as:
+
+- `HTTP_ADDR`
+- `GRAFANA_HOME_URL`
+- `GRAFANA_SN_DASHBOARD_URL_TEMPLATE`
+- `KIBANA_HOME_URL`
+- `KIBANA_SN_LOGS_URL_TEMPLATE`
+
+Workload env entries that use `valueFromConfig` render as `configMapKeyRef`.
+
+Sensitive runtime inputs still render as external Secret references:
+
+- `DB_DSN` -> Secret `cpemon-db`, key `dsn`
+- `HMAC_SECRET` -> Secret `cpemon-acs-hmac`, key `hmac-secret`
+
+The chart also references the image pull Secret:
+
+- `cpemon-ecr-regcred`
+
+These Secrets must exist before installing the chart. This chart intentionally does not create real Secret values.

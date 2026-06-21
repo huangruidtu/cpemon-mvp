@@ -43,6 +43,13 @@ Namespace to use for rendered resources.
 {{- end -}}
 
 {{/*
+Name of the ConfigMap that stores non-secret runtime configuration.
+*/}}
+{{- define "cpemon.configMapName" -}}
+{{- default (printf "%s-app-config" (include "cpemon.fullname" .)) .Values.appConfig.configMap.name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
 Labels that must stay stable between Deployments, Services, monitors, and PDBs.
 */}}
 {{- define "cpemon.workloadLabels" -}}
@@ -91,7 +98,14 @@ Render plain env values and Secret-backed env values from the values model.
 {{- if hasKey . "value" }}
   value: {{ .value | quote }}
 {{- else if hasKey . "valueFromConfig" }}
+{{- if $root.Values.appConfig.configMap.enabled }}
+  valueFrom:
+    configMapKeyRef:
+      name: {{ include "cpemon.configMapName" $root | quote }}
+      key: {{ .name | quote }}
+{{- else }}
   value: {{ index $root.Values.appConfig .valueFromConfig | quote }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- range .secretEnv }}

@@ -250,3 +250,83 @@ The chart rendered successfully. `helm lint` reported only an informational icon
 ## Q23: How would you summarize CCPU-53 in an interview?
 
 I converted the CPEmon Helm chart from a values-only scaffold into a real application rendering layer. The chart now templates Deployments and Services for `cpemon-api`, `acs-ingest`, and `cpemon-writer` from a shared workload model. I kept backward-compatible `app` labels for monitoring selectors, added Kubernetes recommended labels, resolved images from global and workload-specific values, and moved sensitive env vars to Secret references. This made the application deployment more repeatable and safer while preserving the behavior of the original raw manifests.
+
+## Q24: What did CCPU-54 add?
+
+`CCPU-54` added the ConfigMap and secret-reference boundary for the CPEmon Helm chart.
+
+The chart now renders a `cpemon-app-config` ConfigMap for non-secret runtime settings, while DB and HMAC values remain external Secret references.
+
+## Q25: What belongs in a ConfigMap?
+
+A ConfigMap should hold non-sensitive runtime configuration.
+
+In this chart, examples are:
+
+```text
+HTTP_ADDR
+GRAFANA_HOME_URL
+GRAFANA_SN_DASHBOARD_URL_TEMPLATE
+KIBANA_HOME_URL
+KIBANA_SN_LOGS_URL_TEMPLATE
+```
+
+These values change application behavior but are not credentials.
+
+## Q26: What belongs in a Secret?
+
+A Secret should hold sensitive runtime data such as passwords, tokens, HMAC keys, and connection strings that include credentials.
+
+In this chart:
+
+```text
+DB_DSN -> cpemon-db / dsn
+HMAC_SECRET -> cpemon-acs-hmac / hmac-secret
+```
+
+The chart references those names and keys but does not store the real secret values.
+
+## Q27: Why not put production secrets directly in Helm values?
+
+Helm values are often committed to Git, printed in CI logs, included in rendered manifests, and stored in Helm release history.
+
+That makes them a poor place for real production passwords or keys.
+
+For production, real secret material should come from a secret-management flow such as External Secrets Operator, SOPS, Sealed Secrets, AWS Secrets Manager integration, or a controlled bootstrap process.
+
+## Q28: What is the difference between Helm values and a ConfigMap?
+
+Helm values are chart inputs used at render time.
+
+A ConfigMap is a Kubernetes object that exists in the cluster and is read by Pods at runtime.
+
+In this chart, Helm values define the desired config, and the template renders those values into a ConfigMap.
+
+## Q29: How do workloads consume ConfigMap values?
+
+Workloads consume non-secret settings through `configMapKeyRef`:
+
+```yaml
+valueFrom:
+  configMapKeyRef:
+    name: cpemon-app-config
+    key: GRAFANA_HOME_URL
+```
+
+This keeps the Deployment template reusable and moves environment-specific non-secret values into the ConfigMap.
+
+## Q30: Which Kubernetes Secrets must exist before installing this chart?
+
+The chart expects these Secrets to exist:
+
+```text
+cpemon-ecr-regcred
+cpemon-db key dsn
+cpemon-acs-hmac key hmac-secret
+```
+
+`cpemon-ecr-regcred` is used for pulling private ECR images. `cpemon-db` provides `DB_DSN`. `cpemon-acs-hmac` provides the ACS webhook HMAC secret.
+
+## Q31: How would you summarize CCPU-54 in an interview?
+
+I separated non-secret application configuration from secret material in the Helm chart. Non-sensitive runtime values now render into a chart-owned ConfigMap and workloads consume them through `configMapKeyRef`. Sensitive values such as `DB_DSN` and `HMAC_SECRET` remain external Kubernetes Secret references, so the chart documents required Secret names and keys without committing credentials. This makes the chart safer, easier to configure per environment, and closer to a production deployment model.

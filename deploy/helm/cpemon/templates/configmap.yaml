@@ -1,0 +1,15 @@
+{{- if .Values.appConfig.configMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cpemon.configMapName" . | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+data:
+  HTTP_ADDR: {{ .Values.appConfig.httpAddr | quote }}
+  GRAFANA_HOME_URL: {{ .Values.appConfig.grafanaHomeUrl | quote }}
+  GRAFANA_SN_DASHBOARD_URL_TEMPLATE: {{ .Values.appConfig.grafanaSnDashboardUrlTemplate | quote }}
+  KIBANA_HOME_URL: {{ .Values.appConfig.kibanaHomeUrl | quote }}
+  KIBANA_SN_LOGS_URL_TEMPLATE: {{ .Values.appConfig.kibanaSnLogsUrlTemplate | quote }}
+{{- end }}

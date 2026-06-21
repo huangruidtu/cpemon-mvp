@@ -11,3 +11,11 @@ This chart now renders the CPEmon application workload model:
   - cpemon-writer
 
 Use helm template or helm lint before applying the chart to a cluster.
+
+Required pre-existing Secrets:
+  - cpemon-ecr-regcred
+  - cpemon-db key dsn
+  - cpemon-acs-hmac key hmac-secret
+
+Non-secret runtime config is rendered in ConfigMap:
+  - {{ include "cpemon.configMapName" . }}
