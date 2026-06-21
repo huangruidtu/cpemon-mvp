@@ -29,6 +29,7 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 13: Database and Secret Configuration](story-13-database-secret-configuration.md)
 - [Story 14: Kafka Platform Introduction](story-14-kafka-platform-introduction.md)
 - [Story 15: acs-ingest Kafka Producer Refactor](story-15-acs-ingest-kafka-producer-refactor.md)
+- [acs-ingest Kafka Producer Learning Notes](acs-ingest-kafka-producer-learning-notes.md)
 - [Kafka Platform Learning Notes](kafka-platform-learning-notes.md)
 
 ## Practice Focus
@@ -54,3 +55,11 @@ For Story 14, practice the Kafka platform introduction boundary:
 - why Strimzi and MSK are future hardening options
 - how `KAFKA_BOOTSTRAP_SERVERS` and topic names keep future migration flexible
 - how to explain the 60-second Kafka migration story from the learning notes
+
+For Story 15, practice the acs-ingest Kafka producer narrative:
+
+- why the database intake path remains durable
+- why Kafka publishing is behind `EventPublisher`
+- how topic/key/schema choices protect consumers
+- why retry creates at-least-once delivery and idempotency requirements
+- how logs, metrics, unit tests, and the live validation runbook prove the change
