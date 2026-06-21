@@ -1,0 +1,39 @@
+# CPEmon Step 1 Kafka values.
+#
+# This file is intentionally small. Story 8 introduces the Kafka platform
+# boundary first; production sizing, TLS/SASL, external access, and MSK
+# migration belong to later hardening work.
+
+controller:
+  replicaCount: 1
+
+broker:
+  replicaCount: 0
+
+kraft:
+  enabled: true
+
+listeners:
+  client:
+    protocol: PLAINTEXT
+
+service:
+  type: ClusterIP
+
+externalAccess:
+  enabled: false
+
+metrics:
+  jmx:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+volumePermissions:
+  enabled: false
+
+resourcesPreset: small
+
+persistence:
+  enabled: true
+  size: 8Gi

@@ -144,6 +144,85 @@ The tradeoff is speed and learning clarity versus production-grade lifecycle man
 
 A Helm chart based deployment is easier to start with and fits the current project. Strimzi or MSK may be better for later production hardening, but choosing them immediately would expand the first Kafka story too much.
 
+## Q13: What did CCPU-70 add?
+
+`CCPU-70` added the Kafka Helm installation workflow.
+
+The key files are:
+
+```text
+k8s/addons/kafka/values.yaml
+ops/runbooks/kafka-platform-helm.md
+scripts/verify-kafka-helm-workflow.ps1
+Makefile
+```
+
+It also updated the Kafka knowledge notes with the install boundary.
+
+## Q14: Why keep the Kafka values small?
+
+Because Story 8 is introducing the platform boundary first.
+
+The Step 1 values use one KRaft controller, an internal `ClusterIP` service, no external access, and persistent storage. That is enough to prove the first install and bootstrap path without pretending to be a production Kafka design.
+
+Production concerns such as multi-broker sizing, TLS, SASL, external listeners, metrics, Strimzi, or MSK are deferred until the platform contract is clear.
+
+## Q15: What is the expected internal bootstrap server?
+
+For release `kafka` in namespace `kafka`, the expected internal bootstrap address is:
+
+```text
+kafka.kafka.svc.cluster.local:9092
+```
+
+Later application integration should receive it through:
+
+```text
+KAFKA_BOOTSTRAP_SERVERS
+```
+
+not through a hardcoded value in Go code.
+
+## Q16: What are the key Makefile targets?
+
+The Kafka platform targets are:
+
+```text
+make kafka-chart-show
+make kafka-template
+make kafka
+make kafka-check
+make kafka-validate
+make kafka-helm-workflow-check
+```
+
+`kafka-template` proves chart rendering. `kafka` performs the live install or upgrade. `kafka-check` validates the release and Kubernetes resources. `kafka-helm-workflow-check` validates the repository workflow even when Helm is not installed locally.
+
+## Q17: What was the validation boundary for CCPU-70?
+
+The repository workflow validation passed, but live Helm validation was blocked because `helm` was not available on PATH in the local shell.
+
+That means CCPU-70 can claim:
+
+- values file exists
+- runbook exists
+- Makefile targets exist
+- documentation is connected
+- workflow check script passes
+
+It cannot claim:
+
+- chart render success
+- live Helm install success
+- Kafka pod readiness
+- real broker connectivity
+
+That honesty is important in platform work because a documented command is not the same as a running cluster.
+
+## Q18: How would you explain CCPU-70 in an interview?
+
+I added the first Kafka Helm workflow rather than jumping straight to application code. The values file defines a small internal Kafka deployment, the Makefile gives repeatable render/install/check targets, and the runbook explains validation, troubleshooting, rollback, and the bootstrap contract. Since Helm was not available in the local shell, I documented that as the validation boundary and added a repository-level workflow check rather than falsely claiming a live install.
+
 ## STAR Story
 
 Situation:
@@ -156,7 +235,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, and explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, and a workflow validation script. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 

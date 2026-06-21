@@ -5,6 +5,12 @@ EKS_VPC_ID ?=
 AWS_LBC_ROLE_ARN ?=
 METRICS_SERVER_CHART_VERSION ?= 3.13.1
 AWS_LBC_CHART_VERSION ?= 1.14.0
+KAFKA_CHART ?= oci://registry-1.docker.io/bitnamicharts/kafka
+KAFKA_CHART_VERSION ?= 32.4.3
+KAFKA_RELEASE ?= kafka
+KAFKA_NAMESPACE ?= kafka
+KAFKA_VALUES ?= k8s/addons/kafka/values.yaml
+KAFKA_RENDER_OUT ?= build/helm/kafka-rendered.yaml
 HELM ?= helm
 HELM_CPEMON_CHART ?= deploy/helm/cpemon
 HELM_CPEMON_RELEASE ?= cpemon
@@ -12,7 +18,7 @@ HELM_CPEMON_NAMESPACE ?= cpemon
 HELM_CPEMON_VALUES ?= deploy/helm/cpemon/values-dev.yaml
 HELM_CPEMON_RENDER_OUT ?= build/helm/cpemon-rendered.yaml
 
-.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check
+.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check kafka-chart-show kafka-template kafka kafka-check kafka-validate storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check kafka-helm-workflow-check
 
 platform-preflight:
 	kubectl version --client=true
@@ -83,6 +89,32 @@ aws-lbc-check:
 	kubectl get deployment -n kube-system aws-load-balancer-controller
 	kubectl logs -n kube-system deploy/aws-load-balancer-controller --tail=80
 
+kafka-chart-show: helm-check
+	"$(HELM)" show chart $(KAFKA_CHART) --version $(KAFKA_CHART_VERSION)
+
+kafka-template: helm-check
+	powershell -NoProfile -Command "New-Item -ItemType Directory -Force -Path 'build/helm' | Out-Null"
+	"$(HELM)" template $(KAFKA_RELEASE) $(KAFKA_CHART) \
+	  --namespace $(KAFKA_NAMESPACE) \
+	  --version $(KAFKA_CHART_VERSION) \
+	  --values $(KAFKA_VALUES) > $(KAFKA_RENDER_OUT)
+	@echo "Rendered Kafka Helm chart to $(KAFKA_RENDER_OUT)"
+
+kafka: helm-check
+	"$(HELM)" upgrade --install $(KAFKA_RELEASE) $(KAFKA_CHART) \
+	  --namespace $(KAFKA_NAMESPACE) \
+	  --version $(KAFKA_CHART_VERSION) \
+	  --values $(KAFKA_VALUES) \
+	  --wait \
+	  --timeout 10m
+
+kafka-check:
+	"$(HELM)" status $(KAFKA_RELEASE) -n $(KAFKA_NAMESPACE)
+	kubectl get pods,svc,statefulset,pvc -n $(KAFKA_NAMESPACE)
+	kubectl rollout status statefulset/$(KAFKA_RELEASE)-controller -n $(KAFKA_NAMESPACE) --timeout=10m
+
+kafka-validate: kafka-template
+
 storage-check:
 	kubectl get storageclass
 	kubectl get storageclass -o custom-columns=NAME:.metadata.name,DEFAULT:.metadata.annotations.storageclass\\.kubernetes\\.io/is-default-class,PROVISIONER:.provisioner,VOLUME_BINDING:.volumeBindingMode,ALLOW_EXPANSION:.allowVolumeExpansion
@@ -147,3 +179,6 @@ cpemon-writer-db-check:
 
 cpemon-eso-render-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-eso-render.ps1
+
+kafka-helm-workflow-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-helm-workflow.ps1

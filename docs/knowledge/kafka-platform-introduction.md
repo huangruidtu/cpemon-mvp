@@ -130,3 +130,78 @@ Those are later subtasks in Story 8 and the following application-integration st
 ## Interview Point
 
 The strongest answer is that this is a phased migration. I did not add Kafka to the MVP because the MVP needed a small end-to-end proof. In the cloud-platform upgrade, Kafka becomes the event buffer, but I chose a Helm chart based deployment first so I could prove the namespace, install workflow, bootstrap config, topic plan, and validation path before changing application code. Strimzi and MSK remain future hardening options because the application should depend on stable Kafka configuration, not on one specific broker implementation.
+
+## CCPU-70: Kafka Helm Installation Workflow
+
+`CCPU-70` adds the Step 1 Kafka Helm installation workflow.
+
+The values file is:
+
+```text
+k8s/addons/kafka/values.yaml
+```
+
+The runbook is:
+
+```text
+ops/runbooks/kafka-platform-helm.md
+```
+
+The Makefile targets are:
+
+```text
+make kafka-chart-show
+make kafka-template
+make kafka
+make kafka-check
+make kafka-validate
+make kafka-helm-workflow-check
+```
+
+### Step 1 Values Boundary
+
+The Step 1 values are deliberately conservative:
+
+- one KRaft controller
+- no separate broker replicas
+- internal `ClusterIP` service
+- no external access
+- plaintext internal listener
+- persistent storage enabled
+- metrics disabled until the observability subtask
+
+This is not a production Kafka design. It is the smallest useful platform install path that lets the project prove the namespace, release, service, and bootstrap contract.
+
+### Bootstrap Contract
+
+The initial internal bootstrap address is:
+
+```text
+kafka.kafka.svc.cluster.local:9092
+```
+
+Later application integration should consume this through configuration:
+
+```text
+KAFKA_BOOTSTRAP_SERVERS=kafka.kafka.svc.cluster.local:9092
+```
+
+The important design point is that the application should depend on a stable bootstrap value and topic names, not on the fact that the broker currently comes from the Bitnami chart.
+
+### Validation Boundary
+
+The repository can validate that the workflow files and Makefile targets exist with:
+
+```powershell
+make kafka-helm-workflow-check
+```
+
+Live render and install require Helm:
+
+```powershell
+make kafka-template
+make kafka
+make kafka-check
+```
+
+In the current local shell for `CCPU-70`, `helm` was not available on PATH, so this subtask documents the exact boundary instead of claiming live installation.
