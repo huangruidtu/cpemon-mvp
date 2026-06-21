@@ -18,6 +18,7 @@ type fakeKafkaReader struct {
 	commitErr      error
 	committed      []kafka.Message
 	commitCtxError error
+	stats          kafka.ReaderStats
 	closed         bool
 }
 
@@ -46,6 +47,10 @@ func (r *fakeKafkaReader) CommitMessages(ctx context.Context, msgs ...kafka.Mess
 	}
 	r.committed = append(r.committed, msgs...)
 	return nil
+}
+
+func (r *fakeKafkaReader) Stats() kafka.ReaderStats {
+	return r.stats
 }
 
 func (r *fakeKafkaReader) Close() error {
@@ -152,6 +157,13 @@ func TestNewKafkaConsumerWithReaderRequiresReader(t *testing.T) {
 	}
 }
 
+func TestKafkaConsumerCollectorsAreExposed(t *testing.T) {
+	collectors := KafkaConsumerCollectors()
+	if len(collectors) != 4 {
+		t.Fatalf("collectors = %d, want 4", len(collectors))
+	}
+}
+
 func TestKafkaConsumerConsumesMessageThroughBoundary(t *testing.T) {
 	eventTime := time.Date(2026, 6, 22, 9, 15, 0, 0, time.UTC)
 	reader := &fakeKafkaReader{
@@ -204,6 +216,40 @@ func TestKafkaConsumerConsumesMessageThroughBoundary(t *testing.T) {
 	}
 	if reader.commitCtxError != nil {
 		t.Fatalf("commit context error = %v, want nil", reader.commitCtxError)
+	}
+}
+
+func TestKafkaConsumerRecordsOffsetAndLagMetrics(t *testing.T) {
+	eventTime := time.Now().Add(-2 * time.Second)
+	reader := &fakeKafkaReader{
+		messages: []kafka.Message{
+			{
+				Topic:     WANStatusTopic,
+				Key:       []byte("CPE-009"),
+				Value:     []byte(`{"event_type":"wan.status"}`),
+				Time:      eventTime,
+				Partition: 6,
+				Offset:    123,
+			},
+		},
+		stats: kafka.ReaderStats{Lag: 7},
+	}
+	consumer, err := NewKafkaConsumerWithReader(reader)
+	if err != nil {
+		t.Fatalf("NewKafkaConsumerWithReader returned error: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	err = consumer.Consume(ctx, func(ctx context.Context, event ConsumedEvent) error {
+		cancel()
+		return nil
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("Consume error = %v, want context.Canceled", err)
+	}
+
+	if len(reader.committed) != 1 {
+		t.Fatalf("committed messages = %d, want 1", len(reader.committed))
 	}
 }
 

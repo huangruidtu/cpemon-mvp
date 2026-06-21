@@ -419,6 +419,64 @@ Interview framing:
 > will not become valid by waiting. The original offset is committed only after
 > processing succeeds or after the dead-letter event is published successfully.
 
+## Consumer Lag Metrics
+
+`CCPU-93` adds low-cardinality Kafka consumer telemetry to `cpemon-writer`.
+
+Registered collectors:
+
+| Metric | Labels | Meaning |
+| --- | --- | --- |
+| `cpemon_writer_kafka_consumer_last_consumed_offset` | `group`, `topic`, `partition` | Last Kafka offset fetched by the writer consumer. |
+| `cpemon_writer_kafka_consumer_last_committed_offset` | `group`, `topic`, `partition` | Last Kafka offset committed after successful processing. |
+| `cpemon_writer_kafka_consumer_message_age_seconds` | `group`, `topic`, `partition` | Age of the last consumed message. |
+| `cpemon_writer_kafka_consumer_reader_lag_messages` | `group`, `topic`, `partition` | Reader-reported lag when available. |
+
+Label decision:
+
+The metrics intentionally avoid high-cardinality labels such as device id,
+serial number, message key, payload content, or raw error text. Those values
+belong in structured logs or dead-letter payloads, not Prometheus label sets.
+
+Lag boundary:
+
+True Kafka lag is:
+
+```text
+LOG-END-OFFSET - CURRENT-OFFSET
+```
+
+In consumer group mode, `kafka-go` may not always provide true reader lag.
+The application metrics expose local progress and message age. The authoritative
+broker lag check is still:
+
+```powershell
+kubectl exec -n kafka statefulset/kafka-controller -- kafka-consumer-groups.sh `
+  --bootstrap-server kafka.kafka.svc.cluster.local:9092 `
+  --describe `
+  --group cpemon-writer
+```
+
+Runbook:
+
+```text
+ops/runbooks/cpemon-writer-kafka-consumer-lag.md
+```
+
+Repository check:
+
+```powershell
+make cpemon-writer-consumer-lag-check
+```
+
+Interview framing:
+
+> I exposed writer-side consume and commit progress with group/topic/partition
+> labels, but I did not pretend application metrics are always authoritative
+> broker lag. True lag is the broker log-end offset minus the committed group
+> offset, so the runbook pairs Prometheus metrics with
+> `kafka-consumer-groups.sh --describe`.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

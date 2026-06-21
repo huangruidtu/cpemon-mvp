@@ -12,6 +12,7 @@ import (
 
 	appconfig "github.com/huangruidtu/cpemon-mvp/app/pkg/config"
 	appdb "github.com/huangruidtu/cpemon-mvp/app/pkg/db"
+	appevents "github.com/huangruidtu/cpemon-mvp/app/pkg/events"
 )
 
 // ingestEventRow represents a minimal view of one row from ingest_events.
@@ -106,12 +107,14 @@ func main() {
 	}
 
 	// 3. 注册 Prometheus 指标
-	prometheus.MustRegister(
+	collectors := []prometheus.Collector{
 		writerRunsTotal,
 		writerEventsProcessedTotal,
 		writerEventsFailedTotal,
 		writerEventsDeadTotal,
-	)
+	}
+	collectors = append(collectors, appevents.KafkaConsumerCollectors()...)
+	prometheus.MustRegister(collectors...)
 
 	// 👉 启动 9100 metrics server
 	startMetricsServer()
@@ -154,7 +157,8 @@ func main() {
 // 简化版逻辑：
 // 1. 找到 status='queued' & next_at <= NOW() 的事件（LIMIT batchSize）。
 // 2. 尝试“锁定”这条事件：UPDATE status='processing', attempts=attempts+1 WHERE id=? AND status='queued'。
-//    - 如果行数=0，说明被别人抢到了，跳过。
+//   - 如果行数=0，说明被别人抢到了，跳过。
+//
 // 3. 处理事件（当前版本只是打印日志，不更新 cpe_status / history）。
 // 4. 成功：UPDATE ingest_events SET status='done', updated_at=NOW() WHERE id=?。
 func runOnce(batchSize int) error {

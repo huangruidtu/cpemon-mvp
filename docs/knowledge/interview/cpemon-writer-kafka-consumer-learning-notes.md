@@ -55,6 +55,10 @@ Lag:
 The difference between the latest broker offset and the consumer group's
 committed offset. Lag growth tells us the writer is falling behind.
 
+Application-side processing gap:
+The difference between the last consumed offset and the last committed offset
+inside `cpemon-writer`. This is useful, but it is not the same as broker lag.
+
 Feature flag:
 `KAFKA_CONSUMER_ENABLED` keeps the Kafka path off by default while the migration
 is introduced. This lets the team ship config and wiring before changing the
@@ -217,6 +221,35 @@ The handler returns an error, so the Kafka adapter does not commit the original
 offset. That is conservative: it may cause a retry, but it avoids losing the
 failed event completely.
 
+### What metrics did you add for consumer lag?
+
+I added low-cardinality Prometheus gauges for last consumed offset, last
+committed offset, message age, and reader-reported lag when the Kafka client can
+provide it. The labels are `group`, `topic`, and `partition`.
+
+### Why not label metrics with device id or serial number?
+
+Device ids are high-cardinality labels. Putting them into Prometheus metrics can
+create too many time series and hurt the monitoring system. Device-specific
+debugging belongs in logs, payloads, or dead-letter events.
+
+### How do you check true Kafka consumer lag?
+
+Use the broker view:
+
+```powershell
+kafka-consumer-groups.sh --bootstrap-server <broker> --describe --group cpemon-writer
+```
+
+The important columns are `CURRENT-OFFSET`, `LOG-END-OFFSET`, and `LAG`.
+
+### Why are application metrics not always authoritative lag?
+
+In consumer group mode, the Kafka client may not expose true broker lag from
+the reader. The app metrics show local consume/commit progress and message age.
+The broker-side consumer group description is still the source of truth for
+lag.
+
 ### Why use a bounded commit timeout?
 
 Offset commits are part of the reliability path, but they should not hang
@@ -252,3 +285,8 @@ transient processing errors retry with configured backoff, poison messages are
 published to `cpemon.deadletter.v1`, retry exhaustion also dead-letters the
 event, and original offsets are committed only after successful processing or
 successful dead-letter publication.
+
+Added consumer lag telemetry with low-cardinality group/topic/partition labels:
+last consumed offset, last committed offset, message age, and reader-reported
+lag when available, plus a runbook explaining how to confirm authoritative lag
+with Kafka consumer group offsets.

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/kafka-go"
 
 	appconfig "github.com/huangruidtu/cpemon-mvp/app/pkg/config"
@@ -16,13 +17,58 @@ import (
 type kafkaMessageReader interface {
 	FetchMessage(ctx context.Context) (kafka.Message, error)
 	CommitMessages(ctx context.Context, msgs ...kafka.Message) error
+	Stats() kafka.ReaderStats
 	Close() error
+}
+
+var (
+	kafkaConsumerLastConsumedOffset = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cpemon_writer_kafka_consumer_last_consumed_offset",
+			Help: "Last Kafka offset consumed by cpemon-writer, labeled by consumer group, topic, and partition.",
+		},
+		[]string{"group", "topic", "partition"},
+	)
+
+	kafkaConsumerLastCommittedOffset = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cpemon_writer_kafka_consumer_last_committed_offset",
+			Help: "Last Kafka offset committed by cpemon-writer after successful processing, labeled by consumer group, topic, and partition.",
+		},
+		[]string{"group", "topic", "partition"},
+	)
+
+	kafkaConsumerMessageAgeSeconds = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cpemon_writer_kafka_consumer_message_age_seconds",
+			Help: "Age in seconds of the last Kafka message consumed by cpemon-writer, labeled by consumer group, topic, and partition.",
+		},
+		[]string{"group", "topic", "partition"},
+	)
+
+	kafkaConsumerReaderLagMessages = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cpemon_writer_kafka_consumer_reader_lag_messages",
+			Help: "Reader-reported Kafka lag when available. In consumer group mode kafka-go may report -1, so absence of this sample should be paired with broker-side lag metrics.",
+		},
+		[]string{"group", "topic", "partition"},
+	)
+)
+
+func KafkaConsumerCollectors() []prometheus.Collector {
+	return []prometheus.Collector{
+		kafkaConsumerLastConsumedOffset,
+		kafkaConsumerLastCommittedOffset,
+		kafkaConsumerMessageAgeSeconds,
+		kafkaConsumerReaderLagMessages,
+	}
 }
 
 // KafkaConsumer consumes normalized CPEmon events from Kafka and exposes them
 // through the EventConsumer application boundary.
 type KafkaConsumer struct {
 	reader        kafkaMessageReader
+	groupID       string
 	commitTimeout time.Duration
 }
 
@@ -136,6 +182,7 @@ func NewKafkaConsumer(cfg KafkaConsumerConfig) (*KafkaConsumer, error) {
 			CommitInterval:   0,
 			StartOffset:      kafka.FirstOffset,
 		}),
+		groupID:       groupID,
 		commitTimeout: commitTimeout,
 	}, nil
 }
@@ -144,7 +191,7 @@ func NewKafkaConsumerWithReader(reader kafkaMessageReader) (*KafkaConsumer, erro
 	if reader == nil {
 		return nil, newKafkaConsumeError(ConsumeErrorInvalidConfig, ConsumedEvent{}, errors.New("kafka consumer requires reader"))
 	}
-	return &KafkaConsumer{reader: reader, commitTimeout: 5 * time.Second}, nil
+	return &KafkaConsumer{reader: reader, groupID: "test", commitTimeout: 5 * time.Second}, nil
 }
 
 func (c *KafkaConsumer) Consume(ctx context.Context, handler EventHandler) error {
@@ -169,6 +216,7 @@ func (c *KafkaConsumer) Consume(ctx context.Context, handler EventHandler) error
 		}
 
 		event := consumedEventFromKafkaMessage(msg)
+		c.recordConsumed(event)
 		if err := handler(ctx, event); err != nil {
 			return newKafkaConsumeError(ConsumeErrorHandler, event, err)
 		}
@@ -188,7 +236,45 @@ func (c *KafkaConsumer) Close() error {
 func (c *KafkaConsumer) commit(ctx context.Context, msg kafka.Message) error {
 	commitCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), c.commitTimeout)
 	defer cancel()
-	return c.reader.CommitMessages(commitCtx, msg)
+	if err := c.reader.CommitMessages(commitCtx, msg); err != nil {
+		return err
+	}
+	c.recordCommitted(consumedEventFromKafkaMessage(msg))
+	return nil
+}
+
+func (c *KafkaConsumer) recordConsumed(event ConsumedEvent) {
+	group, topic, partition := c.metricLabels(event)
+	kafkaConsumerLastConsumedOffset.WithLabelValues(group, topic, partition).Set(float64(event.Offset))
+	if !event.Time.IsZero() {
+		age := time.Since(event.Time).Seconds()
+		if age < 0 {
+			age = 0
+		}
+		kafkaConsumerMessageAgeSeconds.WithLabelValues(group, topic, partition).Set(age)
+	}
+
+	stats := c.reader.Stats()
+	if stats.Lag >= 0 {
+		kafkaConsumerReaderLagMessages.WithLabelValues(group, topic, partition).Set(float64(stats.Lag))
+	}
+}
+
+func (c *KafkaConsumer) recordCommitted(event ConsumedEvent) {
+	group, topic, partition := c.metricLabels(event)
+	kafkaConsumerLastCommittedOffset.WithLabelValues(group, topic, partition).Set(float64(event.Offset))
+}
+
+func (c *KafkaConsumer) metricLabels(event ConsumedEvent) (string, string, string) {
+	group := strings.TrimSpace(c.groupID)
+	if group == "" {
+		group = "unknown"
+	}
+	topic := strings.TrimSpace(event.Topic)
+	if topic == "" {
+		topic = "unknown"
+	}
+	return group, topic, strconv.Itoa(event.Partition)
 }
 
 func consumedEventFromKafkaMessage(msg kafka.Message) ConsumedEvent {
