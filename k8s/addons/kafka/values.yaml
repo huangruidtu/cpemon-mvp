@@ -37,3 +37,22 @@ resourcesPreset: small
 persistence:
   enabled: true
   size: 8Gi
+
+provisioning:
+  enabled: true
+  topics:
+    - name: cpemon.device.heartbeat.v1
+      partitions: 1
+      replicationFactor: 1
+      config:
+        retention.ms: "604800000"
+    - name: cpemon.wan.status.v1
+      partitions: 1
+      replicationFactor: 1
+      config:
+        retention.ms: "604800000"
+    - name: cpemon.deadletter.v1
+      partitions: 1
+      replicationFactor: 1
+      config:
+        retention.ms: "604800000"

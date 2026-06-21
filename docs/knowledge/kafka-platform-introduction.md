@@ -272,3 +272,83 @@ Live validation requires a Kubernetes cluster:
 kubectl apply -f k8s/base/namespaces.yaml
 kubectl get ns kafka --show-labels
 ```
+
+## CCPU-72: Initial Kafka Topics
+
+`CCPU-72` defines the first CPEmon Kafka topics.
+
+The topic contract is in:
+
+```text
+k8s/addons/kafka/values.yaml
+```
+
+The runbook is:
+
+```text
+ops/runbooks/kafka-topics.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-topics.ps1
+```
+
+The Makefile shortcut is:
+
+```text
+make kafka-topics-check
+```
+
+### Initial Topics
+
+| Topic | Purpose |
+| --- | --- |
+| `cpemon.device.heartbeat.v1` | Device heartbeat events from CPE/ACS ingestion. |
+| `cpemon.wan.status.v1` | WAN status events for connectivity and dashboard updates. |
+| `cpemon.deadletter.v1` | Failed or unprocessable events for debugging and replay decisions. |
+
+### Step 1 Topic Settings
+
+For Step 1, each topic uses:
+
+```text
+partitions: 1
+replicationFactor: 1
+retention.ms: 604800000
+```
+
+This matches the small one-controller Kafka learning environment. Production Kafka would revisit partition count, replication factor, retention, compaction, and dead-letter policies.
+
+### Why Define Topics Before Producers
+
+Topic names are platform contracts.
+
+Defining them before writing producer code prevents accidental hardcoded event routing and makes the future app integration clearer:
+
+```text
+platform defines topic contract
+        |
+        v
+application reads topic names from config
+        |
+        v
+producer publishes to approved topics
+```
+
+### Validation Boundary
+
+Local validation proves the topic contract exists in Git:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-topics.ps1
+```
+
+Live validation requires Kafka to be installed and ready:
+
+```powershell
+kubectl exec -n kafka statefulset/kafka-controller -- kafka-topics.sh `
+  --bootstrap-server kafka.kafka.svc.cluster.local:9092 `
+  --list
+```

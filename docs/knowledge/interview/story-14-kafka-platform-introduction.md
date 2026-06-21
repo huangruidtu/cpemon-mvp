@@ -287,6 +287,69 @@ kubectl get ns kafka --show-labels
 
 So the subtask can prove the namespace contract exists in Git even when a live cluster is not available.
 
+## Q23: What did CCPU-72 add?
+
+`CCPU-72` defined the first CPEmon Kafka topics in the Kafka Helm values.
+
+The key files are:
+
+```text
+k8s/addons/kafka/values.yaml
+ops/runbooks/kafka-topics.md
+scripts/verify-kafka-topics.ps1
+Makefile
+```
+
+## Q24: What are the initial topics?
+
+The initial topics are:
+
+```text
+cpemon.device.heartbeat.v1
+cpemon.wan.status.v1
+cpemon.deadletter.v1
+```
+
+`device.heartbeat` is for heartbeat events. `wan.status` is for connectivity/status events. `deadletter` is for failed or unprocessable events that need debugging or replay decisions.
+
+## Q25: What Step 1 topic settings did you choose?
+
+For Step 1:
+
+```text
+partitions=1
+replicationFactor=1
+retention.ms=604800000
+```
+
+That is seven days of retention.
+
+This is intentionally small because the current Kafka deployment is a learning-path cluster, not a production multi-broker cluster.
+
+## Q26: Why define topics before producer code?
+
+Topic names are part of the platform contract.
+
+If I define topics first, later application code can read topic names from configuration instead of inventing hardcoded strings. It also makes event ownership, dead-letter behavior, and migration decisions easier to review.
+
+## Q27: What is the validation boundary for CCPU-72?
+
+Local validation checks the values file and docs:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-topics.ps1
+```
+
+Live validation requires Kafka to be installed and ready:
+
+```powershell
+kubectl exec -n kafka statefulset/kafka-controller -- kafka-topics.sh `
+  --bootstrap-server kafka.kafka.svc.cluster.local:9092 `
+  --list
+```
+
+So CCPU-72 proves the topic contract in Git, while live broker topic existence belongs to cluster validation.
+
 ## STAR Story
 
 Situation:
@@ -299,7 +362,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 
