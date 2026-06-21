@@ -195,6 +195,7 @@ The ConfigMap stores values such as:
 - `GRAFANA_SN_DASHBOARD_URL_TEMPLATE`
 - `KIBANA_HOME_URL`
 - `KIBANA_SN_LOGS_URL_TEMPLATE`
+- Kafka producer and consumer settings such as `KAFKA_BOOTSTRAP_SERVERS`, topic names, `KAFKA_PRODUCER_ENABLED`, and `KAFKA_CONSUMER_ENABLED`
 
 Workload env entries that use `valueFromConfig` render as `configMapKeyRef`.
 
@@ -208,6 +209,25 @@ The chart also references the image pull Secret:
 - `cpemon-ecr-regcred`
 
 These Secrets must exist before installing the chart. This chart intentionally does not create real Secret values.
+
+## cpemon-writer Kafka Consumer Configuration
+
+Story 10 adds writer-side Kafka consumer configuration while keeping the
+consumer disabled by default:
+
+```yaml
+appConfig:
+  kafkaConsumerEnabled: false
+  kafkaConsumerGroupId: cpemon-writer
+  kafkaConsumerReadTimeout: 5s
+  kafkaConsumerCommitTimeout: 5s
+  kafkaConsumerMaxRetries: "3"
+  kafkaConsumerRetryBackoff: 1s
+```
+
+The chart wires these values only into `cpemon-writer` because `acs-ingest` is
+the producer and `cpemon-writer` is the consumer. The shared topic values remain
+in `appConfig` so producer and consumer agree on the event contracts.
 
 ## Optional Platform Features
 

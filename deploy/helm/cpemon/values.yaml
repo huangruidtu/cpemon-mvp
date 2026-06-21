@@ -30,6 +30,12 @@ appConfig:
   kafkaProducerEnabled: false
   kafkaProducerTimeout: "5s"
   kafkaProducerMaxRetries: "3"
+  kafkaConsumerEnabled: false
+  kafkaConsumerGroupId: "cpemon-writer"
+  kafkaConsumerReadTimeout: "5s"
+  kafkaConsumerCommitTimeout: "5s"
+  kafkaConsumerMaxRetries: "3"
+  kafkaConsumerRetryBackoff: "1s"
 
 database:
   host: "mysql.cpemon.svc.cluster.local"
@@ -208,6 +214,18 @@ workloads:
         valueFromConfig: kafkaTopicWanStatus
       - name: KAFKA_TOPIC_DEADLETTER
         valueFromConfig: kafkaTopicDeadletter
+      - name: KAFKA_CONSUMER_ENABLED
+        valueFromConfig: kafkaConsumerEnabled
+      - name: KAFKA_CONSUMER_GROUP_ID
+        valueFromConfig: kafkaConsumerGroupId
+      - name: KAFKA_CONSUMER_READ_TIMEOUT
+        valueFromConfig: kafkaConsumerReadTimeout
+      - name: KAFKA_CONSUMER_COMMIT_TIMEOUT
+        valueFromConfig: kafkaConsumerCommitTimeout
+      - name: KAFKA_CONSUMER_MAX_RETRIES
+        valueFromConfig: kafkaConsumerMaxRetries
+      - name: KAFKA_CONSUMER_RETRY_BACKOFF
+        valueFromConfig: kafkaConsumerRetryBackoff
       - name: KAFKA_PRODUCER_ENABLED
         valueFromConfig: kafkaProducerEnabled
       - name: KAFKA_PRODUCER_TIMEOUT

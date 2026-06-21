@@ -8,18 +8,24 @@ import (
 )
 
 type Config struct {
-	DBDSN                     string        // MySQL DSN. Treat as secret material.
-	HTTPAddr                  string        // HTTP listen address, for example :8080.
-	WorkerInterval            time.Duration // Background worker loop interval.
-	BatchSize                 int           // Number of queued rows to process per batch.
-	HMACSecret                string        // HMAC key used by acs-ingest.
-	KafkaProducerEnabled      bool          // Enables app-side Kafka producer behavior.
-	KafkaBootstrapServers     string        // Kafka bootstrap servers.
-	KafkaTopicDeviceHeartbeat string        // Topic for normalized heartbeat events.
-	KafkaTopicWANStatus       string        // Topic for normalized WAN status events.
-	KafkaTopicDeadletter      string        // Topic for failed/unprocessable events.
-	KafkaProducerTimeout      time.Duration // Per-publish timeout.
-	KafkaProducerMaxRetries   int           // Max publish retry attempts.
+	DBDSN                      string        // MySQL DSN. Treat as secret material.
+	HTTPAddr                   string        // HTTP listen address, for example :8080.
+	WorkerInterval             time.Duration // Background worker loop interval.
+	BatchSize                  int           // Number of queued rows to process per batch.
+	HMACSecret                 string        // HMAC key used by acs-ingest.
+	KafkaProducerEnabled       bool          // Enables app-side Kafka producer behavior.
+	KafkaBootstrapServers      string        // Kafka bootstrap servers.
+	KafkaTopicDeviceHeartbeat  string        // Topic for normalized heartbeat events.
+	KafkaTopicWANStatus        string        // Topic for normalized WAN status events.
+	KafkaTopicDeadletter       string        // Topic for failed/unprocessable events.
+	KafkaProducerTimeout       time.Duration // Per-publish timeout.
+	KafkaProducerMaxRetries    int           // Max publish retry attempts.
+	KafkaConsumerEnabled       bool          // Enables cpemon-writer Kafka consumer behavior.
+	KafkaConsumerGroupID       string        // Consumer group id used by cpemon-writer.
+	KafkaConsumerReadTimeout   time.Duration // Per-read timeout for consumer polling.
+	KafkaConsumerCommitTimeout time.Duration // Per-commit timeout after successful processing.
+	KafkaConsumerMaxRetries    int           // Max consumer processing retry attempts.
+	KafkaConsumerRetryBackoff  time.Duration // Backoff between consumer processing retries.
 }
 
 // getenv returns an environment variable or the supplied default.
@@ -87,9 +93,15 @@ func Load() Config {
 	cfg.KafkaTopicDeadletter = getenv("KAFKA_TOPIC_DEADLETTER", "cpemon.deadletter.v1")
 	cfg.KafkaProducerTimeout = getenvDuration("KAFKA_PRODUCER_TIMEOUT", 5*time.Second)
 	cfg.KafkaProducerMaxRetries = getenvPositiveInt("KAFKA_PRODUCER_MAX_RETRIES", 3)
+	cfg.KafkaConsumerEnabled = getenvBool("KAFKA_CONSUMER_ENABLED", false)
+	cfg.KafkaConsumerGroupID = getenv("KAFKA_CONSUMER_GROUP_ID", "cpemon-writer")
+	cfg.KafkaConsumerReadTimeout = getenvDuration("KAFKA_CONSUMER_READ_TIMEOUT", 5*time.Second)
+	cfg.KafkaConsumerCommitTimeout = getenvDuration("KAFKA_CONSUMER_COMMIT_TIMEOUT", 5*time.Second)
+	cfg.KafkaConsumerMaxRetries = getenvPositiveInt("KAFKA_CONSUMER_MAX_RETRIES", 3)
+	cfg.KafkaConsumerRetryBackoff = getenvDuration("KAFKA_CONSUMER_RETRY_BACKOFF", time.Second)
 
-	log.Printf("config loaded: DB_DSN_set=%t HTTPAddr=%s WorkerInterval=%s BatchSize=%d KafkaProducerEnabled=%t KafkaBootstrapServers_set=%t KafkaProducerTimeout=%s KafkaProducerMaxRetries=%d",
-		cfg.DBDSN != "", cfg.HTTPAddr, cfg.WorkerInterval, cfg.BatchSize, cfg.KafkaProducerEnabled, cfg.KafkaBootstrapServers != "", cfg.KafkaProducerTimeout, cfg.KafkaProducerMaxRetries)
+	log.Printf("config loaded: DB_DSN_set=%t HTTPAddr=%s WorkerInterval=%s BatchSize=%d KafkaProducerEnabled=%t KafkaConsumerEnabled=%t KafkaBootstrapServers_set=%t KafkaProducerTimeout=%s KafkaProducerMaxRetries=%d KafkaConsumerGroupID=%s KafkaConsumerReadTimeout=%s KafkaConsumerCommitTimeout=%s KafkaConsumerMaxRetries=%d KafkaConsumerRetryBackoff=%s",
+		cfg.DBDSN != "", cfg.HTTPAddr, cfg.WorkerInterval, cfg.BatchSize, cfg.KafkaProducerEnabled, cfg.KafkaConsumerEnabled, cfg.KafkaBootstrapServers != "", cfg.KafkaProducerTimeout, cfg.KafkaProducerMaxRetries, cfg.KafkaConsumerGroupID, cfg.KafkaConsumerReadTimeout, cfg.KafkaConsumerCommitTimeout, cfg.KafkaConsumerMaxRetries, cfg.KafkaConsumerRetryBackoff)
 
 	return cfg
 }

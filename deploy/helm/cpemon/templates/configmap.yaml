@@ -19,4 +19,10 @@ data:
   KAFKA_PRODUCER_ENABLED: {{ .Values.appConfig.kafkaProducerEnabled | quote }}
   KAFKA_PRODUCER_TIMEOUT: {{ .Values.appConfig.kafkaProducerTimeout | quote }}
   KAFKA_PRODUCER_MAX_RETRIES: {{ .Values.appConfig.kafkaProducerMaxRetries | quote }}
+  KAFKA_CONSUMER_ENABLED: {{ .Values.appConfig.kafkaConsumerEnabled | quote }}
+  KAFKA_CONSUMER_GROUP_ID: {{ .Values.appConfig.kafkaConsumerGroupId | quote }}
+  KAFKA_CONSUMER_READ_TIMEOUT: {{ .Values.appConfig.kafkaConsumerReadTimeout | quote }}
+  KAFKA_CONSUMER_COMMIT_TIMEOUT: {{ .Values.appConfig.kafkaConsumerCommitTimeout | quote }}
+  KAFKA_CONSUMER_MAX_RETRIES: {{ .Values.appConfig.kafkaConsumerMaxRetries | quote }}
+  KAFKA_CONSUMER_RETRY_BACKOFF: {{ .Values.appConfig.kafkaConsumerRetryBackoff | quote }}
 {{- end }}

@@ -81,6 +81,44 @@ fake consumers before introducing a real Kafka adapter.
 Live Kafka reads belong to the later Kafka adapter and integration validation
 subtasks.
 
+## Consumer Configuration Boundary
+
+`CCPU-166` adds the configuration surface for the future writer consumer.
+
+The consumer is disabled by default so the existing DB polling/write path stays
+understandable during migration.
+
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `KAFKA_CONSUMER_ENABLED` | `false` | Feature flag for the writer Kafka consumer path. |
+| `KAFKA_BOOTSTRAP_SERVERS` | `kafka.kafka.svc.cluster.local:9092` | Kafka bootstrap address shared with producer config. |
+| `KAFKA_TOPIC_DEVICE_HEARTBEAT` | `cpemon.device.heartbeat.v1` | Heartbeat input topic. |
+| `KAFKA_TOPIC_WAN_STATUS` | `cpemon.wan.status.v1` | WAN status input topic. |
+| `KAFKA_TOPIC_DEADLETTER` | `cpemon.deadletter.v1` | Dead-letter topic for unprocessable events. |
+| `KAFKA_CONSUMER_GROUP_ID` | `cpemon-writer` | Stable group id for writer replicas. |
+| `KAFKA_CONSUMER_READ_TIMEOUT` | `5s` | Timeout for polling Kafka reads. |
+| `KAFKA_CONSUMER_COMMIT_TIMEOUT` | `5s` | Timeout for committing offsets after success. |
+| `KAFKA_CONSUMER_MAX_RETRIES` | `3` | Bounded retry attempts before dead-letter behavior. |
+| `KAFKA_CONSUMER_RETRY_BACKOFF` | `1s` | Backoff between processing retry attempts. |
+
+The Helm chart renders these settings through `appConfig` and wires them only
+into `cpemon-writer`. Raw Kubernetes YAML keeps the same ConfigMap keys for
+local or non-Helm validation.
+
+Enablement example:
+
+```yaml
+appConfig:
+  kafkaConsumerEnabled: true
+  kafkaConsumerGroupId: cpemon-writer
+```
+
+Interview framing:
+
+> I added the consumer config before the Kafka adapter so rollout behavior is
+> explicit. The writer can remain on the DB polling path while the chart,
+> ConfigMap, and application config already agree on the consumer contract.
+
 ## Interview Notes
 
 A strong explanation:

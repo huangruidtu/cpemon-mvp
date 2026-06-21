@@ -6,6 +6,10 @@ global:
   namespaceOverride: cpemon
   imageTag: "__IMAGE_TAG__"
 
+appConfig:
+  kafkaConsumerEnabled: false
+  kafkaConsumerGroupId: cpemon-writer
+
 database:
   dsnSecret:
     name: cpemon-db

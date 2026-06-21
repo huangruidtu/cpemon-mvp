@@ -17,6 +17,12 @@ func clearKafkaEnv(t *testing.T) {
 		"KAFKA_TOPIC_DEADLETTER",
 		"KAFKA_PRODUCER_TIMEOUT",
 		"KAFKA_PRODUCER_MAX_RETRIES",
+		"KAFKA_CONSUMER_ENABLED",
+		"KAFKA_CONSUMER_GROUP_ID",
+		"KAFKA_CONSUMER_READ_TIMEOUT",
+		"KAFKA_CONSUMER_COMMIT_TIMEOUT",
+		"KAFKA_CONSUMER_MAX_RETRIES",
+		"KAFKA_CONSUMER_RETRY_BACKOFF",
 	}
 	previous := map[string]string{}
 	present := map[string]bool{}
@@ -68,6 +74,24 @@ func TestLoadKafkaProducerDefaults(t *testing.T) {
 	if cfg.KafkaProducerMaxRetries != 3 {
 		t.Fatalf("KafkaProducerMaxRetries = %d, want 3", cfg.KafkaProducerMaxRetries)
 	}
+	if cfg.KafkaConsumerEnabled {
+		t.Fatal("KafkaConsumerEnabled = true, want false by default")
+	}
+	if cfg.KafkaConsumerGroupID != "cpemon-writer" {
+		t.Fatalf("KafkaConsumerGroupID = %q", cfg.KafkaConsumerGroupID)
+	}
+	if cfg.KafkaConsumerReadTimeout != 5*time.Second {
+		t.Fatalf("KafkaConsumerReadTimeout = %s, want 5s", cfg.KafkaConsumerReadTimeout)
+	}
+	if cfg.KafkaConsumerCommitTimeout != 5*time.Second {
+		t.Fatalf("KafkaConsumerCommitTimeout = %s, want 5s", cfg.KafkaConsumerCommitTimeout)
+	}
+	if cfg.KafkaConsumerMaxRetries != 3 {
+		t.Fatalf("KafkaConsumerMaxRetries = %d, want 3", cfg.KafkaConsumerMaxRetries)
+	}
+	if cfg.KafkaConsumerRetryBackoff != time.Second {
+		t.Fatalf("KafkaConsumerRetryBackoff = %s, want 1s", cfg.KafkaConsumerRetryBackoff)
+	}
 }
 
 func TestLoadKafkaProducerOverrides(t *testing.T) {
@@ -80,6 +104,12 @@ func TestLoadKafkaProducerOverrides(t *testing.T) {
 	t.Setenv("KAFKA_TOPIC_DEADLETTER", "test.deadletter.v1")
 	t.Setenv("KAFKA_PRODUCER_TIMEOUT", "750ms")
 	t.Setenv("KAFKA_PRODUCER_MAX_RETRIES", "7")
+	t.Setenv("KAFKA_CONSUMER_ENABLED", "true")
+	t.Setenv("KAFKA_CONSUMER_GROUP_ID", "test-writer")
+	t.Setenv("KAFKA_CONSUMER_READ_TIMEOUT", "2s")
+	t.Setenv("KAFKA_CONSUMER_COMMIT_TIMEOUT", "3s")
+	t.Setenv("KAFKA_CONSUMER_MAX_RETRIES", "8")
+	t.Setenv("KAFKA_CONSUMER_RETRY_BACKOFF", "250ms")
 
 	cfg := Load()
 
@@ -104,6 +134,24 @@ func TestLoadKafkaProducerOverrides(t *testing.T) {
 	if cfg.KafkaProducerMaxRetries != 7 {
 		t.Fatalf("KafkaProducerMaxRetries = %d, want 7", cfg.KafkaProducerMaxRetries)
 	}
+	if !cfg.KafkaConsumerEnabled {
+		t.Fatal("KafkaConsumerEnabled = false, want true")
+	}
+	if cfg.KafkaConsumerGroupID != "test-writer" {
+		t.Fatalf("KafkaConsumerGroupID = %q", cfg.KafkaConsumerGroupID)
+	}
+	if cfg.KafkaConsumerReadTimeout != 2*time.Second {
+		t.Fatalf("KafkaConsumerReadTimeout = %s, want 2s", cfg.KafkaConsumerReadTimeout)
+	}
+	if cfg.KafkaConsumerCommitTimeout != 3*time.Second {
+		t.Fatalf("KafkaConsumerCommitTimeout = %s, want 3s", cfg.KafkaConsumerCommitTimeout)
+	}
+	if cfg.KafkaConsumerMaxRetries != 8 {
+		t.Fatalf("KafkaConsumerMaxRetries = %d, want 8", cfg.KafkaConsumerMaxRetries)
+	}
+	if cfg.KafkaConsumerRetryBackoff != 250*time.Millisecond {
+		t.Fatalf("KafkaConsumerRetryBackoff = %s, want 250ms", cfg.KafkaConsumerRetryBackoff)
+	}
 }
 
 func TestLoadKafkaProducerInvalidValuesFallback(t *testing.T) {
@@ -112,6 +160,11 @@ func TestLoadKafkaProducerInvalidValuesFallback(t *testing.T) {
 	t.Setenv("KAFKA_PRODUCER_ENABLED", "not-bool")
 	t.Setenv("KAFKA_PRODUCER_TIMEOUT", "not-duration")
 	t.Setenv("KAFKA_PRODUCER_MAX_RETRIES", "0")
+	t.Setenv("KAFKA_CONSUMER_ENABLED", "not-bool")
+	t.Setenv("KAFKA_CONSUMER_READ_TIMEOUT", "not-duration")
+	t.Setenv("KAFKA_CONSUMER_COMMIT_TIMEOUT", "not-duration")
+	t.Setenv("KAFKA_CONSUMER_MAX_RETRIES", "0")
+	t.Setenv("KAFKA_CONSUMER_RETRY_BACKOFF", "not-duration")
 
 	cfg := Load()
 
@@ -123,5 +176,20 @@ func TestLoadKafkaProducerInvalidValuesFallback(t *testing.T) {
 	}
 	if cfg.KafkaProducerMaxRetries != 3 {
 		t.Fatalf("KafkaProducerMaxRetries = %d, want 3 fallback", cfg.KafkaProducerMaxRetries)
+	}
+	if cfg.KafkaConsumerEnabled {
+		t.Fatal("KafkaConsumerEnabled = true, want false fallback")
+	}
+	if cfg.KafkaConsumerReadTimeout != 5*time.Second {
+		t.Fatalf("KafkaConsumerReadTimeout = %s, want 5s fallback", cfg.KafkaConsumerReadTimeout)
+	}
+	if cfg.KafkaConsumerCommitTimeout != 5*time.Second {
+		t.Fatalf("KafkaConsumerCommitTimeout = %s, want 5s fallback", cfg.KafkaConsumerCommitTimeout)
+	}
+	if cfg.KafkaConsumerMaxRetries != 3 {
+		t.Fatalf("KafkaConsumerMaxRetries = %d, want 3 fallback", cfg.KafkaConsumerMaxRetries)
+	}
+	if cfg.KafkaConsumerRetryBackoff != time.Second {
+		t.Fatalf("KafkaConsumerRetryBackoff = %s, want 1s fallback", cfg.KafkaConsumerRetryBackoff)
 	}
 }

@@ -55,6 +55,16 @@ Lag:
 The difference between the latest broker offset and the consumer group's
 committed offset. Lag growth tells us the writer is falling behind.
 
+Feature flag:
+`KAFKA_CONSUMER_ENABLED` keeps the Kafka path off by default while the migration
+is introduced. This lets the team ship config and wiring before changing the
+runtime processing path.
+
+Consumer group id:
+`KAFKA_CONSUMER_GROUP_ID=cpemon-writer` gives all writer replicas a shared
+offset identity. If the group id changes, Kafka treats it as a new consumer
+group and starts from the configured offset behavior.
+
 ## Strong Q&A
 
 ### Why introduce `EventConsumer`?
@@ -82,6 +92,12 @@ can lose messages if the process crashes before the database update.
 
 At-least-once processing. It avoids message loss but requires idempotent writes
 because duplicate processing is possible.
+
+### Why keep the consumer disabled by default?
+
+Because this is an incremental migration. The existing DB queue path remains the
+known-safe behavior while we add config, adapter, processing, retry, metrics,
+and validation step by step.
 
 ### How can you test this without Kafka?
 

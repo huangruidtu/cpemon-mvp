@@ -56,7 +56,13 @@
         "kafkaTopicDeadletter": { "type": "string", "minLength": 1 },
         "kafkaProducerEnabled": { "type": "boolean" },
         "kafkaProducerTimeout": { "type": "string", "minLength": 1 },
-        "kafkaProducerMaxRetries": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+        "kafkaProducerMaxRetries": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "kafkaConsumerEnabled": { "type": "boolean" },
+        "kafkaConsumerGroupId": { "type": "string", "minLength": 1 },
+        "kafkaConsumerReadTimeout": { "type": "string", "minLength": 1 },
+        "kafkaConsumerCommitTimeout": { "type": "string", "minLength": 1 },
+        "kafkaConsumerMaxRetries": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "kafkaConsumerRetryBackoff": { "type": "string", "minLength": 1 }
       }
     },
     "mysql": {
