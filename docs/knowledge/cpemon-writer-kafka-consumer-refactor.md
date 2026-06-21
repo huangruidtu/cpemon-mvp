@@ -286,6 +286,29 @@ Interview framing:
 > validate `wan_status` because it proves the event is a real WAN status event,
 > and I made the update replay-safe for at-least-once delivery.
 
+## Event Processor Routing
+
+`CCPU-90` adds the common `processConsumedEvent` entry point.
+
+Routing rules:
+
+| Topic | Processor |
+| --- | --- |
+| `cpemon.device.heartbeat.v1` | `processHeartbeatConsumedEvent` |
+| `cpemon.wan.status.v1` | `processWANStatusConsumedEvent` |
+
+Unsupported topics return an explicit error. This is deliberate: unknown event
+families should not be silently acknowledged or written as untyped data.
+
+This gives later reliability subtasks one place to wrap retry, dead-letter,
+offset commit, metrics, and structured logging behavior.
+
+Repository check:
+
+```powershell
+make cpemon-writer-event-processor-check
+```
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

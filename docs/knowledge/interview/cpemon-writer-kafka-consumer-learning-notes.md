@@ -171,6 +171,12 @@ column. Validating `wan_status` still matters because it distinguishes a real
 WAN event from a malformed payload. The storage model can be expanded later
 without weakening the event contract today.
 
+### Why add a common event processor?
+
+It gives the consumer loop one processing entry point. The router dispatches by
+topic, so heartbeat and WAN status keep separate validation/write logic while
+retry, dead-letter, offset commit, metrics, and logs can wrap one function.
+
 ## Resume Bullet
 
 Defined the writer-side Kafka consumer boundary with a broker-independent

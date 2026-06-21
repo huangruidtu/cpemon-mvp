@@ -18,7 +18,7 @@ HELM_CPEMON_NAMESPACE ?= cpemon
 HELM_CPEMON_VALUES ?= deploy/helm/cpemon/values-dev.yaml
 HELM_CPEMON_RENDER_OUT ?= build/helm/cpemon-rendered.yaml
 
-.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check kafka-namespace-check kafka-topics-check kafka-topic-naming-check kafka-config-check kafka-architecture-docs-check kafka-produce-consume-runbook-check kafka-validation-observability-check kafka-learning-notes-check acs-ingest-heartbeat-schema-check acs-ingest-wan-status-schema-check acs-ingest-event-publisher-check acs-ingest-kafka-config-check acs-ingest-kafka-producer-check acs-ingest-publish-wiring-check acs-ingest-producer-retry-check acs-ingest-producer-observability-check acs-ingest-unit-tests-check acs-ingest-kafka-producer-validation-check acs-ingest-kafka-producer-docs-check acs-ingest-kafka-producer-learning-notes-check cpemon-writer-kafka-consumer-config-check cpemon-writer-kafka-consumer-group-check cpemon-writer-heartbeat-subscription-check cpemon-writer-wan-status-subscription-check cpemon-writer-heartbeat-write-model-check cpemon-writer-wan-status-write-model-check kafka-chart-show kafka-template kafka kafka-check kafka-validate storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check kafka-helm-workflow-check
+.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check kafka-namespace-check kafka-topics-check kafka-topic-naming-check kafka-config-check kafka-architecture-docs-check kafka-produce-consume-runbook-check kafka-validation-observability-check kafka-learning-notes-check acs-ingest-heartbeat-schema-check acs-ingest-wan-status-schema-check acs-ingest-event-publisher-check acs-ingest-kafka-config-check acs-ingest-kafka-producer-check acs-ingest-publish-wiring-check acs-ingest-producer-retry-check acs-ingest-producer-observability-check acs-ingest-unit-tests-check acs-ingest-kafka-producer-validation-check acs-ingest-kafka-producer-docs-check acs-ingest-kafka-producer-learning-notes-check cpemon-writer-kafka-consumer-config-check cpemon-writer-kafka-consumer-group-check cpemon-writer-heartbeat-subscription-check cpemon-writer-wan-status-subscription-check cpemon-writer-heartbeat-write-model-check cpemon-writer-wan-status-write-model-check cpemon-writer-event-processor-check kafka-chart-show kafka-template kafka kafka-check kafka-validate storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check kafka-helm-workflow-check
 
 platform-preflight:
 	kubectl version --client=true
@@ -121,6 +121,9 @@ cpemon-writer-heartbeat-write-model-check:
 
 cpemon-writer-wan-status-write-model-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-writer-wan-status-write-model.ps1
+
+cpemon-writer-event-processor-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-writer-event-processor.ps1
 
 helm-repos:
 	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
