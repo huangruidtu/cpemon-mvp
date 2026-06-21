@@ -125,3 +125,37 @@ I separated platform config from app config. Kafka can move from a Helm-based
 cluster to Strimzi or MSK later, but `acs-ingest` only needs stable bootstrap
 and topic settings from environment variables.
 
+## CCPU-78: Kafka Producer Implementation
+
+`CCPU-78` adds the concrete Kafka producer adapter behind the `EventPublisher`
+interface.
+
+### Which Go Kafka client did you choose?
+
+I used `segmentio/kafka-go` because it is a pure Go client and fits this small
+service without CGO or native librdkafka dependencies.
+
+### What does the producer do?
+
+It takes a `PublishableEvent`, validates `Topic()` and `Key()`, marshals the
+event to JSON, and writes a Kafka message with that topic, key, value, and
+timestamp.
+
+### Why use a hash balancer?
+
+The message key is stable device identity. A hash balancer keeps messages for
+the same device key routed consistently, which supports per-device ordering
+within a partition.
+
+### Why does the producer have `Close()`?
+
+Kafka writers own network resources and buffers. An explicit close lifecycle
+makes shutdown behavior visible and prevents silent message loss during service
+shutdown.
+
+### What remains for later subtasks?
+
+Retries, richer error classification, metrics, structured logging, application
+handler wiring, and live produce/consume validation are handled by later
+subtasks.
+

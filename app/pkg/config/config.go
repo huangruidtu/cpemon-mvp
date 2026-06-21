@@ -8,18 +8,18 @@ import (
 )
 
 type Config struct {
-	DBDSN                    string        // MySQL DSN. Treat as secret material.
-	HTTPAddr                 string        // HTTP listen address, for example :8080.
-	WorkerInterval           time.Duration // Background worker loop interval.
-	BatchSize                int           // Number of queued rows to process per batch.
-	HMACSecret               string        // HMAC key used by acs-ingest.
-	KafkaProducerEnabled     bool          // Enables app-side Kafka producer behavior.
-	KafkaBootstrapServers    string        // Kafka bootstrap servers.
-	KafkaTopicDeviceHeartbeat string       // Topic for normalized heartbeat events.
-	KafkaTopicWANStatus      string        // Topic for normalized WAN status events.
-	KafkaTopicDeadletter     string        // Topic for failed/unprocessable events.
-	KafkaProducerTimeout     time.Duration // Per-publish timeout.
-	KafkaProducerMaxRetries  int           // Max publish retry attempts.
+	DBDSN                     string        // MySQL DSN. Treat as secret material.
+	HTTPAddr                  string        // HTTP listen address, for example :8080.
+	WorkerInterval            time.Duration // Background worker loop interval.
+	BatchSize                 int           // Number of queued rows to process per batch.
+	HMACSecret                string        // HMAC key used by acs-ingest.
+	KafkaProducerEnabled      bool          // Enables app-side Kafka producer behavior.
+	KafkaBootstrapServers     string        // Kafka bootstrap servers.
+	KafkaTopicDeviceHeartbeat string        // Topic for normalized heartbeat events.
+	KafkaTopicWANStatus       string        // Topic for normalized WAN status events.
+	KafkaTopicDeadletter      string        // Topic for failed/unprocessable events.
+	KafkaProducerTimeout      time.Duration // Per-publish timeout.
+	KafkaProducerMaxRetries   int           // Max publish retry attempts.
 }
 
 // getenv returns an environment variable or the supplied default.

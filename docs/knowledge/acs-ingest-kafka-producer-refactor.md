@@ -199,3 +199,25 @@ introducing the wiring before the concrete Kafka adapter and handler refactor
 are complete. The bootstrap server and topic defaults still point at the Story
 8 Kafka platform contract, so enabling the producer later does not require
 changing application code.
+
+## Kafka Producer Adapter
+
+`KafkaProducer` is the concrete implementation of `EventPublisher`.
+
+Implementation choices:
+
+* Client library: `github.com/segmentio/kafka-go`.
+* Payload encoding: JSON marshaling of the normalized event struct.
+* Topic selection: `event.Topic()`.
+* Message key: `event.Key()`.
+* Balancer: hash balancer, so the same device key is routed consistently.
+* Acknowledgement: `RequireOne`, enough for this Step 1 learning path.
+* Lifecycle: explicit `Close()` so the underlying writer can flush/close.
+
+The producer validates that every event has a non-empty topic and key before it
+writes to Kafka. It returns errors with topic/key context so the caller and
+logs can explain which publish failed.
+
+Retry behavior is still handled by the later retry/error-handling subtask. This
+adapter keeps the first producer implementation focused on construction,
+serialization, topic/key selection, write, and close lifecycle.
