@@ -23,6 +23,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Platform Architecture and Migration](kafka-platform-architecture-migration.md)
 - [Kafka Platform Introduction](kafka-platform-introduction.md)
 - [Kafka Topic Naming Convention](kafka-topic-naming-convention.md)
+- [acs-ingest Kafka Producer Refactor](acs-ingest-kafka-producer-refactor.md)
 
 ## Architecture Decisions
 

@@ -28,6 +28,7 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 12: Helm CPEmon Application](story-12-helm-cpemon-application.md)
 - [Story 13: Database and Secret Configuration](story-13-database-secret-configuration.md)
 - [Story 14: Kafka Platform Introduction](story-14-kafka-platform-introduction.md)
+- [Story 15: acs-ingest Kafka Producer Refactor](story-15-acs-ingest-kafka-producer-refactor.md)
 - [Kafka Platform Learning Notes](kafka-platform-learning-notes.md)
 
 ## Practice Focus
