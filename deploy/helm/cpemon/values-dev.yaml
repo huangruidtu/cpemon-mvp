@@ -16,6 +16,12 @@ secretRefs:
     name: cpemon-acs-hmac
     secretKey: hmac-secret
 
+mysql:
+  enabled: false
+  persistence:
+    create: false
+    claimName: data-mysql-0
+
 workloads:
   cpemonApi:
     replicaCount: 2

@@ -38,6 +38,57 @@ secretRefs:
     name: cpemon-acs-hmac
     secretKey: hmac-secret
 
+mysql:
+  enabled: false
+  name: mysql
+  replicaCount: 1
+  image:
+    repository: mysql
+    tag: "8.4"
+    pullPolicy: IfNotPresent
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 3306
+  authSecret:
+    name: mysql-auth
+    rootPasswordKey: mysql-root-password
+    usernameKey: mysql-username
+    passwordKey: mysql-password
+    databaseKey: mysql-database
+  configMap:
+    enabled: true
+    name: mysql-config
+    data:
+      zz-custom.cnf: |
+        [mysqld]
+        innodb_buffer_pool_size=256M
+        innodb_flush_log_at_trx_commit=1
+        binlog_format=ROW
+        skip-name-resolve
+        max_connections=200
+  persistence:
+    enabled: true
+    create: false
+    claimName: data-mysql-0
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    storageClassName: ""
+  probes:
+    readiness:
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    liveness:
+      initialDelaySeconds: 20
+      periodSeconds: 10
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
 defaults:
   service:
     enabled: true

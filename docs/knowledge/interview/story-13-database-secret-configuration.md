@@ -98,6 +98,46 @@ No application runtime logic changed in this subtask.
 
 I kept MySQL in EKS for Step 1 because I wanted to reduce migration variables. The project was already changing the platform target, Helm packaging, and secret-management model. Moving to RDS at the same time would mix database migration, network design, Terraform RDS work, and credential rotation into one story. Instead, I stabilized the application contract: workloads read `DB_DSN` from a Kubernetes Secret. That Secret can later be populated by External Secrets Operator from AWS Secrets Manager, and its value can point either to in-cluster MySQL or RDS. This gives a clean path to production without overloading the first migration step.
 
+## Q9: Did you use a MySQL chart dependency?
+
+Not for Step 1.
+
+I templated the existing MySQL shape directly in the CPEmon Helm chart and kept it disabled by default.
+
+That was intentional. A dependency such as a community MySQL chart can be useful later, but it brings a larger values model and chart lifecycle into this story. The immediate goal was to make the current database dependency reviewable in Helm while preserving the secret boundary.
+
+## Q10: What does the optional MySQL template render?
+
+When `mysql.enabled=true`, it renders:
+
+```text
+ConfigMap/mysql-config
+Deployment/mysql
+Service/mysql
+optional PersistentVolumeClaim
+```
+
+The template references Secret `mysql-auth` for:
+
+```text
+mysql-root-password
+mysql-username
+mysql-password
+mysql-database
+```
+
+It does not create real credential values.
+
+## Q11: Why is MySQL disabled by default?
+
+Because the chart's main job is to package CPEmon application workloads.
+
+MySQL is a data dependency. Some environments may use in-cluster MySQL, while future production environments may use RDS. Keeping `mysql.enabled=false` by default avoids accidental database installs and makes the database ownership decision explicit per environment.
+
+## Q12: How would you explain the chart-dependency decision in an interview?
+
+I avoided adding a MySQL chart dependency in Step 1 because the goal was not to adopt a full database chart lifecycle yet. The project needed a small, reviewable bridge from the current raw MySQL manifest to Helm. I copied the existing shape into an optional chart template, kept it disabled by default, and made sure it only references `mysql-auth` rather than storing credentials. That leaves the path open for RDS or a dedicated dependency later without making this story too broad.
+
 ## STAR Story
 
 Situation:

@@ -52,6 +52,69 @@
         "kibanaSnLogsUrlTemplate": { "type": "string" }
       }
     },
+    "mysql": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "name": { "type": "string", "minLength": 1 },
+        "replicaCount": { "type": "integer", "minimum": 0 },
+        "image": {
+          "type": "object",
+          "required": ["repository", "tag", "pullPolicy"],
+          "properties": {
+            "repository": { "type": "string", "minLength": 1 },
+            "tag": { "type": "string", "minLength": 1 },
+            "pullPolicy": {
+              "type": "string",
+              "enum": ["Always", "IfNotPresent", "Never"]
+            }
+          }
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "type": { "type": "string" },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+          }
+        },
+        "authSecret": {
+          "type": "object",
+          "required": ["name", "rootPasswordKey", "usernameKey", "passwordKey", "databaseKey"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "rootPasswordKey": { "type": "string", "minLength": 1 },
+            "usernameKey": { "type": "string", "minLength": 1 },
+            "passwordKey": { "type": "string", "minLength": 1 },
+            "databaseKey": { "type": "string", "minLength": 1 }
+          }
+        },
+        "configMap": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "name": { "type": "string", "minLength": 1 },
+            "data": { "type": "object" }
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "create": { "type": "boolean" },
+            "claimName": { "type": "string" },
+            "accessModes": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "size": { "type": "string", "minLength": 1 },
+            "storageClassName": { "type": "string" }
+          }
+        },
+        "probes": { "type": "object" },
+        "resources": { "type": "object" }
+      }
+    },
     "defaults": {
       "type": "object",
       "properties": {

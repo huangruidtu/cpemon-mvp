@@ -114,3 +114,46 @@ Those belong to later validation and hardening tasks.
 ## Interview Summary
 
 I kept MySQL in EKS for Step 1 because the project was already changing platform layers: EKS, Helm, and secret management. Moving to RDS at the same time would mix database migration with secret-delivery work. I kept the application contract stable through `DB_DSN`, moved sensitive values behind Kubernetes Secret references, and documented RDS as the future production direction. This lets the team improve secret management now and later swap the database endpoint with less application impact.
+
+## CCPU-62: Helmize MySQL or Add Chart Dependency
+
+The decision for `CCPU-62` is to template the current MySQL shape directly in the CPEmon Helm chart, behind `mysql.enabled=false` by default.
+
+### Why Direct Template Instead of Dependency
+
+An external MySQL chart dependency is useful when the project is ready to delegate database lifecycle details to a maintained chart. For this Step 1 story, that adds more moving parts than needed:
+
+- dependency version management
+- upstream chart values model
+- chart update review
+- a larger set of generated resources
+- more behavior to explain before the secret boundary is stable
+
+The current goal is smaller:
+
+```text
+preserve existing MySQL behavior -> make it optional and reviewable in Helm -> keep credentials external
+```
+
+### What the Template Renders
+
+When enabled, the chart renders:
+
+| Resource | Purpose |
+| --- | --- |
+| `ConfigMap/mysql-config` | MySQL tuning file copied from the current raw manifest. |
+| `Deployment/mysql` | In-cluster MySQL workload using `mysql:8.4`. |
+| `Service/mysql` | Stable ClusterIP endpoint for application pods. |
+| optional PVC | Created only when `mysql.persistence.create=true`. |
+
+The template references `mysql-auth` but never stores real password values.
+
+### Why Disabled by Default
+
+The default chart still represents the CPEmon application workloads.
+
+MySQL is a data dependency. It is enabled only when the environment wants this chart to own the in-cluster MySQL workload. Keeping it off by default avoids surprising installs and keeps future RDS migration clean.
+
+### Interview Point
+
+I did not add a heavy MySQL chart dependency yet because the project needed a small, reviewable migration step. I templated the existing MySQL resource shape directly, kept it optional, and preserved the secret boundary by referencing `mysql-auth` instead of putting credentials in values. This keeps the Step 1 path understandable while leaving room to replace in-cluster MySQL with RDS or a dedicated database chart later.

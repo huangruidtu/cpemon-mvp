@@ -105,6 +105,7 @@ The chart values are grouped by responsibility:
 | `appConfig` | Non-secret runtime configuration rendered through the chart ConfigMap. |
 | `database` | Database endpoint metadata and the Secret reference used for `DB_DSN`. |
 | `secretRefs` | Named Secret references for sensitive inputs that must not be committed as raw values. |
+| `mysql` | Optional in-cluster MySQL resources for Step 1 compatibility. |
 | `defaults` | Shared service, port, probe, resource, annotation, and env defaults. |
 | `workloads` | Per-service configuration for `cpemon-api`, `acs-ingest`, and `cpemon-writer`. |
 | `podScheduling` | Node affinity, toleration, node selector, and scheduling override model. |
@@ -247,3 +248,32 @@ Argo CD can later deploy the chart from Git.
 ```
 
 The chart does not replace Terraform, and it does not create real production secrets. It provides a repeatable application rendering model that future CI/CD or GitOps tooling can consume.
+
+## Optional MySQL Template
+
+`CCPU-62` keeps MySQL in EKS for Step 1 and templates the existing MVP MySQL shape directly in this chart instead of adding an external chart dependency.
+
+The MySQL template is disabled by default:
+
+```yaml
+mysql:
+  enabled: false
+```
+
+When enabled, it renders:
+
+- `ConfigMap` `mysql-config`
+- `Deployment` `mysql`
+- `Service` `mysql`
+- optional `PersistentVolumeClaim` if `mysql.persistence.create=true`
+
+The template references, but does not create, Secret `mysql-auth`:
+
+```text
+mysql-root-password
+mysql-username
+mysql-password
+mysql-database
+```
+
+This keeps real database credentials outside Helm values and prepares the chart for a later External Secrets Operator integration.

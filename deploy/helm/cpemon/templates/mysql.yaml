@@ -1,0 +1,153 @@
+{{- if .Values.mysql.enabled }}
+{{- if .Values.mysql.configMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cpemon.mysqlConfigMapName" . | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+    app: {{ include "cpemon.mysqlName" . | quote }}
+    app.kubernetes.io/component: database
+data:
+{{- range $key, $value := .Values.mysql.configMap.data }}
+  {{ $key }}: |
+{{ $value | nindent 4 }}
+{{- end }}
+---
+{{- end }}
+{{- if and .Values.mysql.persistence.enabled .Values.mysql.persistence.create }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ default (printf "%s-data" (include "cpemon.mysqlName" .)) .Values.mysql.persistence.claimName | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+    app: {{ include "cpemon.mysqlName" . | quote }}
+    app.kubernetes.io/component: database
+spec:
+  accessModes:
+{{ toYaml .Values.mysql.persistence.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.mysql.persistence.size | quote }}
+{{- with .Values.mysql.persistence.storageClassName }}
+  storageClassName: {{ . | quote }}
+{{- end }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cpemon.mysqlName" . | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+    app: {{ include "cpemon.mysqlName" . | quote }}
+    app.kubernetes.io/component: database
+spec:
+  replicas: {{ .Values.mysql.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "cpemon.mysqlName" . | quote }}
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+{{ include "cpemon.labels" . | nindent 8 }}
+        app: {{ include "cpemon.mysqlName" . | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        app.kubernetes.io/component: database
+    spec:
+{{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+      containers:
+        - name: mysql
+          image: {{ printf "%s:%s" .Values.mysql.image.repository .Values.mysql.image.tag | quote }}
+          imagePullPolicy: {{ .Values.mysql.image.pullPolicy | quote }}
+          ports:
+            - name: mysql
+              containerPort: {{ .Values.mysql.service.port }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cpemon.mysqlAuthSecretName" . | quote }}
+                  key: {{ .Values.mysql.authSecret.rootPasswordKey | quote }}
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cpemon.mysqlAuthSecretName" . | quote }}
+                  key: {{ .Values.mysql.authSecret.usernameKey | quote }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cpemon.mysqlAuthSecretName" . | quote }}
+                  key: {{ .Values.mysql.authSecret.passwordKey | quote }}
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cpemon.mysqlAuthSecretName" . | quote }}
+                  key: {{ .Values.mysql.authSecret.databaseKey | quote }}
+          readinessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: {{ .Values.mysql.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.mysql.probes.readiness.periodSeconds }}
+          livenessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: {{ .Values.mysql.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.mysql.probes.liveness.periodSeconds }}
+          resources:
+{{ toYaml .Values.mysql.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+{{- if .Values.mysql.configMap.enabled }}
+            - name: config
+              mountPath: /etc/mysql/conf.d/zz-custom.cnf
+              subPath: zz-custom.cnf
+{{- end }}
+      volumes:
+        - name: data
+{{- if .Values.mysql.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-data" (include "cpemon.mysqlName" .)) .Values.mysql.persistence.claimName | quote }}
+{{- else }}
+          emptyDir: {}
+{{- end }}
+{{- if .Values.mysql.configMap.enabled }}
+        - name: config
+          configMap:
+            name: {{ include "cpemon.mysqlConfigMapName" . | quote }}
+{{- end }}
+{{- if .Values.mysql.service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cpemon.mysqlName" . | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+    app: {{ include "cpemon.mysqlName" . | quote }}
+    app.kubernetes.io/component: database
+spec:
+  type: {{ .Values.mysql.service.type | quote }}
+  selector:
+    app: {{ include "cpemon.mysqlName" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/component: database
+  ports:
+    - name: mysql
+      port: {{ .Values.mysql.service.port }}
+      targetPort: mysql
+{{- end }}
+{{- end }}

@@ -50,6 +50,21 @@ Name of the ConfigMap that stores non-secret runtime configuration.
 {{- end -}}
 
 {{/*
+Name helpers for the optional in-cluster MySQL resources.
+*/}}
+{{- define "cpemon.mysqlName" -}}
+{{- default "mysql" .Values.mysql.name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "cpemon.mysqlConfigMapName" -}}
+{{- default "mysql-config" .Values.mysql.configMap.name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "cpemon.mysqlAuthSecretName" -}}
+{{- default "mysql-auth" .Values.mysql.authSecret.name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
 Labels that must stay stable between Deployments, Services, monitors, and PDBs.
 */}}
 {{- define "cpemon.workloadLabels" -}}
