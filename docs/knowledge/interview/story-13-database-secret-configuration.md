@@ -178,6 +178,56 @@ valueFrom:
 
 That makes the secret source replaceable without changing application code.
 
+## Q1K: How did you validate the ESO render boundary?
+
+I added:
+
+```text
+scripts/verify-cpemon-eso-render.ps1
+```
+
+It runs Helm lint, renders the chart with ESO disabled, renders again with ESO enabled, and checks the resource counts.
+
+Expected ESO-enabled counts:
+
+```text
+SecretStore or ClusterSecretStore: 1
+ExternalSecret: 3
+```
+
+It also checks that remote keys and properties are present without rendering real secret values.
+
+## Q1L: What does ESO render validation prove?
+
+It proves the desired manifest shape:
+
+- ESO is disabled by default
+- templates are valid
+- the expected SecretStore exists when enabled
+- the expected ExternalSecrets exist when enabled
+- remote keys and properties are correct
+- Helm is not rendering Kubernetes Secret payloads
+
+That is valuable because it catches Git and Helm mistakes before any live apply.
+
+## Q1M: What does ESO render validation not prove?
+
+It does not prove:
+
+- ESO CRDs exist in the cluster
+- IRSA can assume the IAM role
+- AWS Secrets Manager allows access
+- KMS decrypt succeeds
+- ExternalSecret reconciliation succeeds
+- workloads restart with the synced Secret
+- database reads and writes work
+
+Those need live EKS/AWS validation.
+
+## Q1N: How would you explain that boundary in an interview?
+
+I would say: local render validation proves the GitOps contract, not the cloud runtime. It tells me the chart will ask Kubernetes for the right ESO resources and will not leak secret values. Runtime validation begins when ESO, IRSA, KMS, AWS Secrets Manager, and the application Pods all exist and can be observed in a real cluster.
+
 ## Q2: What did you decide for MySQL in Step 1?
 
 For Step 1, I kept MySQL inside the EKS application boundary.

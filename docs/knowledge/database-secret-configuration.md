@@ -237,6 +237,51 @@ It does not store the values for those properties.
 
 I kept the workload contract stable and introduced ESO behind it. The Helm chart can render `ExternalSecret` resources that point to AWS Secrets Manager remote keys and JSON properties, but the workloads still consume normal Kubernetes Secrets. That means application code, Deployment env wiring, and Helm workload templates do not need to know where the real secret value comes from.
 
+## CCPU-157: ESO Render Validation and Live Boundary
+
+`CCPU-157` captures the local validation boundary for the ESO resources.
+
+The validation script is:
+
+```text
+scripts/verify-cpemon-eso-render.ps1
+```
+
+The runbook is:
+
+```text
+ops/runbooks/cpemon-eso-render-validation.md
+```
+
+### What the Script Checks
+
+The script validates:
+
+- Helm lint passes with dev values
+- default render includes no ESO resources
+- ESO-enabled render includes exactly one `SecretStore` or `ClusterSecretStore`
+- ESO-enabled render includes exactly three `ExternalSecret` resources
+- rendered remote keys and properties match the CPEmon contract
+- rendered YAML does not include obvious secret values or Kubernetes Secret payloads
+
+### What It Does Not Prove
+
+Render validation does not prove:
+
+- ESO CRDs are installed
+- IRSA trust works
+- AWS Secrets Manager is reachable
+- KMS decrypt works
+- ExternalSecret reconciliation succeeds
+- workloads can start with the synced Secrets
+- database reads or writes work
+
+Those require live EKS and AWS validation.
+
+### Interview Point
+
+I separated manifest validation from runtime validation. Locally, I can prove that Helm renders the right SecretStore and ExternalSecret shape without leaking secret values. I cannot claim that AWS Secrets Manager, KMS, IRSA, or ESO reconciliation works until the live EKS/AWS environment exists. That honesty is important because `helm template` validates desired YAML, not cloud identity or controller behavior.
+
 ## CCPU-61: MySQL Deployment Strategy for Step 1
 
 For Step 1, CPEmon keeps MySQL inside the EKS application boundary.
