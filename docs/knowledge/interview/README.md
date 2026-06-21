@@ -25,3 +25,4 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 9: EKS Provisioning - kubeconfig and kubectl Access](story-09-eks-kubeconfig-kubectl.md)
 - [Story 10: EKS Provisioning Capstone and Incident Drill](story-10-eks-provisioning-capstone.md)
 - [Story 11: EKS Platform Add-ons](story-11-eks-platform-addons.md)
+- [Story 12: Helm CPEmon Application](story-12-helm-cpemon-application.md)

@@ -1,0 +1,10 @@
+CPEmon chart scaffold rendered successfully.
+
+Release:
+  Name: {{ .Release.Name }}
+  Namespace: {{ include "cpemon.namespace" . }}
+  Chart: {{ .Chart.Name }} {{ .Chart.Version }}
+
+This scaffold currently defines chart metadata, values, helpers, and install notes.
+Application workload templates are added in the next CCPU-6 subtasks.
+

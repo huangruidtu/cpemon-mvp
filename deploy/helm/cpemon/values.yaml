@@ -1,0 +1,131 @@
+# Default values for the CPEmon application chart.
+#
+# Keep this file environment-neutral. Put local or dev-only overrides in
+# values-dev.yaml, and keep production secrets outside Git.
+
+global:
+  namespaceOverride: ""
+  imageRegistry: "701573843911.dkr.ecr.eu-north-1.amazonaws.com"
+  imagePullSecrets:
+    - name: cpemon-ecr-regcred
+  commonLabels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: application
+
+appConfig:
+  httpAddr: ":8080"
+  mysqlHost: "mysql.cpemon.svc.cluster.local"
+  mysqlPort: 3306
+  mysqlDatabase: "cpemon"
+  grafanaHomeUrl: "https://grafana.local/"
+  grafanaSnDashboardUrlTemplate: "https://grafana.local/d/cpemon_cpe_detail?var_sn=%s"
+  kibanaHomeUrl: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:''))"
+  kibanaSnLogsUrlTemplate: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:'message:\"sn=%s\"'))"
+
+secretRefs:
+  database:
+    name: cpemon-db
+    usernameKey: username
+    passwordKey: password
+  acsHmac:
+    name: cpemon-acs-hmac
+    secretKey: hmac-secret
+
+workloads:
+  cpemonApi:
+    enabled: true
+    name: cpemon-api
+    replicaCount: 2
+    image:
+      repository: cpemon-api
+      tag: "dev"
+      pullPolicy: IfNotPresent
+    ports:
+      http: 8080
+      metrics: 9100
+    service:
+      enabled: true
+      type: ClusterIP
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    probes:
+      path: /healthz
+      livenessInitialDelaySeconds: 5
+      readinessInitialDelaySeconds: 2
+  acsIngest:
+    enabled: true
+    name: acs-ingest
+    replicaCount: 2
+    image:
+      repository: acs-ingest
+      tag: "dev"
+      pullPolicy: IfNotPresent
+    ports:
+      http: 8080
+      metrics: 9100
+    service:
+      enabled: true
+      type: ClusterIP
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    probes:
+      path: /healthz
+      livenessInitialDelaySeconds: 5
+      readinessInitialDelaySeconds: 2
+  cpemonWriter:
+    enabled: true
+    name: cpemon-writer
+    replicaCount: 1
+    image:
+      repository: cpemon-writer
+      tag: "dev"
+      pullPolicy: IfNotPresent
+    ports:
+      http: 8080
+      metrics: 9100
+    service:
+      enabled: true
+      type: ClusterIP
+    worker:
+      interval: "1s"
+      batchSize: "50"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    probes:
+      path: /healthz
+      livenessInitialDelaySeconds: 5
+      readinessInitialDelaySeconds: 2
+
+podScheduling:
+  preferWorkerNodes: true
+  workerNodeLabelKey: cpemon-role
+  workerNodeLabelValue: worker
+  tolerateControlPlane: true
+
+ingress:
+  enabled: false
+
+networkPolicy:
+  enabled: false
+
+pdb:
+  enabled: false
+
+serviceMonitor:
+  enabled: false
+

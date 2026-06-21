@@ -1,0 +1,8 @@
+# Files that should not be packaged into the chart archive.
+.git/
+.gitignore
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+

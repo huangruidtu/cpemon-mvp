@@ -18,6 +18,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [EKS Provisioning - kubeconfig and kubectl Access](eks-provisioning-kubeconfig-kubectl.md)
 - [EKS Provisioning Foundation Review](eks-provisioning-foundation-review.md)
 - [EKS Platform Add-ons](eks-platform-addons.md)
+- [Helm CPEmon Application](helm-cpemon-application.md)
 
 ## Interview Prep
 

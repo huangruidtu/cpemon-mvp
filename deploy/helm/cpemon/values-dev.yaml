@@ -1,0 +1,18 @@
+# Dev overrides for rendering and later installing the CPEmon chart.
+#
+# This file is safe to commit because it contains non-secret placeholders only.
+
+global:
+  namespaceOverride: cpemon
+
+workloads:
+  cpemonApi:
+    image:
+      tag: "__IMAGE_TAG__"
+  acsIngest:
+    image:
+      tag: "__IMAGE_TAG__"
+  cpemonWriter:
+    image:
+      tag: "__IMAGE_TAG__"
+

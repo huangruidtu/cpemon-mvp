@@ -1,0 +1,14 @@
+apiVersion: v2
+name: cpemon
+description: Helm chart for the CPEmon application workloads.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - cpemon
+  - cloud-platform-upgrade
+  - eks
+home: https://github.com/ruiproj/cpemon-mvp
+maintainers:
+  - name: CPEmon Platform Upgrade
+
