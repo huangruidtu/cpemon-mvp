@@ -310,6 +310,23 @@ validation explains whether the deployed system works: DNS, topics, consumer
 group membership, Kafka records, database connectivity, schema, offset commits,
 and metrics.
 
+### How do you prove the API reads Kafka-updated status?
+
+First prove Kafka-to-DB: produce heartbeat and WAN status events, watch
+`cpemon-writer` process them, and verify the MySQL `cpe_status` row. Then call
+`GET /api/cpe/:sn` and confirm the JSON response contains the same `last_seen`,
+`wan_ip`, and `sw_version` values.
+
+### Does `cpemon-api` need Kafka code?
+
+No. The API should read the read model from MySQL. Kafka is part of the write
+path into that read model. That keeps the API simple and avoids coupling reads
+to broker availability.
+
+### What is the proof chain?
+
+Kafka event, writer success log, MySQL row, API JSON response.
+
 ### Why use a bounded commit timeout?
 
 Offset commits are part of the reliability path, but they should not hang
@@ -363,3 +380,7 @@ Added Kafka-to-DB validation wiring and runbook: when
 `KAFKA_CONSUMER_ENABLED=true`, `cpemon-writer` starts the Kafka consumer loop,
 uses the dead-letter publisher, processes heartbeat and WAN status events, and
 the runbook verifies MySQL state plus consumer group offsets.
+
+Added API verification for Kafka-updated status: the runbook proves that after
+Kafka consumption updates `cpe_status`, the existing `GET /api/cpe/:sn` read
+path returns the same `last_seen`, `wan_ip`, and `sw_version` values.

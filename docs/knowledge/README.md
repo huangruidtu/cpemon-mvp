@@ -46,6 +46,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [cpemon-writer Kafka Consumer Group Runbook](../../ops/runbooks/cpemon-writer-kafka-consumer-group.md)
 - [cpemon-writer Kafka Consumer Lag Runbook](../../ops/runbooks/cpemon-writer-kafka-consumer-lag.md)
 - [cpemon-writer Kafka-to-DB Integration Validation](../../ops/runbooks/cpemon-writer-kafka-to-db-validation.md)
+- [cpemon-api Kafka-Updated Status Validation](../../ops/runbooks/cpemon-api-kafka-updated-status-validation.md)
 - [Kafka Namespace Runbook](../../ops/runbooks/kafka-namespace.md)
 - [Kafka Platform Helm Runbook](../../ops/runbooks/kafka-platform-helm.md)
 - [Kafka Produce and Consume Validation Runbook](../../ops/runbooks/kafka-produce-consume-validation.md)

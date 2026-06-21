@@ -613,6 +613,59 @@ Interview framing:
 > I keep those two proof layers separate because they fail for different
 > reasons.
 
+## API Verification For Kafka-Updated Status
+
+`CCPU-172` verifies the read side after Kafka consumption:
+
+```text
+Kafka topic -> cpemon-writer -> MySQL cpe_status -> cpemon-api GET /api/cpe/:sn
+```
+
+The API already reads from `cpe_status`:
+
+```sql
+SELECT
+  sn, last_seen, wan_ip, sw_version, cpu_pct, mem_pct, updated_at
+FROM cpe_status
+WHERE sn = ?
+```
+
+That means the API does not need Kafka-specific logic. The migration proof is
+that Kafka-updated rows become visible through the existing API read model.
+
+Runbook:
+
+```text
+ops/runbooks/cpemon-api-kafka-updated-status-validation.md
+```
+
+Validation chain:
+
+| Layer | Evidence |
+| --- | --- |
+| Kafka | heartbeat/WAN status event produced with key `TEST-CPE-KAFKA-DB-001` |
+| Writer | `event=writer_kafka_process result=success` |
+| MySQL | `cpe_status` row has `last_seen`, `wan_ip`, and `sw_version` |
+| API | `GET /api/cpe/TEST-CPE-KAFKA-DB-001` returns the same fields |
+
+Repository check:
+
+```powershell
+make cpemon-api-kafka-status-validation-check
+```
+
+Boundary:
+
+The repository check validates the route, SQL read path, model fields, runbook,
+and documentation. It does not prove live API behavior. Live proof requires the
+Kafka-to-DB validation first, then a real API request against `cpemon-api`.
+
+Interview framing:
+
+> I did not make `cpemon-api` consume Kafka. The API reads the MySQL read model.
+> The migration proof is that the Kafka consumer updates that read model and
+> the existing API returns the updated status.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:
