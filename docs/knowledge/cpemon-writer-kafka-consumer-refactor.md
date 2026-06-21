@@ -246,6 +246,46 @@ Interview framing:
 > older than the stored value and by making the history insert safe for duplicate
 > `(sn, event_ts)` replays.
 
+## WAN Status Write Model
+
+`CCPU-168` maps consumed WAN status events into the existing MySQL read model.
+
+Processing steps:
+
+1. Verify the consumed topic is `cpemon.wan.status.v1`.
+2. Decode JSON into the shared `WANStatusEvent` contract.
+3. Validate schema version, event type, device identity, message key,
+   `wan_status`, and event timestamp.
+4. Upsert `cpe_status.last_seen`, `wan_ip`, and `sw_version`.
+5. Insert or update `cpe_status_history` for `(sn, event_ts)`.
+
+Current schema boundary:
+
+The existing `cpe_status` table does not have a dedicated `wan_status` column.
+For this subtask, `wan_status` is validated as the event signal, while the
+persisted read model updates the fields that already exist:
+
+* `last_seen`
+* `wan_ip`
+* `sw_version`
+
+The write path is idempotent. Older replays do not overwrite newer current
+status, and empty optional fields do not erase existing `wan_ip` or
+`sw_version` values.
+
+Repository check:
+
+```powershell
+make cpemon-writer-wan-status-write-model-check
+```
+
+Interview framing:
+
+> I did not expand the database schema just to store `wan_status` because the
+> current read model already exposes WAN IP and software version. I still
+> validate `wan_status` because it proves the event is a real WAN status event,
+> and I made the update replay-safe for at-least-once delivery.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

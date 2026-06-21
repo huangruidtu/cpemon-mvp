@@ -157,6 +157,20 @@ Kafka can replay messages after retries, crashes, or group changes. The current
 status table should represent the latest known state, so the heartbeat upsert
 keeps the newer `last_seen` when an older replay arrives.
 
+### How does WAN status update MySQL?
+
+The writer decodes `WANStatusEvent`, validates the schema, device identity,
+message key, `wan_status`, and timestamp, then updates `cpe_status` with
+`last_seen`, `wan_ip`, and `sw_version`. It also writes `cpe_status_history` so
+the event remains visible in historical debugging.
+
+### Why validate `wan_status` if the table does not store it?
+
+The current schema has `wan_ip` and `sw_version`, but no separate `wan_status`
+column. Validating `wan_status` still matters because it distinguishes a real
+WAN event from a malformed payload. The storage model can be expanded later
+without weakening the event contract today.
+
 ## Resume Bullet
 
 Defined the writer-side Kafka consumer boundary with a broker-independent
