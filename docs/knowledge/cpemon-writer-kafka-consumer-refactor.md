@@ -206,6 +206,46 @@ Repository check:
 make cpemon-writer-wan-status-subscription-check
 ```
 
+## Heartbeat Write Model
+
+`CCPU-167` maps consumed heartbeat events into the existing MySQL read model.
+
+Processing steps:
+
+1. Verify the consumed topic is `cpemon.device.heartbeat.v1`.
+2. Decode JSON into the shared `DeviceHeartbeatEvent` contract.
+3. Validate schema version, event type, device identity, message key, status,
+   and event timestamp.
+4. Upsert `cpe_status.last_seen`.
+5. Insert or update `cpe_status_history` for `(sn, event_ts)`.
+
+The current status update is idempotent:
+
+```sql
+ON DUPLICATE KEY UPDATE
+  last_seen = CASE
+    WHEN last_seen IS NULL OR VALUES(last_seen) >= last_seen THEN VALUES(last_seen)
+    ELSE last_seen
+  END
+```
+
+This protects the read model from an older replay overwriting a newer
+heartbeat. The history write also uses `ON DUPLICATE KEY UPDATE` so duplicate
+delivery of the same `(sn, event_ts)` does not fail the consumer path.
+
+Repository check:
+
+```powershell
+make cpemon-writer-heartbeat-write-model-check
+```
+
+Interview framing:
+
+> Kafka consumers should assume at-least-once delivery. I made the heartbeat
+> write path idempotent by updating current state only when the event is not
+> older than the stored value and by making the history insert safe for duplicate
+> `(sn, event_ts)` replays.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

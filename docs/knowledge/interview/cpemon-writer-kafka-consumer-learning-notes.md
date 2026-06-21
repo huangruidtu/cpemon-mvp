@@ -144,6 +144,19 @@ it independently.
 because `cpemon-writer` should acknowledge progress only after the database
 write succeeds.
 
+### How does heartbeat update MySQL?
+
+The writer decodes `DeviceHeartbeatEvent`, validates the schema and device
+identity, then updates `cpe_status.last_seen` and appends or updates
+`cpe_status_history`. The update is idempotent so a replay of the same heartbeat
+does not break processing.
+
+### Why not let old heartbeat events overwrite newer status?
+
+Kafka can replay messages after retries, crashes, or group changes. The current
+status table should represent the latest known state, so the heartbeat upsert
+keeps the newer `last_seen` when an older replay arrives.
+
 ## Resume Bullet
 
 Defined the writer-side Kafka consumer boundary with a broker-independent
