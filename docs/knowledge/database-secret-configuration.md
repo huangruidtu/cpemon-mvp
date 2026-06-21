@@ -282,6 +282,71 @@ Those require live EKS and AWS validation.
 
 I separated manifest validation from runtime validation. Locally, I can prove that Helm renders the right SecretStore and ExternalSecret shape without leaking secret values. I cannot claim that AWS Secrets Manager, KMS, IRSA, or ESO reconciliation works until the live EKS/AWS environment exists. That honesty is important because `helm template` validates desired YAML, not cloud identity or controller behavior.
 
+## CCPU-158: Secret-Management Runbook and Interview Notes
+
+`CCPU-158` completes the Story 7 documentation layer.
+
+The runbook is:
+
+```text
+ops/runbooks/cpemon-secret-management.md
+```
+
+It covers:
+
+- the end-to-end secret path
+- the Kubernetes Secret contract
+- the AWS Secrets Manager path convention
+- render validation
+- Terraform outputs
+- ESO service account annotation
+- live SecretStore and ExternalSecret checks
+- workload validation
+- common failure modes
+- rotation notes
+- recovery checklist
+
+### Final Story 7 Mental Model
+
+The final model is:
+
+```text
+Git
+  owns chart templates, Terraform IAM contract, names, keys, and runbooks
+
+AWS Secrets Manager
+  owns the actual sensitive values
+
+AWS KMS
+  protects secret encryption at rest
+
+IRSA
+  lets ESO use scoped AWS permissions without static keys
+
+External Secrets Operator
+  reconciles remote secrets into Kubernetes Secrets
+
+Kubernetes Secret
+  is the local runtime projection consumed by Pods
+
+CPEmon workloads
+  keep using secretKeyRef
+```
+
+### Secret Rotation Boundary
+
+ESO can update the Kubernetes Secret after AWS Secrets Manager changes, but CPEmon currently consumes secrets through environment variables. That means workload rollout may be required after credential rotation:
+
+```powershell
+kubectl -n cpemon rollout restart deployment/cpemon-api
+kubectl -n cpemon rollout restart deployment/acs-ingest
+kubectl -n cpemon rollout restart deployment/cpemon-writer
+```
+
+### Interview Point
+
+The strongest interview answer is that I treated secret management as a chain of responsibilities, not a single Kubernetes object. I can explain what belongs in Git, what belongs in AWS Secrets Manager, how KMS and IRSA reduce risk, what ESO reconciles, why workloads still use `secretKeyRef`, how to validate render output locally, and how to debug live sync failures without exposing secret values.
+
 ## CCPU-61: MySQL Deployment Strategy for Step 1
 
 For Step 1, CPEmon keeps MySQL inside the EKS application boundary.

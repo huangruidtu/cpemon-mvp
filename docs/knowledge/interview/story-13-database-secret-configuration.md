@@ -228,6 +228,54 @@ Those need live EKS/AWS validation.
 
 I would say: local render validation proves the GitOps contract, not the cloud runtime. It tells me the chart will ask Kubernetes for the right ESO resources and will not leak secret values. Runtime validation begins when ESO, IRSA, KMS, AWS Secrets Manager, and the application Pods all exist and can be observed in a real cluster.
 
+## Q1O: How do you debug an ExternalSecret sync failure?
+
+I would start with the Kubernetes status, then move outward to AWS identity:
+
+```powershell
+kubectl -n cpemon describe externalsecret cpemon-db
+kubectl -n cpemon get secretstore cpemon-aws-secretsmanager -o yaml
+kubectl -n external-secrets logs deploy/external-secrets --tail=200
+kubectl -n external-secrets get sa external-secrets -o yaml
+```
+
+The main causes are wrong region, missing remote key, wrong JSON property, missing service account annotation, IAM denial, or KMS decrypt denial.
+
+I would not decode and paste secret values while debugging. I would check whether keys exist and whether ESO reports Ready.
+
+## Q1P: How do you handle secret rotation with ESO?
+
+Rotation starts in AWS Secrets Manager. ESO can sync the updated value into the Kubernetes Secret after its refresh interval.
+
+Because CPEmon currently consumes secrets as environment variables, the Pods may need a rollout restart:
+
+```powershell
+kubectl -n cpemon rollout restart deployment/cpemon-api
+kubectl -n cpemon rollout restart deployment/acs-ingest
+kubectl -n cpemon rollout restart deployment/cpemon-writer
+```
+
+For database credentials, I would plan rotation carefully because active DB connections, grants, and rollback matter.
+
+## Q1Q: Why do secrets not belong in Helm values?
+
+Helm values are often committed, rendered in CI, stored in release metadata, printed during debugging, and shared between environments.
+
+Putting passwords in Helm values creates too many leak paths.
+
+The safer pattern is:
+
+```text
+Helm values define names and references.
+AWS Secrets Manager stores values.
+ESO syncs Kubernetes Secrets.
+Pods consume secretKeyRef.
+```
+
+## Q1R: What is the final Story 7 secret-management story?
+
+I moved CPEmon from ad hoc secret handling to a production-style secret boundary. First, I documented that MySQL stays in EKS for Step 1 while `DB_DSN` remains the stable application contract. Then I moved sensitive runtime values behind Kubernetes Secret references and non-sensitive values into ConfigMaps. After that, I defined the ESO architecture with AWS Secrets Manager, KMS, and IRSA, added Terraform for the ESO IAM contract, templated SecretStore and ExternalSecret resources, and added validation/runbooks that prove the render contract without leaking values.
+
 ## Q2: What did you decide for MySQL in Step 1?
 
 For Step 1, I kept MySQL inside the EKS application boundary.
@@ -635,16 +683,16 @@ I added a safe verification path for `cpemon-writer` that checks both the secret
 
 Situation:
 
-CPEmon was moving from a YAML-first MVP toward EKS, Helm, and better secret management. The application already used MySQL, but the platform story needed to decide whether to keep it in Kubernetes or move immediately to RDS.
+CPEmon was moving from a YAML-first MVP toward EKS, Helm, and better secret management. The application already used MySQL and runtime secrets, but secrets were not yet handled through a cloud-ready boundary.
 
 Task:
 
-I needed to choose a database deployment strategy that supported the secret-management story without expanding the scope too far.
+I needed to define how database credentials and sensitive runtime values should enter the application safely, while keeping the migration explainable and not expanding scope into a full RDS migration too early.
 
 Action:
 
-I kept MySQL in EKS for Step 1, documented RDS as a future production hardening direction, and made `DB_DSN` the stable application contract. I recorded which Kubernetes Secrets the workloads expect and why real credentials should later come from AWS Secrets Manager through External Secrets Operator.
+I kept MySQL in EKS for Step 1 and made `DB_DSN` the stable application contract. I moved sensitive values behind Kubernetes Secret references, moved non-sensitive config into ConfigMaps, documented the ESO plus AWS Secrets Manager plus KMS decision, added Terraform for the IRSA/IAM contract, templated SecretStore and ExternalSecret resources, and added render/runtime validation runbooks.
 
 Result:
 
-The migration has a clearer sequence. The team can improve Helm and secret handling now, then move to RDS later behind the same `DB_DSN` boundary. That makes the work easier to validate and easier to explain.
+The migration now has a clear secret-management chain: Git owns the contract, AWS Secrets Manager owns values, KMS protects encryption, IRSA scopes ESO access, ESO reconciles Kubernetes Secrets, and workloads consume `secretKeyRef`. The work is safer, easier to validate, and much easier to explain in an interview because each layer has a specific responsibility.
