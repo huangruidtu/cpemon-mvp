@@ -129,6 +129,55 @@ Static AWS keys in Kubernetes create a long-lived credential that can be copied,
 
 With IRSA, the ESO Pod receives short-lived credentials through the EKS OIDC trust chain. The IAM role trust policy is bound to one Kubernetes service account, and the permission policy is scoped to CPEmon secret ARNs. That means the blast radius is much smaller and the access path is auditable.
 
+## Q1H: What ESO resources did you template?
+
+I added optional Helm templates for:
+
+```text
+SecretStore/cpemon-aws-secretsmanager
+ExternalSecret/cpemon-db
+ExternalSecret/cpemon-acs-hmac
+ExternalSecret/mysql-auth
+```
+
+They are controlled by:
+
+```yaml
+externalSecrets:
+  enabled: false
+```
+
+The default is false because ESO CRDs may not exist in every local cluster.
+
+## Q1I: How do the ExternalSecrets avoid storing secret values in Git?
+
+The chart stores only remote references:
+
+```yaml
+remoteRef:
+  key: cpemon/dev/cpemon-db
+  property: dsn
+```
+
+That says where ESO should fetch the value from, not what the value is.
+
+The actual DSN, HMAC secret, and MySQL passwords live in AWS Secrets Manager.
+
+## Q1J: Why is it useful that workloads still use `secretKeyRef`?
+
+It keeps the application boundary stable.
+
+The workload does not care whether `cpemon-db` was created manually, by ESO, by SOPS, or by a bootstrap process. It only needs:
+
+```yaml
+valueFrom:
+  secretKeyRef:
+    name: cpemon-db
+    key: dsn
+```
+
+That makes the secret source replaceable without changing application code.
+
 ## Q2: What did you decide for MySQL in Step 1?
 
 For Step 1, I kept MySQL inside the EKS application boundary.

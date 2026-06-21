@@ -38,6 +38,54 @@ secretRefs:
     name: cpemon-acs-hmac
     secretKey: hmac-secret
 
+externalSecrets:
+  enabled: false
+  apiVersion: external-secrets.io/v1
+  refreshInterval: 1h
+  store:
+    create: true
+    kind: SecretStore
+    name: cpemon-aws-secretsmanager
+    provider:
+      aws:
+        service: SecretsManager
+        region: eu-north-1
+        roleArn: ""
+  secrets:
+    db:
+      enabled: true
+      name: cpemon-db
+      targetName: cpemon-db
+      creationPolicy: Owner
+      remoteKey: cpemon/dev/cpemon-db
+      data:
+        - secretKey: dsn
+          remoteProperty: dsn
+    acsHmac:
+      enabled: true
+      name: cpemon-acs-hmac
+      targetName: cpemon-acs-hmac
+      creationPolicy: Owner
+      remoteKey: cpemon/dev/cpemon-acs-hmac
+      data:
+        - secretKey: hmac-secret
+          remoteProperty: hmac-secret
+    mysqlAuth:
+      enabled: true
+      name: mysql-auth
+      targetName: mysql-auth
+      creationPolicy: Owner
+      remoteKey: cpemon/dev/mysql-auth
+      data:
+        - secretKey: mysql-root-password
+          remoteProperty: mysql-root-password
+        - secretKey: mysql-username
+          remoteProperty: mysql-username
+        - secretKey: mysql-password
+          remoteProperty: mysql-password
+        - secretKey: mysql-database
+          remoteProperty: mysql-database
+
 mysql:
   enabled: false
   name: mysql

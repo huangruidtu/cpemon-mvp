@@ -16,6 +16,20 @@ secretRefs:
     name: cpemon-acs-hmac
     secretKey: hmac-secret
 
+externalSecrets:
+  enabled: false
+  store:
+    provider:
+      aws:
+        region: eu-north-1
+  secrets:
+    db:
+      remoteKey: cpemon/dev/cpemon-db
+    acsHmac:
+      remoteKey: cpemon/dev/cpemon-acs-hmac
+    mysqlAuth:
+      remoteKey: cpemon/dev/mysql-auth
+
 mysql:
   enabled: false
   persistence:

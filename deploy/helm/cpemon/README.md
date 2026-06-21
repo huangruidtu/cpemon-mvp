@@ -105,6 +105,7 @@ The chart values are grouped by responsibility:
 | `appConfig` | Non-secret runtime configuration rendered through the chart ConfigMap. |
 | `database` | Database endpoint metadata and the Secret reference used for `DB_DSN`. |
 | `secretRefs` | Named Secret references for sensitive inputs that must not be committed as raw values. |
+| `externalSecrets` | Optional ESO `SecretStore` and `ExternalSecret` resources for syncing runtime Secrets from AWS Secrets Manager. |
 | `mysql` | Optional in-cluster MySQL resources for Step 1 compatibility. |
 | `defaults` | Shared service, port, probe, resource, annotation, and env defaults. |
 | `workloads` | Per-service configuration for `cpemon-api`, `acs-ingest`, and `cpemon-writer`. |
@@ -277,3 +278,53 @@ mysql-database
 ```
 
 This keeps real database credentials outside Helm values and prepares the chart for a later External Secrets Operator integration.
+
+## External Secrets Operator Resources
+
+`CCPU-156` adds optional External Secrets Operator resources to the chart.
+
+They are disabled by default:
+
+```yaml
+externalSecrets:
+  enabled: false
+```
+
+This conservative default matters because ESO resources require CRDs that may not exist in every local or test cluster.
+
+When enabled, the chart renders:
+
+- `SecretStore` `cpemon-aws-secretsmanager`
+- `ExternalSecret` `cpemon-db`
+- `ExternalSecret` `cpemon-acs-hmac`
+- `ExternalSecret` `mysql-auth`
+
+The chart stores only remote secret paths and properties:
+
+```yaml
+externalSecrets:
+  secrets:
+    db:
+      remoteKey: cpemon/dev/cpemon-db
+      data:
+        - secretKey: dsn
+          remoteProperty: dsn
+```
+
+It does not store secret values.
+
+The resulting Kubernetes Secrets keep the existing workload contract:
+
+| Kubernetes Secret | Key(s) | Consumers |
+| --- | --- | --- |
+| `cpemon-db` | `dsn` | `cpemon-api`, `acs-ingest`, `cpemon-writer` |
+| `cpemon-acs-hmac` | `hmac-secret` | `acs-ingest` |
+| `mysql-auth` | `mysql-root-password`, `mysql-username`, `mysql-password`, `mysql-database` | optional MySQL template |
+
+Render with ESO enabled:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml --set externalSecrets.enabled=true
+```
+
+The expected rendered YAML contains `remoteRef.key` and `remoteRef.property`, not decoded credentials.

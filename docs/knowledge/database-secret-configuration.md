@@ -165,6 +165,78 @@ That gives CPEmon a clear naming convention without committing secret values.
 
 I defined ESO access as an IRSA contract instead of storing AWS access keys in Kubernetes. The trust policy allows only the `external-secrets/external-secrets` service account to assume the role, and the permission policy allows reading only approved Secrets Manager ARNs plus optional KMS decrypt on approved keys. This is least privilege across Kubernetes identity, AWS IAM, Secrets Manager, and KMS.
 
+## CCPU-156: SecretStore and ExternalSecret Templates
+
+`CCPU-156` adds optional ESO resources to the CPEmon Helm chart.
+
+The template is:
+
+```text
+deploy/helm/cpemon/templates/external-secrets.yaml
+```
+
+The values contract is:
+
+```text
+deploy/helm/cpemon/values.yaml
+deploy/helm/cpemon/values-dev.yaml
+deploy/helm/cpemon/values.schema.json
+```
+
+### Resources Rendered
+
+When `externalSecrets.enabled=true`, the chart renders:
+
+- `SecretStore` `cpemon-aws-secretsmanager`
+- `ExternalSecret` `cpemon-db`
+- `ExternalSecret` `cpemon-acs-hmac`
+- `ExternalSecret` `mysql-auth`
+
+The resources are disabled by default because ESO CRDs may not exist in local clusters.
+
+### Secret Contract Preserved
+
+Workloads still read Kubernetes Secrets through `secretKeyRef`.
+
+ESO only changes how those Kubernetes Secrets are produced:
+
+```text
+AWS Secrets Manager remote key/property
+        |
+        v
+ExternalSecret
+        |
+        v
+Kubernetes Secret
+        |
+        v
+workload secretKeyRef
+```
+
+### No Secret Material in Git
+
+The chart stores paths such as:
+
+```text
+cpemon/dev/cpemon-db
+cpemon/dev/cpemon-acs-hmac
+cpemon/dev/mysql-auth
+```
+
+and properties such as:
+
+```text
+dsn
+hmac-secret
+mysql-password
+```
+
+It does not store the values for those properties.
+
+### Interview Point
+
+I kept the workload contract stable and introduced ESO behind it. The Helm chart can render `ExternalSecret` resources that point to AWS Secrets Manager remote keys and JSON properties, but the workloads still consume normal Kubernetes Secrets. That means application code, Deployment env wiring, and Helm workload templates do not need to know where the real secret value comes from.
+
 ## CCPU-61: MySQL Deployment Strategy for Step 1
 
 For Step 1, CPEmon keeps MySQL inside the EKS application boundary.
