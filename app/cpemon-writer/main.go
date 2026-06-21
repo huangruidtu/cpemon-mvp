@@ -114,6 +114,7 @@ func main() {
 		writerEventsDeadTotal,
 	}
 	collectors = append(collectors, appevents.KafkaConsumerCollectors()...)
+	collectors = append(collectors, writerKafkaProcessingCollectors()...)
 	prometheus.MustRegister(collectors...)
 
 	// 👉 启动 9100 metrics server

@@ -250,6 +250,26 @@ the reader. The app metrics show local consume/commit progress and message age.
 The broker-side consumer group description is still the source of truth for
 lag.
 
+### What processing metrics did you add?
+
+I added counters for processing outcomes, retries, and dead-letter publish
+outcomes, plus a histogram for processing duration. The labels are deliberately
+low-cardinality: topic, result, and failure kind.
+
+### What do the structured logs include?
+
+The logs use stable key-value fields such as
+`event=writer_kafka_process`, `result=retry`, topic, key, partition, offset,
+attempt count, `duration_ms`, failure kind, and error text. That gives enough
+context to debug one event without putting device ids or raw errors into metric
+labels.
+
+### Why split metrics and logs this way?
+
+Metrics are for aggregate questions: error rate, retries, dead-letter volume,
+and latency. Logs are for single-event investigation: which topic, key,
+partition, offset, attempt, and error caused the issue.
+
 ### Why use a bounded commit timeout?
 
 Offset commits are part of the reliability path, but they should not hang
@@ -290,3 +310,7 @@ Added consumer lag telemetry with low-cardinality group/topic/partition labels:
 last consumed offset, last committed offset, message age, and reader-reported
 lag when available, plus a runbook explaining how to confirm authoritative lag
 with Kafka consumer group offsets.
+
+Added writer processing observability: low-cardinality processing, retry,
+dead-letter, and duration metrics plus structured logs that carry topic, key,
+partition, offset, attempts, failure kind, `duration_ms`, and error context.

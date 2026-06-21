@@ -477,6 +477,52 @@ Interview framing:
 > offset, so the runbook pairs Prometheus metrics with
 > `kafka-consumer-groups.sh --describe`.
 
+## Writer Processing Metrics And Structured Logging
+
+`CCPU-170` adds processing-level observability around retry and dead-letter
+decisions.
+
+Metrics:
+
+| Metric | Labels | Meaning |
+| --- | --- | --- |
+| `cpemon_writer_kafka_processing_events_total` | `topic`, `result`, `kind` | Processing outcomes such as success, retry, dead-letter, or error. |
+| `cpemon_writer_kafka_processing_retries_total` | `topic`, `kind` | Retry attempts grouped by failure kind. |
+| `cpemon_writer_kafka_deadletters_total` | `topic`, `result`, `kind` | Dead-letter publish success/error outcomes. |
+| `cpemon_writer_kafka_processing_duration_seconds` | `topic`, `result`, `kind` | End-to-end processing duration for one consumed event. |
+
+Label boundary:
+
+The processing metrics keep only low-cardinality labels: topic, result, and
+failure kind. Device id, serial number, Kafka key, raw error text, and payload
+content stay out of metric labels.
+
+Structured log events:
+
+```text
+event=writer_kafka_process result=success topic=<topic> key=<key> partition=<n> offset=<n> attempts=<n> duration_ms=<n>
+event=writer_kafka_process result=retry topic=<topic> key=<key> partition=<n> offset=<n> attempt=<n> kind=<kind> backoff_ms=<n> duration_ms=<n> error=<error>
+event=writer_kafka_process result=error topic=<topic> key=<key> partition=<n> offset=<n> attempts=<n> kind=<kind> duration_ms=<n> error=<error>
+event=writer_kafka_deadletter result=success source_topic=<topic> key=<key> partition=<n> offset=<n> attempts=<n> kind=<kind> duration_ms=<n> reason=<reason>
+event=writer_kafka_deadletter result=error source_topic=<topic> key=<key> partition=<n> offset=<n> attempts=<n> kind=<kind> duration_ms=<n> error=<error>
+```
+
+The logs include Kafka key, partition, and offset because those identify one
+event during incident response. They do not include secrets or database DSNs.
+
+Repository check:
+
+```powershell
+make cpemon-writer-processing-observability-check
+```
+
+Interview framing:
+
+> I kept metrics low-cardinality for dashboards and alerts, then used
+> structured logs for single-event debugging. Metrics answer "what is failing
+> and how often"; logs answer "which exact topic/key/partition/offset failed
+> and why."
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

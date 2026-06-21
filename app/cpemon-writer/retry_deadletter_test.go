@@ -45,6 +45,13 @@ func (p *recordedPublisher) Publish(ctx context.Context, event events.Publishabl
 	return nil
 }
 
+func TestWriterKafkaProcessingCollectorsAreExposed(t *testing.T) {
+	collectors := writerKafkaProcessingCollectors()
+	if len(collectors) != 4 {
+		t.Fatalf("collectors = %d, want 4", len(collectors))
+	}
+}
+
 func TestProcessConsumedEventWithReliabilityRetriesRetriableError(t *testing.T) {
 	dbErr := errors.New("db unavailable")
 	exec := &flakyExec{failures: 1, err: dbErr}

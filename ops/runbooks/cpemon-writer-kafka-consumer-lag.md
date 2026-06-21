@@ -134,6 +134,46 @@ Check these in order:
    Scaling writer replicas beyond topic partition count will not increase
    parallelism for that topic.
 
+## Processing Observability
+
+Use these metrics to identify where writer processing is failing:
+
+| Metric | What To Check |
+| --- | --- |
+| `cpemon_writer_kafka_processing_events_total` | Whether failures are success, retry, dead-letter, or error outcomes. |
+| `cpemon_writer_kafka_processing_retries_total` | Whether transient failures are repeatedly retrying. |
+| `cpemon_writer_kafka_deadletters_total` | Whether poison messages or retry exhaustion are moving to dead-letter. |
+| `cpemon_writer_kafka_processing_duration_seconds` | Whether processing latency is growing before lag grows. |
+
+Useful log filters:
+
+```text
+event=writer_kafka_process result=retry
+event=writer_kafka_process result=error
+event=writer_kafka_deadletter result=success
+event=writer_kafka_deadletter result=error
+```
+
+How to read the logs:
+
+| Field | Meaning |
+| --- | --- |
+| `topic` / `source_topic` | Event family involved in the failure. |
+| `key` | Kafka message key for single-event debugging. |
+| `partition` and `offset` | Exact Kafka record location. |
+| `attempts` / `attempt` | Processing attempt count. |
+| `kind` | Failure class such as `poison_message` or `retriable_error`. |
+| `duration_ms` | Processing duration before the outcome. |
+
+If `result=retry` grows, check MySQL and transient infrastructure health.
+
+If `result=dead_letter` grows with `kind=poison_message`, inspect the
+dead-letter payloads and producer-side schema contract.
+
+If `event=writer_kafka_deadletter result=error` appears, the original Kafka
+message should not be committed, so check Kafka producer connectivity for the
+dead-letter topic.
+
 ## Interview Summary
 
 Lag is not just "the consumer is slow." It is the distance between broker
