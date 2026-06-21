@@ -20,10 +20,12 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [EKS Platform Add-ons](eks-platform-addons.md)
 - [Helm CPEmon Application](helm-cpemon-application.md)
 - [Database and Secret Configuration](database-secret-configuration.md)
+- [Kafka Platform Introduction](kafka-platform-introduction.md)
 
 ## Architecture Decisions
 
 - [ESO with AWS Secrets Manager and KMS](../../ADR/cloud-platform-upgrade-eso-aws-secrets-manager-kms.md)
+- [Kafka Deployment Option for Step 1](../../ADR/cloud-platform-upgrade-kafka-deployment-step1.md)
 
 ## Runbooks
 

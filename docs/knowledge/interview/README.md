@@ -27,6 +27,7 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 11: EKS Platform Add-ons](story-11-eks-platform-addons.md)
 - [Story 12: Helm CPEmon Application](story-12-helm-cpemon-application.md)
 - [Story 13: Database and Secret Configuration](story-13-database-secret-configuration.md)
+- [Story 14: Kafka Platform Introduction](story-14-kafka-platform-introduction.md)
 
 ## Practice Focus
 
@@ -42,3 +43,11 @@ For Story 13, practice the database and secret migration boundary:
 - why RDS is deferred but still the production direction
 - how `DB_DSN` lets the database implementation change behind a stable application contract
 - how ESO, AWS Secrets Manager, KMS, and IRSA split responsibilities
+
+For Story 14, practice the Kafka platform introduction boundary:
+
+- why the MVP did not use Kafka
+- why the cloud-platform upgrade introduces Kafka now
+- why Step 1 starts with Helm chart based Kafka
+- why Strimzi and MSK are future hardening options
+- how `KAFKA_BOOTSTRAP_SERVERS` and topic names keep future migration flexible
