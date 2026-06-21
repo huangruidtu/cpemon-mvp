@@ -356,6 +356,34 @@ Interview-ready explanation:
 > broker connectivity and produce/consume confirmation belong to integration
 > validation because they depend on cluster state.
 
+## Integration Validation Path
+
+`CCPU-163` adds a repeatable live validation runbook:
+
+```text
+ops/runbooks/acs-ingest-kafka-producer-validation.md
+```
+
+The runbook validates:
+
+* `acs-ingest` has Kafka producer configuration enabled.
+* A sample ACS webhook returns `202 Accepted`.
+* Heartbeat is consumed from `cpemon.device.heartbeat.v1`.
+* WAN status is consumed from `cpemon.wan.status.v1`.
+* Message key is stable device identity.
+* Payload shape matches the normalized event contracts.
+* Producer success logs and metrics are visible.
+
+Repository validation command:
+
+```powershell
+make acs-ingest-kafka-producer-validation-check
+```
+
+The repository command validates the runbook and surrounding artifacts. It does
+not claim live broker proof unless the runbook is executed against a real
+cluster.
+
 ## acs-ingest Publish Wiring
 
 `acs-ingest` now wires the producer into the webhook flow behind

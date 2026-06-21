@@ -323,3 +323,43 @@ I used fake publishers and fake Kafka writers to test the logic without a live
 broker. That keeps local tests fast while still covering contracts, retries,
 errors, and handler decisions. Real Kafka validation is separated into an
 integration task because it depends on cluster resources.
+
+## CCPU-163: Kafka Producer Integration Validation
+
+`CCPU-163` adds the live validation path for proving the producer works with a
+real Kafka broker.
+
+### What does the integration runbook prove?
+
+It proves the full path from ACS webhook payload to `acs-ingest`, through the
+Kafka producer, into the expected Kafka topic, and back out through a Kafka
+consumer.
+
+### What inputs are validated?
+
+The runbook uses a sample ACS payload with `sn`, `event_ts`, `wan_status`,
+`wan_ip`, and `sw_version`. That payload should produce both heartbeat and WAN
+status events.
+
+### What outputs are expected?
+
+The heartbeat topic should receive a `device.heartbeat` payload keyed by the
+device serial number. The WAN status topic should receive a `wan.status`
+payload with the same key and WAN fields.
+
+### What evidence should you collect?
+
+Collect the HTTP response, Kafka consumer output, producer success logs, and
+producer metrics for publish count and latency.
+
+### What is the boundary if no cluster is available?
+
+Repository checks can validate code, config, and the runbook itself, but they
+do not prove live broker connectivity. Live proof requires running the runbook
+against a Kubernetes/Kafka environment.
+
+### What should you say in an interview?
+
+I separate proof into layers. Unit tests prove mapping and boundaries. The
+integration runbook proves the real broker path by sending a webhook, consuming
+from Kafka, and checking logs and metrics for runtime evidence.

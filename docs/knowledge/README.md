@@ -39,6 +39,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [CPEmon ESO Render Validation](../../ops/runbooks/cpemon-eso-render-validation.md)
 - [CPEmon Secret Management Runbook](../../ops/runbooks/cpemon-secret-management.md)
 - [Kafka Bootstrap Configuration Runbook](../../ops/runbooks/kafka-bootstrap-config.md)
+- [acs-ingest Kafka Producer Integration Validation Runbook](../../ops/runbooks/acs-ingest-kafka-producer-validation.md)
 - [Kafka Namespace Runbook](../../ops/runbooks/kafka-namespace.md)
 - [Kafka Platform Helm Runbook](../../ops/runbooks/kafka-platform-helm.md)
 - [Kafka Produce and Consume Validation Runbook](../../ops/runbooks/kafka-produce-consume-validation.md)
