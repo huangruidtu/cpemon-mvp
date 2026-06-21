@@ -315,6 +315,47 @@ Debug flow:
 5. Validate Kafka topic existence and broker health.
 6. Confirm consumers receive the expected topic/key pair.
 
+## Unit Test Boundary
+
+`CCPU-84` documents and tightens the unit-test boundary for the producer
+refactor.
+
+Unit tests cover:
+
+* Heartbeat event mapping, topic, key, schema version, and JSON contract.
+* WAN status event mapping, derived WAN status, optional fields, missing WAN
+  data, invalid JSON, topic, key, and JSON contract.
+* `EventPublisher` as an interface boundary using fake publishers.
+* `KafkaProducer` construction, topic/key validation, JSON serialization,
+  writer errors, retry behavior, timeout classification, close lifecycle, and
+  observability collector exposure.
+* `acs-ingest` publish wiring with fake publishers, including disabled
+  publisher behavior, heartbeat + WAN publish, WAN skip, WAN build failure, and
+  publish error propagation.
+
+Unit tests intentionally do not prove:
+
+* A real Kafka broker is reachable.
+* Kafka topics exist in the target cluster.
+* ACLs, DNS, listener config, and broker-side message-size limits are correct.
+* A consumer can read the event after a real publish.
+
+Those are integration concerns and stay in the dedicated integration validation
+subtask.
+
+Repository command:
+
+```powershell
+go test ./...
+```
+
+Interview-ready explanation:
+
+> I kept the fast unit tests broker-free. They prove the contract mapping,
+> interface boundary, retry/error behavior, and handler publish decisions. Live
+> broker connectivity and produce/consume confirmation belong to integration
+> validation because they depend on cluster state.
+
 ## acs-ingest Publish Wiring
 
 `acs-ingest` now wires the producer into the webhook flow behind

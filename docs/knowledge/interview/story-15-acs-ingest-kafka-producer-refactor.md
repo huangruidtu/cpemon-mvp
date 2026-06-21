@@ -288,3 +288,38 @@ topic/key pair.
 I added observability at the producer boundary because it is the handoff point
 between app logic and Kafka. Metrics answer how often and how slowly publishing
 happens; logs answer which topic/key failed and why, without exposing payloads.
+
+## CCPU-84: Unit Tests
+
+`CCPU-84` records the testing boundary for the Kafka producer refactor.
+
+### What do the unit tests prove?
+
+They prove event mapping, schema fields, topic/key selection, JSON contracts,
+the `EventPublisher` interface boundary, producer validation, retry/error
+classification, observability collector exposure, and `acs-ingest` publish
+decisions using fake publishers and fake Kafka writers.
+
+### Why keep unit tests broker-free?
+
+Unit tests should be fast, deterministic, and runnable on every developer
+machine. Requiring Kafka for every unit test would make the feedback loop slow
+and dependent on external cluster state.
+
+### What do unit tests not prove?
+
+They do not prove broker DNS, listeners, ACLs, topic existence, or real
+produce/consume behavior. Those belong to integration validation.
+
+### What is the key testing-pyramid explanation?
+
+Unit tests protect pure mapping and boundary behavior. Integration tests prove
+the real Kafka infrastructure path. End-to-end tests prove the full application
+workflow from webhook to consumer-visible message.
+
+### What should you say in an interview?
+
+I used fake publishers and fake Kafka writers to test the logic without a live
+broker. That keeps local tests fast while still covering contracts, retries,
+errors, and handler decisions. Real Kafka validation is separated into an
+integration task because it depends on cluster resources.

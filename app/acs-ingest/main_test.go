@@ -81,6 +81,26 @@ func TestPublishACSKafkaEventsSkipsWANStatusWhenPayloadHasNoWANData(t *testing.T
 	}
 }
 
+func TestPublishACSKafkaEventsReturnsWANBuildError(t *testing.T) {
+	publisher := &fakeEventPublisher{}
+
+	err := publishACSKafkaEvents(
+		context.Background(),
+		publisher,
+		validIngestEvent([]byte(`not-json`)),
+		time.Now(),
+	)
+	if err == nil {
+		t.Fatal("expected WAN status build error")
+	}
+	if len(publisher.events) != 1 {
+		t.Fatalf("published events = %d, want heartbeat before WAN build failure", len(publisher.events))
+	}
+	if publisher.events[0].Topic() != events.DeviceHeartbeatTopic {
+		t.Fatalf("topic = %q, want %q", publisher.events[0].Topic(), events.DeviceHeartbeatTopic)
+	}
+}
+
 func TestPublishACSKafkaEventsReturnsPublishError(t *testing.T) {
 	wantErr := errors.New("write failed")
 	publisher := &fakeEventPublisher{err: wantErr}
