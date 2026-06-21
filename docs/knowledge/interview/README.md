@@ -29,6 +29,7 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 13: Database and Secret Configuration](story-13-database-secret-configuration.md)
 - [Story 14: Kafka Platform Introduction](story-14-kafka-platform-introduction.md)
 - [Story 15: acs-ingest Kafka Producer Refactor](story-15-acs-ingest-kafka-producer-refactor.md)
+- [Story 16: cpemon-writer Kafka Consumer Refactor](story-16-cpemon-writer-kafka-consumer-refactor.md)
 - [acs-ingest Kafka Producer Learning Notes](acs-ingest-kafka-producer-learning-notes.md)
 - [cpemon-writer Kafka Consumer Learning Notes](cpemon-writer-kafka-consumer-learning-notes.md)
 - [Kafka Platform Learning Notes](kafka-platform-learning-notes.md)
@@ -73,3 +74,5 @@ consumer narrative:
 - why offsets should be committed only after successful MySQL writes
 - how fake consumers keep unit tests broker-free
 - how at-least-once delivery changes database write design
+- how retry, dead-letter publishing, lag metrics, structured logs, and API
+  validation turn the implementation into an operational story

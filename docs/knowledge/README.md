@@ -58,3 +58,5 @@ The goal is not to archive raw conversations. Each note should extract the durab
 ## Interview Prep
 
 - [Interview Q&A](interview/README.md)
+- [cpemon-writer Kafka Consumer Interview Q&A](interview/story-16-cpemon-writer-kafka-consumer-refactor.md)
+- [cpemon-writer Kafka Consumer Learning Notes](interview/cpemon-writer-kafka-consumer-learning-notes.md)

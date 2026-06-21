@@ -14,6 +14,11 @@ acs-ingest -> Kafka topics -> cpemon-writer -> MySQL -> cpemon-api
 `CCPU-86` starts the consumer side by defining the application boundary before
 adding a concrete Kafka client.
 
+For interview preparation, use:
+
+* `docs/knowledge/interview/story-16-cpemon-writer-kafka-consumer-refactor.md`
+* `docs/knowledge/interview/cpemon-writer-kafka-consumer-learning-notes.md`
+
 ## EventConsumer Boundary
 
 `EventConsumer` is the writer-side equivalent of the producer-side

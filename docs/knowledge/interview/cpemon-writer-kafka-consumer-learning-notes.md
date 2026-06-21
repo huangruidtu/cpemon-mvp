@@ -25,6 +25,23 @@ Kafka topic
   -> offset commit after success
 ```
 
+## One-Page Review
+
+If an interviewer gives only one minute, focus on this:
+
+* I separated Kafka mechanics from writer business logic with `EventConsumer`.
+* I used a stable consumer group id, `cpemon-writer`, so replicas share work and
+  offsets are inspectable.
+* I commit offsets only after validation and MySQL writes succeed.
+* I accept at-least-once delivery, so database writes are idempotent.
+* I classify failures into retriable infrastructure failures and poison
+  messages.
+* I publish poison messages and retry-exhausted events to a dead-letter topic.
+* I expose low-cardinality metrics and structured logs for lag, retries,
+  dead-letter events, and single-message debugging.
+* I kept the path behind `KAFKA_CONSUMER_ENABLED` so rollout and rollback are
+  controlled operationally.
+
 ## Key Concepts
 
 Consumer group:
@@ -360,6 +377,118 @@ If shutdown arrives just after the handler succeeds, using the already-canceled
 context could skip the commit for a successfully written event. The adapter uses
 `context.WithoutCancel` plus a timeout so commit has a small independent window
 without becoming unbounded.
+
+## Producer Versus Consumer Reliability
+
+Producer-side reliability in Story 15 asks:
+
+* Did the HTTP ingest path safely accept the payload?
+* Did the producer publish the normalized event to the correct topic?
+* If publish fails, does retry avoid a short transient outage?
+* If publish still fails, is the original intake record still available?
+
+Consumer-side reliability in Story 16 asks:
+
+* Did the consumer decode and validate the event contract?
+* Did MySQL update successfully before the offset was committed?
+* Is replay safe if Kafka redelivers the message?
+* Should a failure retry, dead-letter, or stop offset commit?
+
+The interview lesson is that producer retry protects event publication, while
+consumer retry protects side effects after consumption. Both can create
+duplicates, so the downstream write model must be idempotent.
+
+## Debug Flow
+
+Use this order when the API does not show an expected Kafka-updated status:
+
+1. Confirm the event was produced to `cpemon.device.heartbeat.v1` or
+   `cpemon.wan.status.v1` with the expected device key.
+2. Confirm `cpemon-writer` was deployed with `KAFKA_CONSUMER_ENABLED=true`.
+3. Check the `cpemon-writer` consumer group assignment and lag.
+4. Inspect writer logs for `writer_kafka_process`, retry, dead-letter, or
+   commit errors.
+5. Query `cpe_status` and `cpe_status_history` for the device.
+6. Call `GET /api/cpe/:sn` and compare the JSON response with the MySQL row.
+7. If the event dead-lettered, inspect the dead-letter payload for source topic,
+   key, partition, offset, failure kind, and reason.
+
+## Tradeoffs
+
+At-least-once instead of exactly-once:
+This is simpler and appropriate for the current migration stage, but it forces
+idempotent writes.
+
+Feature flag instead of immediate cutover:
+This slows the migration slightly, but it makes rollback simple and keeps the
+current baseline available.
+
+Dead-letter instead of infinite retry:
+This prevents one bad message from blocking a partition, but it requires an
+operational process to inspect and replay dead-lettered events.
+
+Broker-free unit tests plus manual integration validation:
+This gives fast deterministic test coverage while being honest that live
+Kafka-to-DB behavior still requires a deployed broker, writer, and MySQL.
+
+Low-cardinality metrics instead of per-device labels:
+This protects Prometheus from time-series explosion. Device-level detail moves
+to logs, SQL, and dead-letter payloads.
+
+## STAR Story
+
+Situation:
+The MVP used MySQL queue tables as a durable buffer, which was easy to demo but
+did not give Kafka-style decoupling, lag visibility, or partitioned scaling.
+
+Task:
+Move the writer side toward Kafka consumption without breaking the existing
+runtime path.
+
+Action:
+I introduced `EventConsumer`, added disabled-by-default Kafka config, wired a
+consumer group, mapped heartbeat and WAN events into idempotent MySQL writes,
+committed offsets only after successful processing, added retry and
+dead-letter handling, exposed metrics/logs, and documented validation and
+rollback.
+
+Result:
+The project now has a testable Kafka consumer path with explicit at-least-once
+semantics, replay-safe writes, operational runbooks, and a clear interview
+story from event production through API-visible state.
+
+## Follow-Up Questions To Practice
+
+### Why not implement exactly-once?
+
+Exactly-once would require stronger transaction coordination between Kafka and
+MySQL than this migration needs right now. I chose at-least-once plus
+idempotent writes because it is simpler, observable, and honest for a service
+that writes to an external database.
+
+### How would schema registry change this design?
+
+Schema registry would move some payload contract enforcement earlier and make
+schema evolution more formal. The consumer would still need runtime validation,
+dead-letter behavior, and idempotent writes because operational failures and
+bad producer behavior can still happen.
+
+### How would you replay dead-lettered events?
+
+Inspect the dead-letter payload, fix the root cause, then republish the original
+payload to the source topic with the correct key. Replay should be controlled
+and observable because it can update current status again.
+
+### How would you scale the writer consumer?
+
+Increase `cpemon-writer` replicas up to the useful limit set by topic
+partition count. If there are more replicas than partitions, some replicas will
+sit idle for that topic.
+
+### What would you monitor first in production?
+
+Consumer group lag, processing error rate, retry rate, dead-letter publish
+rate, message age, DB write latency, and commit errors.
 
 ## Resume Bullet
 
