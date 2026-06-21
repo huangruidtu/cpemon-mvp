@@ -734,6 +734,112 @@ helm upgrade --install cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon
 
 That command belongs to a later live deployment or GitOps story.
 
+## CCPU-57: Chart Usage and Migration Decisions
+
+`CCPU-57` turns the Helm chart work into operator-facing documentation.
+
+The main new artifact is:
+
+```text
+ops/runbooks/helm-cpemon-application.md
+```
+
+The runbook explains:
+
+- required local tools
+- chart inputs
+- required pre-existing Secrets
+- local validation
+- rendered output review
+- optional platform feature rendering
+- future live install
+- future post-install checks
+- upgrade and rollback workflow
+- troubleshooting
+- migration decision summary
+
+### Why a Runbook Matters
+
+A chart README explains the chart.
+
+A runbook explains the workflow.
+
+That distinction matters in production-style platform work. Operators and reviewers need to know not only what files exist, but also:
+
+- what to run first
+- what output to inspect
+- what not to run yet
+- what prerequisites must exist
+- how to recover if a release fails
+
+### Helm as Application Packaging
+
+The migration decision is not "Helm replaces everything."
+
+The boundary is:
+
+```text
+Terraform -> cloud infrastructure
+Kubernetes add-ons -> platform capabilities
+Helm -> application package
+Argo CD -> future GitOps reconciliation
+```
+
+Helm owns the CPEmon application rendering layer:
+
+- Deployments
+- Services
+- ConfigMap
+- Secret references
+- optional Ingress
+- optional ServiceMonitor
+- optional PDB
+- optional NetworkPolicy
+
+Helm does not own:
+
+- VPCs
+- EKS clusters
+- IAM roles
+- ECR repositories
+- production secret material
+- GitOps reconciliation
+
+### Raw YAML to Helm
+
+The raw YAML was useful for the MVP because it made every Kubernetes object explicit.
+
+The Helm chart is useful for the upgrade because it makes variation explicit:
+
+```text
+stable Kubernetes object shape + environment-specific values = rendered manifests
+```
+
+This is the key interview point:
+
+> I did not move to Helm because raw YAML is wrong. I moved to Helm because the application had reached the point where repeated manifests, image tags, environment-specific settings, and optional platform integrations needed a reusable packaging model.
+
+### Pre-Apply vs Post-Apply
+
+Current pre-apply work:
+
+- lint the chart
+- render the chart
+- inspect generated manifests
+- validate values schema
+- document required Secrets and cluster dependencies
+
+Future post-apply work:
+
+- install or upgrade the Helm release
+- check `helm status`
+- check Deployment rollouts
+- check Services and endpoints
+- check optional Ingress, ServiceMonitor, PDB, and NetworkPolicy resources
+- test application health endpoints
+
+Keeping those phases separate prevents the project from claiming live deployment validation before the EKS cluster exists.
+
 ## Helm Values Precedence
 
 When Helm renders a chart, values are merged from several sources.

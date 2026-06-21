@@ -20,6 +20,10 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [EKS Platform Add-ons](eks-platform-addons.md)
 - [Helm CPEmon Application](helm-cpemon-application.md)
 
+## Runbooks
+
+- [CPEmon Helm Application Runbook](../../ops/runbooks/helm-cpemon-application.md)
+
 ## Interview Prep
 
 - [Interview Q&A](interview/README.md)

@@ -61,6 +61,12 @@ build/helm/cpemon-rendered.yaml
 
 Live `helm upgrade --install` is intentionally deferred until the target EKS cluster and required Secrets exist.
 
+For the full operator workflow, including pre-apply validation, future install checks, rollback, and troubleshooting, see:
+
+```text
+ops/runbooks/helm-cpemon-application.md
+```
+
 ## Secrets Boundary
 
 Do not commit production database passwords, HMAC secrets, or image pull credentials into this chart.
@@ -226,3 +232,18 @@ The optional templates are:
 | `templates/networkpolicy.yaml` | Adds a baseline default-deny egress posture plus explicit DNS/core egress allows. |
 
 The conservative default is important: these resources depend on platform capabilities such as an ingress controller, Prometheus Operator CRDs, and NetworkPolicy enforcement.
+
+## Migration Decision
+
+The raw Kubernetes YAML remains useful as historical MVP context, but the Helm chart is the migration target for application packaging.
+
+The decision boundary is:
+
+```text
+Terraform provisions cloud infrastructure.
+Kubernetes add-ons provide platform capabilities.
+Helm packages the CPEmon application.
+Argo CD can later deploy the chart from Git.
+```
+
+The chart does not replace Terraform, and it does not create real production secrets. It provides a repeatable application rendering model that future CI/CD or GitOps tooling can consume.

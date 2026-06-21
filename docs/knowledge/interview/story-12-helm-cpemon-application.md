@@ -476,3 +476,70 @@ This keeps the target useful even when a newly installed tool is not visible to 
 ## Q48: How would you summarize CCPU-56 in an interview?
 
 I added Makefile targets that make Helm validation repeatable. The project now has one command for linting and rendering the CPEmon chart against the dev values file. The targets fail clearly if Helm is missing and support overriding the Helm binary path. This turns manual chart checks into a team workflow that can later be reused in CI or GitOps validation.
+
+## Q49: What did CCPU-57 add?
+
+`CCPU-57` added operator-facing documentation for the CPEmon Helm chart.
+
+The main artifact is:
+
+```text
+ops/runbooks/helm-cpemon-application.md
+```
+
+It explains validation, render review, future install, post-install checks, rollback, troubleshooting, and the migration decision from raw YAML to Helm.
+
+## Q50: What is the difference between a chart README and a runbook?
+
+A chart README explains what the chart contains.
+
+A runbook explains how to operate it.
+
+For this project, the README documents chart structure and values. The runbook documents the workflow: validate, render, inspect, install later, check, troubleshoot, and roll back.
+
+## Q51: Why describe pre-apply and post-apply separately?
+
+Because the current project can validate and render the chart locally, but the live EKS install is not available yet.
+
+Pre-apply validation includes `helm lint`, `helm template`, values review, rendered YAML inspection, and documenting required Secrets.
+
+Post-apply validation includes `helm status`, rollout checks, Service checks, Ingress checks, ServiceMonitor checks, NetworkPolicy checks, and application health checks.
+
+## Q52: How does Helm prepare the application for Argo CD?
+
+Argo CD can use a Helm chart as a source of desired Kubernetes manifests.
+
+By moving CPEmon into a chart, the project gives Argo CD a clean application package to render and sync later. Values files can represent environment-specific configuration while Git remains the source of truth.
+
+## Q53: How would you explain Helm versus Terraform in this project?
+
+Terraform provisions cloud infrastructure such as VPC, subnets, EKS, IAM, and ECR.
+
+Helm packages Kubernetes application resources such as Deployments, Services, ConfigMaps, and optional application-level integrations.
+
+They operate at different layers. Terraform creates the platform foundation. Helm packages what runs on top of Kubernetes.
+
+## Q54: Why not stay with raw Kubernetes YAML?
+
+Raw YAML is fine for a small MVP because it is explicit and easy to inspect.
+
+As the project grows, raw YAML becomes harder to reuse across environments. Image tags, replicas, resources, config, secret references, Ingress, monitoring, PDBs, and NetworkPolicies all need controlled variation.
+
+Helm keeps the stable Kubernetes object structure in templates and moves environment differences into values.
+
+## Q55: What remains before a real Helm install?
+
+The project still needs:
+
+- a live EKS cluster
+- kubeconfig access
+- the `cpemon` namespace
+- required Secrets
+- image tags that exist in ECR
+- platform add-ons before optional features are enabled
+
+Until then, the honest validation boundary is local lint and render.
+
+## Q56: How would you summarize CCPU-57 in an interview?
+
+I documented the operational workflow for the CPEmon Helm chart. The runbook explains how to validate and render the chart now, what to inspect in the generated manifests, what prerequisites are needed before live install, how to check a future release, and how to roll back. I also captured the migration decision: Terraform owns infrastructure, Helm packages the application, and the chart prepares CPEmon for future Argo CD GitOps.
