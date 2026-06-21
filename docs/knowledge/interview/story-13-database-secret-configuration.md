@@ -263,6 +263,75 @@ The lesson is that Git should own the Secret contract, not the Secret values.
 
 I made the required Kubernetes Secrets reviewable by adding a template file, and I changed workloads to consume sensitive values through `secretKeyRef`. That gives a clean bridge to External Secrets Operator later, where AWS Secrets Manager becomes the source of truth for the actual secret material.
 
+## Q26: How do you verify that `cpemon-api` uses the DB Secret correctly?
+
+I verify the wiring before looking at application behavior:
+
+```powershell
+kubectl -n cpemon get secret cpemon-db
+kubectl -n cpemon get deploy cpemon-api -o yaml
+```
+
+The expected env block is:
+
+```yaml
+- name: DB_DSN
+  valueFrom:
+    secretKeyRef:
+      name: cpemon-db
+      key: dsn
+```
+
+Then I check rollout and logs:
+
+```powershell
+kubectl -n cpemon rollout status deployment/cpemon-api
+kubectl -n cpemon logs deployment/cpemon-api --tail=120
+```
+
+The success signal is no `failed to initialize database`, and ideally a startup log like `database connection established`.
+
+## Q27: Why not decode the Secret during verification?
+
+Because the goal is to prove the application can use the Secret, not to expose the credential.
+
+In production, decoding and pasting secrets into terminals, tickets, or chat creates a new leak path. A safer check verifies:
+
+- Secret exists
+- required key exists
+- Deployment references the correct Secret/key
+- application starts successfully
+- logs do not show DB initialization failure
+
+## Q28: What script did you add for `cpemon-api` DB verification?
+
+I added:
+
+```text
+scripts/verify-cpemon-api-db.ps1
+```
+
+It checks the Secret shape, Deployment `DB_DSN` wiring, rollout status, recent logs, and `/healthz` through port-forward.
+
+## Q29: What is the validation boundary for CCPU-66?
+
+Local validation can prove that the script parses, documentation exists, Go tests pass, and Helm still renders.
+
+Live validation requires:
+
+- `kubectl`
+- kubeconfig pointing to a live cluster
+- namespace `cpemon`
+- Secret `cpemon-db`
+- running MySQL
+- running `cpemon-api`
+
+Without those, it would be dishonest to claim live DB connectivity.
+
+## Q30: How would you summarize CCPU-66?
+
+I added a safe verification path for `cpemon-api` database connectivity. The script checks that `DB_DSN` comes from `cpemon-db/dsn`, waits for the API rollout, inspects logs for database initialization failures, and checks `/healthz`. It deliberately does not print or decode the database Secret. That makes the verification useful for operations and safe from a credential-handling perspective.
+
 ## STAR Story
 
 Situation:

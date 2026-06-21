@@ -325,3 +325,56 @@ This matches the Helm chart boundary and removes the last sensitive literal from
 ### Interview Point
 
 I documented the Kubernetes Secret contract without committing the actual secrets. The manifests now show exactly which Secrets and keys the application expects, while real values are left to a secure bootstrap or External Secrets Operator. This is the right GitOps boundary: Git owns desired structure, not secret material.
+
+## CCPU-66: Verify cpemon-api DB Connection
+
+`CCPU-66` adds a repeatable verification path for `cpemon-api` database connectivity.
+
+The verification script is:
+
+```text
+scripts/verify-cpemon-api-db.ps1
+```
+
+The runbook is:
+
+```text
+ops/runbooks/cpemon-api-db-connection.md
+```
+
+### What the Script Checks
+
+The script verifies:
+
+- `kubectl` client and current context
+- Secret `cpemon-db` exists in namespace `cpemon`
+- Secret key `dsn` exists without printing the value
+- `deployment/cpemon-api` reads `DB_DSN` from `cpemon-db/dsn`
+- rollout status for `deployment/cpemon-api`
+- recent logs for database initialization failures
+- `/healthz` through a temporary port-forward
+
+### Why This Is the Right Verification Boundary
+
+The app initializes its database connection during startup:
+
+```text
+cfg.DBDSN -> appdb.Init(cfg.DBDSN) -> database connection established
+```
+
+So the most useful operational check is not to decode the Secret. It is to verify the Secret shape, workload wiring, rollout, logs, and health endpoint without exposing credentials.
+
+### Local Boundary
+
+If no live cluster or `kubectl` is available, this task can still validate:
+
+- the verification script parses
+- the docs and runbook exist
+- Go tests pass
+- Helm lint/template still pass
+
+It cannot honestly claim live DB connectivity until a cluster, kubeconfig, MySQL, and required Secrets exist.
+
+### Interview Point
+
+I did not verify database connectivity by printing or decoding the database password. I created a safe operational check that confirms the Secret shape, verifies the Deployment consumes the right Secret key, waits for rollout, scans logs for DB initialization failures, and checks `/healthz`. That is closer to how I would debug this in production because it validates behavior without exposing credentials.

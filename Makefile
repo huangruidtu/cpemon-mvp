@@ -12,7 +12,7 @@ HELM_CPEMON_NAMESPACE ?= cpemon
 HELM_CPEMON_VALUES ?= deploy/helm/cpemon/values-dev.yaml
 HELM_CPEMON_RENDER_OUT ?= build/helm/cpemon-rendered.yaml
 
-.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate
+.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check
 
 platform-preflight:
 	kubectl version --client=true
@@ -138,3 +138,6 @@ smoke:
 	kubectl get nodes -o wide
 	kubectl -n ingress-nginx get pods -o wide || true
 	@echo "Try: curl -I -k https://api.local  (expect 404)"
+
+cpemon-api-db-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-db.ps1
