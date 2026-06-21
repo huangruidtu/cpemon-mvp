@@ -363,3 +363,35 @@ against a Kubernetes/Kafka environment.
 I separate proof into layers. Unit tests prove mapping and boundaries. The
 integration runbook proves the real broker path by sending a webhook, consuming
 from Kafka, and checking logs and metrics for runtime evidence.
+
+## CCPU-164: Runbook and Migration Decision
+
+`CCPU-164` turns the implementation into an operational and architectural
+story.
+
+### What migration decision was made?
+
+`acs-ingest` keeps the durable database intake path and adds Kafka publishing
+after persistence. The Kafka dependency is hidden behind `EventPublisher` and
+enabled by `KAFKA_PRODUCER_ENABLED`.
+
+### Why keep the old database path?
+
+It preserves the current reliable intake record while Kafka consumers are added
+incrementally. This lowers rollout risk.
+
+### What does the operations runbook cover?
+
+It covers Kafka unavailable, missing topic, serialization failure, timeout, bad
+key, oversized event, DNS, and network policy/connectivity issues.
+
+### What remains for later stories?
+
+Kafka consumers, dead-letter publishing, schema registry, exactly-once
+semantics, and automated live-cluster integration tests remain future work.
+
+### What should you say in an interview?
+
+I migrated by adding an event-driven boundary without removing the existing
+durable intake path. The producer is feature-flagged, interface-based,
+observable, and documented with both a decision record and an incident runbook.

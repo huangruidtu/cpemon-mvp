@@ -384,6 +384,34 @@ The repository command validates the runbook and surrounding artifacts. It does
 not claim live broker proof unless the runbook is executed against a real
 cluster.
 
+## Migration Decision And Operations Runbook
+
+`CCPU-164` captures the architectural and operational story in dedicated
+documents:
+
+* `ADR/acs-ingest-kafka-producer-migration.md`
+* `ops/runbooks/acs-ingest-kafka-producer-operations.md`
+
+The ADR records the decision to publish normalized events after durable ingest
+storage, behind `EventPublisher` and `KAFKA_PRODUCER_ENABLED`.
+
+The operations runbook covers incident handling for:
+
+* Kafka unavailable.
+* Topic missing.
+* Serialization failure.
+* Timeout.
+* Bad key or invalid event.
+* Oversized event.
+* Network policy or DNS connectivity issue.
+
+This is the interview narrative:
+
+> We moved from a database-only ingestion path toward an event-driven path
+> without removing the durable intake record. Kafka publishing is behind a
+> feature flag, isolated behind an interface, observable with logs and metrics,
+> and validated incrementally before downstream consumers are added.
+
 ## acs-ingest Publish Wiring
 
 `acs-ingest` now wires the producer into the webhook flow behind

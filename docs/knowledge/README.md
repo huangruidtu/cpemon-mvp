@@ -28,6 +28,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 ## Architecture Decisions
 
 - [ESO with AWS Secrets Manager and KMS](../../ADR/cloud-platform-upgrade-eso-aws-secrets-manager-kms.md)
+- [acs-ingest Kafka Producer Migration Decision](../../ADR/acs-ingest-kafka-producer-migration.md)
 - [Kafka Platform Architecture and Migration Boundary](../../ADR/cloud-platform-upgrade-kafka-platform-architecture.md)
 - [Kafka Deployment Option for Step 1](../../ADR/cloud-platform-upgrade-kafka-deployment-step1.md)
 
@@ -40,6 +41,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [CPEmon Secret Management Runbook](../../ops/runbooks/cpemon-secret-management.md)
 - [Kafka Bootstrap Configuration Runbook](../../ops/runbooks/kafka-bootstrap-config.md)
 - [acs-ingest Kafka Producer Integration Validation Runbook](../../ops/runbooks/acs-ingest-kafka-producer-validation.md)
+- [acs-ingest Kafka Producer Operations Runbook](../../ops/runbooks/acs-ingest-kafka-producer-operations.md)
 - [Kafka Namespace Runbook](../../ops/runbooks/kafka-namespace.md)
 - [Kafka Platform Helm Runbook](../../ops/runbooks/kafka-platform-helm.md)
 - [Kafka Produce and Consume Validation Runbook](../../ops/runbooks/kafka-produce-consume-validation.md)
