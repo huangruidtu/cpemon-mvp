@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,19 +21,67 @@ type kafkaMessageWriter interface {
 
 // KafkaProducer publishes normalized CPEmon events to Kafka.
 type KafkaProducer struct {
-	writer  kafkaMessageWriter
-	timeout time.Duration
+	writer     kafkaMessageWriter
+	timeout    time.Duration
+	maxRetries int
 }
 
 type KafkaProducerConfig struct {
 	BootstrapServers string
 	Timeout          time.Duration
+	MaxRetries       int
+}
+
+type PublishErrorKind string
+
+const (
+	PublishErrorInvalidEvent       PublishErrorKind = "invalid_event"
+	PublishErrorSerialization      PublishErrorKind = "serialization_error"
+	PublishErrorTimeout            PublishErrorKind = "timeout"
+	PublishErrorWriter             PublishErrorKind = "writer_error"
+	DefaultKafkaProducerMaxRetries                  = 3
+)
+
+type KafkaPublishError struct {
+	Kind     PublishErrorKind
+	Topic    string
+	Key      string
+	Attempts int
+	Err      error
+}
+
+func (e *KafkaPublishError) Error() string {
+	if e == nil {
+		return ""
+	}
+	message := "kafka publish failed kind=" + string(e.Kind)
+	if e.Topic != "" {
+		message += " topic=" + e.Topic
+	}
+	if e.Key != "" {
+		message += " key=" + e.Key
+	}
+	if e.Attempts > 0 {
+		message += " attempts=" + strconv.Itoa(e.Attempts)
+	}
+	if e.Err != nil {
+		message += ": " + e.Err.Error()
+	}
+	return message
+}
+
+func (e *KafkaPublishError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Err
 }
 
 func NewKafkaProducerFromConfig(cfg appconfig.Config) (*KafkaProducer, error) {
 	return NewKafkaProducer(KafkaProducerConfig{
 		BootstrapServers: cfg.KafkaBootstrapServers,
 		Timeout:          cfg.KafkaProducerTimeout,
+		MaxRetries:       cfg.KafkaProducerMaxRetries,
 	})
 }
 
@@ -55,60 +104,79 @@ func NewKafkaProducer(cfg KafkaProducerConfig) (*KafkaProducer, error) {
 			Async:        false,
 			BatchSize:    1,
 		},
-		timeout: timeout,
+		timeout:    timeout,
+		maxRetries: normalizeMaxRetries(cfg.MaxRetries),
 	}, nil
 }
 
 func NewKafkaProducerWithWriter(writer kafkaMessageWriter, timeout time.Duration) (*KafkaProducer, error) {
+	return NewKafkaProducerWithWriterAndRetry(writer, timeout, 0)
+}
+
+func NewKafkaProducerWithWriterAndRetry(writer kafkaMessageWriter, timeout time.Duration, maxRetries int) (*KafkaProducer, error) {
 	if writer == nil {
 		return nil, errors.New("kafka producer requires writer")
 	}
 	if timeout <= 0 {
 		timeout = 5 * time.Second
 	}
-	return &KafkaProducer{writer: writer, timeout: timeout}, nil
+	return &KafkaProducer{
+		writer:     writer,
+		timeout:    timeout,
+		maxRetries: normalizeMaxRetries(maxRetries),
+	}, nil
 }
 
 func (p *KafkaProducer) Publish(ctx context.Context, event PublishableEvent) error {
 	if p == nil || p.writer == nil {
-		return errors.New("kafka producer is not initialized")
+		return newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer is not initialized"))
 	}
 	if event == nil {
-		return errors.New("kafka producer requires event")
+		return newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer requires event"))
 	}
 
 	topic := strings.TrimSpace(event.Topic())
 	if topic == "" {
-		return errors.New("kafka producer requires event topic")
+		return newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer requires event topic"))
 	}
 
 	key := strings.TrimSpace(event.Key())
 	if key == "" {
-		return errors.New("kafka producer requires event key")
+		return newKafkaPublishError(PublishErrorInvalidEvent, topic, "", 0, errors.New("kafka producer requires event key"))
 	}
 
 	payload, err := json.Marshal(event)
 	if err != nil {
-		return fmt.Errorf("marshal kafka event: %w", err)
+		return newKafkaPublishError(PublishErrorSerialization, topic, key, 0, fmt.Errorf("marshal kafka event: %w", err))
 	}
 
-	writeCtx := ctx
-	cancel := func() {}
-	if p.timeout > 0 {
-		writeCtx, cancel = context.WithTimeout(ctx, p.timeout)
-	}
-	defer cancel()
+	attempts := p.maxRetries + 1
+	var lastErr error
+	for attempt := 1; attempt <= attempts; attempt++ {
+		writeCtx := ctx
+		cancel := func() {}
+		if p.timeout > 0 {
+			writeCtx, cancel = context.WithTimeout(ctx, p.timeout)
+		}
 
-	if err := p.writer.WriteMessages(writeCtx, kafka.Message{
-		Topic: topic,
-		Key:   []byte(key),
-		Value: payload,
-		Time:  time.Now().UTC(),
-	}); err != nil {
-		return fmt.Errorf("write kafka message topic=%s key=%s: %w", topic, key, err)
+		err = p.writer.WriteMessages(writeCtx, kafka.Message{
+			Topic: topic,
+			Key:   []byte(key),
+			Value: payload,
+			Time:  time.Now().UTC(),
+		})
+		cancel()
+		if err == nil {
+			return nil
+		}
+
+		lastErr = err
+		if ctx.Err() != nil {
+			return newKafkaPublishError(classifyKafkaPublishError(ctx.Err()), topic, key, attempt, ctx.Err())
+		}
 	}
 
-	return nil
+	return newKafkaPublishError(classifyKafkaPublishError(lastErr), topic, key, attempts, lastErr)
 }
 
 func (p *KafkaProducer) Close() error {
@@ -127,4 +195,28 @@ func parseBootstrapServers(value string) []string {
 		}
 	}
 	return brokers
+}
+
+func normalizeMaxRetries(maxRetries int) int {
+	if maxRetries < 0 {
+		return 0
+	}
+	return maxRetries
+}
+
+func newKafkaPublishError(kind PublishErrorKind, topic string, key string, attempts int, err error) error {
+	return &KafkaPublishError{
+		Kind:     kind,
+		Topic:    topic,
+		Key:      key,
+		Attempts: attempts,
+		Err:      err,
+	}
+}
+
+func classifyKafkaPublishError(err error) PublishErrorKind {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return PublishErrorTimeout
+	}
+	return PublishErrorWriter
 }

@@ -218,9 +218,60 @@ The producer validates that every event has a non-empty topic and key before it
 writes to Kafka. It returns errors with topic/key context so the caller and
 logs can explain which publish failed.
 
-Retry behavior is still handled by the later retry/error-handling subtask. This
-adapter keeps the first producer implementation focused on construction,
-serialization, topic/key selection, write, and close lifecycle.
+The initial adapter focused on construction, serialization, topic/key
+selection, write, and close lifecycle. `CCPU-82` extends it with explicit retry
+and error classification.
+
+## Producer Retry and Error Handling
+
+`KafkaProducer` now makes publish failures explicit with `KafkaPublishError`.
+
+Error fields:
+
+| Field | Meaning |
+| --- | --- |
+| `Kind` | High-level class such as `invalid_event`, `serialization_error`, `timeout`, or `writer_error`. |
+| `Topic` | Kafka topic selected by the normalized event. |
+| `Key` | Kafka message key, currently stable device identity. |
+| `Attempts` | Number of writer attempts made before returning the error. |
+| `Err` | Wrapped root cause returned by validation, JSON marshaling, context, or the Kafka writer. |
+
+Fail-fast behavior:
+
+* Nil producer or nil event.
+* Empty topic.
+* Empty key.
+* JSON serialization error.
+
+These failures are not retried because another network attempt cannot repair an
+invalid application event.
+
+Retry behavior:
+
+* Writer errors are retried up to `KafkaProducerMaxRetries`.
+* The producer makes `1 + KafkaProducerMaxRetries` total writer attempts.
+* Each attempt uses the configured per-publish timeout.
+* Parent context cancellation stops the retry loop immediately.
+
+Delivery semantics:
+
+The producer is designed for at-least-once publishing. Retrying can create
+duplicates if Kafka accepts a write but the client sees an ambiguous timeout or
+network error. Consumers should therefore be idempotent and should use stable
+keys plus event timestamps or future event IDs to de-duplicate where needed.
+
+Incident drill:
+
+1. Check the application log for `KafkaPublishError` fields: kind, topic, key,
+   attempts, and wrapped error.
+2. If `kind=timeout`, verify broker reachability and whether the configured
+   timeout is too low for the environment.
+3. If `kind=writer_error`, check Kafka broker health, bootstrap DNS, topic
+   existence, ACLs, and broker-side request size limits.
+4. If `kind=serialization_error`, inspect the event schema and mapper; do not
+   retry blindly.
+5. If duplicates are suspected after recovery, query by device key and event
+   timestamp before replaying downstream effects.
 
 ## acs-ingest Publish Wiring
 

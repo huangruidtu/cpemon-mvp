@@ -199,3 +199,46 @@ I separated durable intake from event publication. The webhook handler persists
 the raw event first, then emits normalized Kafka contracts through an interface.
 The feature flag gives a safe rollout path, and the unit tests verify the
 publish decisions without needing Kafka.
+
+## CCPU-82: Producer Retry and Error Handling
+
+`CCPU-82` makes Kafka publish failure behavior explicit.
+
+### Which errors are fail-fast?
+
+Invalid application events are fail-fast: nil event, empty topic, empty key, or
+JSON serialization failure. Retrying those errors would only repeat the same bad
+input.
+
+### Which errors are retried?
+
+Writer errors are retried because they may be transient broker, network,
+leader, DNS, or topic availability problems. The producer uses
+`KafkaProducerMaxRetries`, so total writer attempts are
+`1 + KafkaProducerMaxRetries`.
+
+### What does the returned error include?
+
+The producer returns `KafkaPublishError` with a kind, topic, key, attempt count,
+and wrapped root cause. That gives logs and incident notes enough context to
+answer what failed and for which device.
+
+### Why is this at-least-once rather than exactly-once?
+
+If a write reaches Kafka but the client receives a timeout or ambiguous network
+error, a retry can publish a duplicate. That is normal at-least-once behavior.
+Exactly-once requires stronger producer and consumer transaction semantics than
+this story needs.
+
+### Why should consumers be idempotent?
+
+Because retries can create duplicates. Consumers should treat the message key,
+event timestamp, and future event IDs as de-duplication inputs before applying
+side effects.
+
+### What should you say in an interview?
+
+I separated permanent application errors from transient transport errors.
+Schema and validation errors fail fast; writer errors retry with bounded
+attempts and return structured context. The tradeoff is at-least-once delivery,
+so downstream consumers must be idempotent.

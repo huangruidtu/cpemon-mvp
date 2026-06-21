@@ -15,16 +15,24 @@ import (
 )
 
 type fakeKafkaWriter struct {
-	messages []kafka.Message
-	err      error
-	closed   bool
+	messages  []kafka.Message
+	err       error
+	failures  int
+	alwaysErr bool
+	attempts  int
+	closed    bool
 }
 
 func (w *fakeKafkaWriter) WriteMessages(ctx context.Context, msgs ...kafka.Message) error {
+	w.attempts++
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if w.err != nil {
+	if w.failures > 0 {
+		w.failures--
+		return w.err
+	}
+	if w.alwaysErr && w.err != nil {
 		return w.err
 	}
 	w.messages = append(w.messages, msgs...)
@@ -98,7 +106,7 @@ func TestKafkaProducerPublishesEvent(t *testing.T) {
 }
 
 func TestKafkaProducerReturnsWriterError(t *testing.T) {
-	writer := &fakeKafkaWriter{err: errors.New("broker unavailable")}
+	writer := &fakeKafkaWriter{err: errors.New("broker unavailable"), alwaysErr: true}
 	producer, err := NewKafkaProducerWithWriter(writer, time.Second)
 	if err != nil {
 		t.Fatalf("NewKafkaProducerWithWriter returned error: %v", err)
@@ -112,8 +120,78 @@ func TestKafkaProducerReturnsWriterError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected writer error")
 	}
-	if !strings.Contains(err.Error(), "topic=") || !strings.Contains(err.Error(), "key=CPE-001") {
+	if !strings.Contains(err.Error(), "kind=writer_error") ||
+		!strings.Contains(err.Error(), "topic=") ||
+		!strings.Contains(err.Error(), "key=CPE-001") ||
+		!strings.Contains(err.Error(), "attempts=1") {
 		t.Fatalf("error lacks topic/key context: %v", err)
+	}
+}
+
+func TestKafkaProducerRetriesWriterError(t *testing.T) {
+	writerErr := errors.New("broker unavailable")
+	writer := &fakeKafkaWriter{err: writerErr, failures: 2}
+	producer, err := NewKafkaProducerWithWriterAndRetry(writer, time.Second, 2)
+	if err != nil {
+		t.Fatalf("NewKafkaProducerWithWriterAndRetry returned error: %v", err)
+	}
+
+	heartbeat := DeviceHeartbeatEvent{DeviceID: "CPE-001"}
+	if err := producer.Publish(context.Background(), heartbeat); err != nil {
+		t.Fatalf("Publish returned error after retry: %v", err)
+	}
+
+	if writer.attempts != 3 {
+		t.Fatalf("attempts = %d, want 3", writer.attempts)
+	}
+	if len(writer.messages) != 1 {
+		t.Fatalf("messages = %d, want 1", len(writer.messages))
+	}
+}
+
+func TestKafkaProducerReturnsStructuredTimeoutError(t *testing.T) {
+	writer := &fakeKafkaWriter{err: context.DeadlineExceeded, alwaysErr: true}
+	producer, err := NewKafkaProducerWithWriterAndRetry(writer, time.Second, 1)
+	if err != nil {
+		t.Fatalf("NewKafkaProducerWithWriterAndRetry returned error: %v", err)
+	}
+
+	err = producer.Publish(context.Background(), DeviceHeartbeatEvent{DeviceID: "CPE-001"})
+	if err == nil {
+		t.Fatal("expected timeout error")
+	}
+	var publishErr *KafkaPublishError
+	if !errors.As(err, &publishErr) {
+		t.Fatalf("error type = %T, want *KafkaPublishError", err)
+	}
+	if publishErr.Kind != PublishErrorTimeout {
+		t.Fatalf("kind = %q, want %q", publishErr.Kind, PublishErrorTimeout)
+	}
+	if publishErr.Attempts != 2 {
+		t.Fatalf("attempts = %d, want 2", publishErr.Attempts)
+	}
+}
+
+func TestKafkaProducerFailsFastOnSerializationError(t *testing.T) {
+	writer := &fakeKafkaWriter{}
+	producer, err := NewKafkaProducerWithWriterAndRetry(writer, time.Second, 3)
+	if err != nil {
+		t.Fatalf("NewKafkaProducerWithWriterAndRetry returned error: %v", err)
+	}
+
+	err = producer.Publish(context.Background(), unserializableEvent{Ch: make(chan int)})
+	if err == nil {
+		t.Fatal("expected serialization error")
+	}
+	var publishErr *KafkaPublishError
+	if !errors.As(err, &publishErr) {
+		t.Fatalf("error type = %T, want *KafkaPublishError", err)
+	}
+	if publishErr.Kind != PublishErrorSerialization {
+		t.Fatalf("kind = %q, want %q", publishErr.Kind, PublishErrorSerialization)
+	}
+	if writer.attempts != 0 {
+		t.Fatalf("writer attempts = %d, want 0", writer.attempts)
 	}
 }
 
@@ -172,3 +250,10 @@ type eventWithoutKey struct{}
 
 func (eventWithoutKey) Topic() string { return DeviceHeartbeatTopic }
 func (eventWithoutKey) Key() string   { return "" }
+
+type unserializableEvent struct {
+	Ch chan int `json:"ch"`
+}
+
+func (unserializableEvent) Topic() string { return DeviceHeartbeatTopic }
+func (unserializableEvent) Key() string   { return "CPE-001" }
