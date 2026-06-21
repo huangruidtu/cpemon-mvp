@@ -186,6 +186,37 @@ It gives the consumer loop one processing entry point. The router dispatches by
 topic, so heartbeat and WAN status keep separate validation/write logic while
 retry, dead-letter, offset commit, metrics, and logs can wrap one function.
 
+### What is a poison message?
+
+A poison message is an event that will not succeed if retried unchanged. Common
+examples are invalid JSON, a missing required field, a wrong schema version, an
+unknown topic, or a key that does not match the device identity.
+
+### Why are infinite retries dangerous?
+
+Kafka preserves order within a partition. If one poison message is retried
+forever, later valid messages in the same partition can be blocked. Bounded
+retries plus dead-letter handling keep the system moving while preserving the
+bad event for debugging.
+
+### Which failures should retry?
+
+Transient infrastructure failures should retry: MySQL unavailable, temporary
+timeouts, or a short network interruption. Payload contract failures should not
+retry because waiting will not make malformed JSON valid.
+
+### When can the consumer commit a dead-lettered message?
+
+Only after the dead-letter event has been published successfully. At that point
+the original event is no longer lost; it has moved to an operational queue where
+it can be inspected, replayed, or fixed manually.
+
+### What if dead-letter publishing fails?
+
+The handler returns an error, so the Kafka adapter does not commit the original
+offset. That is conservative: it may cause a retry, but it avoids losing the
+failed event completely.
+
 ### Why use a bounded commit timeout?
 
 Offset commits are part of the reliability path, but they should not hang
@@ -215,3 +246,9 @@ Added explicit at-least-once offset commit behavior: auto-commit stays disabled,
 successful handler execution is followed by `CommitMessages`, handler failures
 are not committed, commit failures return contextual `commit_error` values, and
 the docs explain why idempotent MySQL writes are required.
+
+Added bounded retry and dead-letter handling for the writer consumer path:
+transient processing errors retry with configured backoff, poison messages are
+published to `cpemon.deadletter.v1`, retry exhaustion also dead-letters the
+event, and original offsets are committed only after successful processing or
+successful dead-letter publication.

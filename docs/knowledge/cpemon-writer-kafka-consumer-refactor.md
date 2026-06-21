@@ -363,6 +363,62 @@ Interview framing:
 > loss, but it means duplicates are possible after crashes or commit failures,
 > so the database writes are idempotent.
 
+## Retry And Dead-Letter Handling
+
+`CCPU-92` adds the writer reliability wrapper around `processConsumedEvent`.
+
+Processing shape:
+
+```text
+ConsumedEvent
+  -> processConsumedEventWithReliability
+  -> processConsumedEvent
+  -> per-topic validation/write processor
+  -> retry or dead-letter decision
+  -> return nil only when it is safe for the Kafka adapter to commit
+```
+
+Failure classes:
+
+| Class | Examples | Behavior |
+| --- | --- | --- |
+| `poison_message` | Invalid JSON, missing required fields, key/device mismatch, unsupported topic | Publish to `cpemon.deadletter.v1` without repeated retries. |
+| `retriable_error` | MySQL unavailable, write timeout, transient infrastructure failure | Retry with bounded backoff, then publish to dead-letter after the limit. |
+
+Why this boundary matters:
+
+* Infinite retries can block a partition behind one bad message.
+* Immediate commits can lose messages before the failure is inspected.
+* Dead-letter publish success is the point where the original message can be
+  acknowledged.
+* Dead-letter publish failure returns an error so the original Kafka offset is
+  not committed prematurely.
+
+Dead-letter payload:
+
+The `deadLetterEvent` contains:
+
+* `schema_version` and `event_type`
+* source topic and source key
+* partition and offset
+* failure kind and reason
+* attempt count
+* failed timestamp
+* original payload as a debugging string
+
+Repository check:
+
+```powershell
+make cpemon-writer-retry-deadletter-check
+```
+
+Interview framing:
+
+> I separated transient failures from poison messages. Transient failures get a
+> bounded retry policy. Poison messages go to a dead-letter topic because they
+> will not become valid by waiting. The original offset is committed only after
+> processing succeeds or after the dead-letter event is published successfully.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:
