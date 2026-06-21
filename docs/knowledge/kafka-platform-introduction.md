@@ -554,3 +554,53 @@ cpemon.deadletter.v1
 ### Interview Point
 
 Topic naming matters because names become long-lived contracts between producers, consumers, dashboards, runbooks, alerts, and replay tools. A good topic name explains the business domain and compatibility version without leaking cluster, chart, environment, or producer implementation details.
+
+## CCPU-159: Kafka Architecture and Migration Decision
+
+`CCPU-159` documents where Kafka fits in CPEmon and why Story 8 does not immediately replace the application queue behavior.
+
+The ADR is:
+
+```text
+ADR/cloud-platform-upgrade-kafka-platform-architecture.md
+```
+
+The knowledge note is:
+
+```text
+docs/knowledge/kafka-platform-architecture-migration.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-architecture-docs.ps1
+```
+
+The Makefile shortcut is:
+
+```text
+make kafka-architecture-docs-check
+```
+
+### Migration Boundary
+
+The migration is:
+
+```text
+current MySQL queue path remains baseline
+        |
+        v
+Kafka platform contract is introduced
+        |
+        v
+manual Kafka validation proves platform readiness
+        |
+        v
+future application story adds producers and consumers
+        |
+        v
+MySQL queue behavior is retired only after Kafka path is proven
+```
+
+This is the core Story 8 architecture answer: Kafka is introduced as a platform event buffer first, not as a hidden application rewrite.

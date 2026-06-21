@@ -558,6 +558,63 @@ cpemon.wan.deadletter.v1
 
 I treated Kafka topic names as platform contracts. The pattern `cpemon.<domain>.<event-family>.v<major>` keeps names business-oriented, versioned, and independent of environment or broker implementation. That makes topics easier to document, monitor, migrate, and explain in an interview.
 
+## Q46: What did CCPU-159 add?
+
+`CCPU-159` added the Kafka platform architecture and migration decision.
+
+The key files are:
+
+```text
+ADR/cloud-platform-upgrade-kafka-platform-architecture.md
+docs/knowledge/kafka-platform-architecture-migration.md
+scripts/verify-kafka-architecture-docs.ps1
+Makefile
+```
+
+## Q47: Where does Kafka sit in the CPEmon architecture?
+
+Kafka sits between ingestion and downstream processing.
+
+The future target is:
+
+```text
+acs-ingest / cpemon-api
+        |
+        v
+Kafka topics
+        |
+        v
+cpemon-writer / consumers
+        |
+        v
+MySQL business tables
+```
+
+Kafka replaces the queue role, not the business database role.
+
+## Q48: Why does Story 8 not immediately replace the MySQL queue?
+
+Because platform readiness and application behavior should be validated separately.
+
+Replacing the queue immediately would mix Kafka install risk, topic risk, producer-code risk, consumer-code risk, and data consistency risk. Story 8 keeps the current MySQL queue path as the baseline while preparing and validating the Kafka platform contract.
+
+## Q49: What is the migration sequence?
+
+The sequence is:
+
+```text
+1. Keep current MySQL queue path as baseline.
+2. Introduce Kafka namespace and Helm workflow.
+3. Define topics and bootstrap config.
+4. Validate manual produce/consume.
+5. Add application producers and consumers later.
+6. Retire or reduce MySQL queue behavior after Kafka path is proven.
+```
+
+## Q50: How would you explain CCPU-159 in an interview?
+
+I introduced Kafka as a platform boundary before changing application code. That let me prove the Kafka namespace, Helm workflow, topics, bootstrap config, and manual validation path separately from producer and consumer logic. The current MySQL queue remains the running baseline until the Kafka path is proven. That is safer than a big-bang rewrite because each risk has its own validation step.
+
 ## STAR Story
 
 Situation:
@@ -570,7 +627,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, a manual produce/consume validation runbook, a topic naming convention, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, a manual produce/consume validation runbook, a topic naming convention, Kafka architecture migration docs, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 
