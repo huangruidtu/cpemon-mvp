@@ -487,6 +487,77 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-produce-consume-ru
 
 Live validation requires a running Kafka release and real cluster access. Without those, I can document the exact commands but cannot honestly claim a successful produce/consume test.
 
+## Q39: What did CCPU-75 add?
+
+`CCPU-75` added the Kafka topic naming convention.
+
+The key files are:
+
+```text
+docs/knowledge/kafka-topic-naming-convention.md
+scripts/verify-kafka-topic-naming.ps1
+Makefile
+```
+
+## Q40: What topic naming pattern did you choose?
+
+The pattern is:
+
+```text
+cpemon.<domain>.<event-family>.v<major>
+```
+
+Examples:
+
+```text
+cpemon.device.heartbeat.v1
+cpemon.wan.status.v1
+cpemon.deadletter.v1
+```
+
+## Q41: Why include a version suffix?
+
+The version suffix marks major compatibility.
+
+If a future event shape changes incompatibly, the project can introduce a `v2` topic rather than breaking existing consumers. Optional additive fields usually do not require a new major topic version.
+
+## Q42: Why not include environment names in topic names?
+
+Environment is a deployment concern, not part of the logical event contract.
+
+The same topic name can exist in dev and prod clusters:
+
+```text
+cpemon.device.heartbeat.v1
+```
+
+The separation comes from cluster/account/namespace/Helm values, not from renaming the event.
+
+## Q43: Why not name the topic after the producer service?
+
+Producer services can change.
+
+The topic should represent the event domain and purpose, not the current implementation. `cpemon.device.heartbeat.v1` is more stable than `cpemon-api-heartbeat` because another service could produce heartbeat events later.
+
+## Q44: What is the dead-letter naming rule?
+
+Story 8 starts with:
+
+```text
+cpemon.deadletter.v1
+```
+
+That is a shared dead-letter topic for Step 1. Later, if failures need stronger ownership boundaries, it can evolve into domain-specific dead-letter topics such as:
+
+```text
+cpemon.device.deadletter.v1
+cpemon.wan.deadletter.v1
+```
+
+## Q45: How would you summarize the naming decision?
+
+I treated Kafka topic names as platform contracts. The pattern `cpemon.<domain>.<event-family>.v<major>` keeps names business-oriented, versioned, and independent of environment or broker implementation. That makes topics easier to document, monitor, migrate, and explain in an interview.
+
 ## STAR Story
 
 Situation:
@@ -499,7 +570,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, a manual produce/consume validation runbook, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, a manual produce/consume validation runbook, a topic naming convention, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 

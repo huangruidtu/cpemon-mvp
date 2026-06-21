@@ -21,6 +21,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Helm CPEmon Application](helm-cpemon-application.md)
 - [Database and Secret Configuration](database-secret-configuration.md)
 - [Kafka Platform Introduction](kafka-platform-introduction.md)
+- [Kafka Topic Naming Convention](kafka-topic-naming-convention.md)
 
 ## Architecture Decisions
 

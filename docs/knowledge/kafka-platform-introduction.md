@@ -504,3 +504,53 @@ kubectl exec -n kafka statefulset/kafka-controller -- kafka-console-consumer.sh 
   --from-beginning `
   --max-messages 1
 ```
+
+## CCPU-75: Topic Naming Convention
+
+`CCPU-75` documents the CPEmon Kafka topic naming convention.
+
+The convention document is:
+
+```text
+docs/knowledge/kafka-topic-naming-convention.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-topic-naming.ps1
+```
+
+The Makefile shortcut is:
+
+```text
+make kafka-topic-naming-check
+```
+
+### Pattern
+
+Use:
+
+```text
+cpemon.<domain>.<event-family>.v<major>
+```
+
+Current examples:
+
+```text
+cpemon.device.heartbeat.v1
+cpemon.wan.status.v1
+cpemon.deadletter.v1
+```
+
+### Design Rules
+
+- Topic names are logical event contracts, not broker implementation details.
+- Do not include environment names in topic names.
+- Do not include producer service names unless the topic is truly service-owned.
+- Include a major version suffix for compatibility management.
+- Treat dead-letter naming as an operational decision, not an afterthought.
+
+### Interview Point
+
+Topic naming matters because names become long-lived contracts between producers, consumers, dashboards, runbooks, alerts, and replay tools. A good topic name explains the business domain and compatibility version without leaking cluster, chart, environment, or producer implementation details.
