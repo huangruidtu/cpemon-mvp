@@ -37,6 +37,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Bootstrap Configuration Runbook](../../ops/runbooks/kafka-bootstrap-config.md)
 - [Kafka Namespace Runbook](../../ops/runbooks/kafka-namespace.md)
 - [Kafka Platform Helm Runbook](../../ops/runbooks/kafka-platform-helm.md)
+- [Kafka Produce and Consume Validation Runbook](../../ops/runbooks/kafka-produce-consume-validation.md)
 - [Kafka Topics Runbook](../../ops/runbooks/kafka-topics.md)
 
 ## Interview Prep

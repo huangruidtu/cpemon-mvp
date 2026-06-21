@@ -18,7 +18,7 @@ HELM_CPEMON_NAMESPACE ?= cpemon
 HELM_CPEMON_VALUES ?= deploy/helm/cpemon/values-dev.yaml
 HELM_CPEMON_RENDER_OUT ?= build/helm/cpemon-rendered.yaml
 
-.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check kafka-namespace-check kafka-topics-check kafka-config-check kafka-chart-show kafka-template kafka kafka-check kafka-validate storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check kafka-helm-workflow-check
+.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check kafka-namespace-check kafka-topics-check kafka-config-check kafka-produce-consume-runbook-check kafka-chart-show kafka-template kafka kafka-check kafka-validate storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check kafka-helm-workflow-check
 
 platform-preflight:
 	kubectl version --client=true
@@ -52,6 +52,9 @@ kafka-topics-check:
 
 kafka-config-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-config-boundary.ps1
+
+kafka-produce-consume-runbook-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-produce-consume-runbook.ps1
 
 helm-repos:
 	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/

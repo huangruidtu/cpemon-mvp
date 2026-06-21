@@ -432,3 +432,75 @@ Live validation requires rendered or applied ConfigMaps:
 make helm-cpemon-template
 kubectl get configmap cpemon-app-config -n cpemon -o yaml
 ```
+
+## CCPU-74: Manual Produce and Consume Validation
+
+`CCPU-74` captures the manual Kafka produce/consume validation path.
+
+The runbook is:
+
+```text
+ops/runbooks/kafka-produce-consume-validation.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-produce-consume-runbook.ps1
+```
+
+The Makefile shortcut is:
+
+```text
+make kafka-produce-consume-runbook-check
+```
+
+### What It Proves
+
+A manual produce/consume test proves the Kafka platform path:
+
+```text
+test message
+        |
+        v
+kafka-console-producer.sh
+        |
+        v
+cpemon.device.heartbeat.v1
+        |
+        v
+kafka-console-consumer.sh
+        |
+        v
+same message returned
+```
+
+It proves broker/topic connectivity. It does not prove CPEmon application producer behavior.
+
+### Test Message
+
+The runbook uses:
+
+```json
+{"source":"manual-kafka-validation","serialNumber":"TEST-CPE-0001","status":"online","ts":"2026-06-21T00:00:00Z"}
+```
+
+This is intentionally not the final application event schema.
+
+### Validation Boundary
+
+Local validation proves the runbook exists and contains the required commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-produce-consume-runbook.ps1
+```
+
+Live validation requires Kafka to be installed and ready:
+
+```powershell
+kubectl exec -n kafka statefulset/kafka-controller -- kafka-console-consumer.sh `
+  --bootstrap-server kafka.kafka.svc.cluster.local:9092 `
+  --topic cpemon.device.heartbeat.v1 `
+  --from-beginning `
+  --max-messages 1
+```

@@ -430,6 +430,63 @@ kubectl get configmap cpemon-app-config -n cpemon -o yaml
 
 Because Helm is still unavailable in the local shell, this subtask proves the committed config boundary but does not claim live render/apply validation.
 
+## Q34: What did CCPU-74 add?
+
+`CCPU-74` added the manual Kafka produce/consume validation runbook.
+
+The key files are:
+
+```text
+ops/runbooks/kafka-produce-consume-validation.md
+scripts/verify-kafka-produce-consume-runbook.ps1
+Makefile
+```
+
+## Q35: What does manual produce/consume prove?
+
+It proves platform-level Kafka connectivity:
+
+- the broker is reachable
+- the topic exists
+- a producer can write to the topic
+- a consumer can read from the topic
+
+It does not prove CPEmon application producer code, because no application producer has been implemented in this story.
+
+## Q36: What test message does the runbook use?
+
+The runbook uses:
+
+```json
+{"source":"manual-kafka-validation","serialNumber":"TEST-CPE-0001","status":"online","ts":"2026-06-21T00:00:00Z"}
+```
+
+That message is deliberately simple. It is a platform connectivity probe, not the final event schema.
+
+## Q37: What commands matter most?
+
+Producer:
+
+```powershell
+kafka-console-producer.sh --bootstrap-server kafka.kafka.svc.cluster.local:9092 --topic cpemon.device.heartbeat.v1
+```
+
+Consumer:
+
+```powershell
+kafka-console-consumer.sh --bootstrap-server kafka.kafka.svc.cluster.local:9092 --topic cpemon.device.heartbeat.v1 --from-beginning --max-messages 1
+```
+
+## Q38: What is the validation boundary for CCPU-74?
+
+Local validation checks the runbook:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-produce-consume-runbook.ps1
+```
+
+Live validation requires a running Kafka release and real cluster access. Without those, I can document the exact commands but cannot honestly claim a successful produce/consume test.
+
 ## STAR Story
 
 Situation:
@@ -442,7 +499,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, a manual produce/consume validation runbook, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 
