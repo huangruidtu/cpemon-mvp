@@ -523,6 +523,38 @@ Interview framing:
 > and how often"; logs answer "which exact topic/key/partition/offset failed
 > and why."
 
+## Consumer Unit Test Matrix
+
+`CCPU-171` consolidates broker-free unit coverage for the writer consumer path.
+
+The tests intentionally use fakes instead of a real Kafka broker. Kafka itself
+is covered by integration validation later; these unit tests protect business
+and reliability decisions that should be fast to run locally.
+
+| Area | Representative Tests | What They Prove |
+| --- | --- | --- |
+| Consumer boundary | `TestEventConsumerCanUseFakeWithoutKafka`, `TestEventConsumerPropagatesHandlerError`, `TestEventConsumerPropagatesContextCancellation` | Writer logic can depend on the `EventConsumer` interface without a broker. |
+| Kafka adapter | `TestKafkaConsumerConsumesMessageThroughBoundary`, `TestKafkaConsumerReturnsFetchError`, `TestKafkaConsumerReturnsCommitErrorWithMessageContext` | Kafka records become `ConsumedEvent` envelopes and errors keep topic/key/offset context. |
+| Offset commit | `TestKafkaConsumerConsumesMessageThroughBoundary`, `TestKafkaConsumerReturnsHandlerErrorWithMessageContext`, `TestKafkaConsumerReturnsCommitErrorWithMessageContext` | Successful handling commits; handler failure does not commit; commit failure is explicit. |
+| Heartbeat decoding/write | `TestDecodeHeartbeatWriteRejectsInvalidPayload`, `TestWriteHeartbeatStatusUsesIdempotentUpserts`, `TestProcessHeartbeatConsumedEventPropagatesDBError` | Payload validation and idempotent MySQL behavior are protected. |
+| WAN status decoding/write | `TestDecodeWANStatusWriteRejectsInvalidPayload`, `TestWriteWANStatusUsesIdempotentUpserts`, `TestProcessWANStatusConsumedEventPropagatesDBError` | WAN payload validation and replay-safe updates are protected. |
+| Event routing | `TestProcessConsumedEventRoutesHeartbeatToMySQLWrites`, `TestProcessConsumedEventRoutesWANStatusToMySQLWrites`, `TestProcessConsumedEventRejectsUnsupportedTopic` | Topic routing is explicit and unknown topics fail closed. |
+| Retry/dead-letter | `TestProcessConsumedEventWithReliabilityRetriesRetriableError`, `TestProcessConsumedEventWithReliabilityPublishesPoisonMessageToDeadLetter`, `TestProcessConsumedEventWithReliabilityPublishesRetriableFailureAfterLimit` | Retriable failures retry, poison messages dead-letter, and retry exhaustion dead-letters. |
+| Shutdown/fallback edges | `TestProcessConsumedEventWithReliabilityStopsWhenRetrySleepContextCancels`, `TestDeadLetterEventUsesOffsetKeyWhenMessageKeyIsMissing` | Shutdown does not publish misleading DLQ events, and DLQ records remain traceable without an original key. |
+
+Repository check:
+
+```powershell
+make cpemon-writer-consumer-unit-tests-check
+```
+
+Interview framing:
+
+> I split tests by boundary. Unit tests do not try to prove Kafka works; they
+> prove my consumer contract, routing, validation, idempotent writes, offset
+> decisions, retry/DLQ behavior, and shutdown edge cases are correct without a
+> broker.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

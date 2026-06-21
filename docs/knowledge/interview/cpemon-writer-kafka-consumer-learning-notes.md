@@ -270,6 +270,26 @@ Metrics are for aggregate questions: error rate, retries, dead-letter volume,
 and latency. Logs are for single-event investigation: which topic, key,
 partition, offset, attempt, and error caused the issue.
 
+### How did you unit test the consumer without Kafka?
+
+I used fake consumers, fake readers, fake SQL executors, and fake publishers.
+That lets tests verify the application contract, routing, decode failures,
+idempotent writes, retry decisions, dead-letter behavior, and offset commit
+decisions without starting a broker.
+
+### What belongs in unit tests versus integration tests?
+
+Unit tests cover deterministic code decisions: how one event is decoded, routed,
+written, retried, dead-lettered, or committed. Integration tests should cover
+the live Kafka-to-DB path: real broker connectivity, topic creation, consumer
+group assignment, and end-to-end API-visible state changes.
+
+### Why are broker-free unit tests valuable?
+
+They run fast and fail close to the code that made the decision. If a test for
+poison-message DLQ behavior fails, I know the issue is in processing logic, not
+Kafka networking, topic metadata, or local cluster state.
+
 ### Why use a bounded commit timeout?
 
 Offset commits are part of the reliability path, but they should not hang
@@ -314,3 +334,7 @@ with Kafka consumer group offsets.
 Added writer processing observability: low-cardinality processing, retry,
 dead-letter, and duration metrics plus structured logs that carry topic, key,
 partition, offset, attempts, failure kind, `duration_ms`, and error context.
+
+Consolidated broker-free consumer unit coverage across interface, adapter,
+decode, routing, idempotent MySQL writes, offset commit, retry/dead-letter, and
+shutdown/fallback edge cases.

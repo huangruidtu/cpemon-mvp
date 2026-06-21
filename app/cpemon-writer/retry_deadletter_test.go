@@ -166,6 +166,26 @@ func TestProcessConsumedEventWithReliabilityPublishesRetriableFailureAfterLimit(
 	}
 }
 
+func TestProcessConsumedEventWithReliabilityStopsWhenRetrySleepContextCancels(t *testing.T) {
+	dbErr := errors.New("db unavailable")
+	exec := &flakyExec{failures: 10, err: dbErr}
+	publisher := &recordedPublisher{}
+
+	err := processConsumedEventWithReliability(context.Background(), exec, publisher, validHeartbeatConsumedEvent(), consumerRetryOptions{
+		MaxRetries:      3,
+		DeadLetterTopic: "cpemon.deadletter.v1",
+		Sleep: func(ctx context.Context, delay time.Duration) error {
+			return context.Canceled
+		},
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context.Canceled", err)
+	}
+	if len(publisher.events) != 0 {
+		t.Fatalf("dead-letter events = %d, want 0 when retry sleep is canceled", len(publisher.events))
+	}
+}
+
 func TestProcessConsumedEventWithReliabilityReturnsDeadLetterPublishError(t *testing.T) {
 	publishErr := errors.New("dead-letter broker unavailable")
 	publisher := &recordedPublisher{err: publishErr}
@@ -180,6 +200,18 @@ func TestProcessConsumedEventWithReliabilityReturnsDeadLetterPublishError(t *tes
 	}
 	if !strings.Contains(err.Error(), "publish dead-letter event") {
 		t.Fatalf("error = %q, want dead-letter context", err.Error())
+	}
+}
+
+func TestDeadLetterEventUsesOffsetKeyWhenMessageKeyIsMissing(t *testing.T) {
+	event := deadLetterEvent{
+		SourceTopic: "cpemon.device.heartbeat.v1",
+		Partition:   3,
+		Offset:      99,
+	}
+
+	if got := event.Key(); got != "cpemon.device.heartbeat.v1:3:99" {
+		t.Fatalf("dead-letter fallback key = %q", got)
 	}
 }
 
