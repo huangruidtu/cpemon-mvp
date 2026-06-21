@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	DefaultKafkaConsumerGroupID = "cpemon-writer"
+)
+
 type Config struct {
 	DBDSN                      string        // MySQL DSN. Treat as secret material.
 	HTTPAddr                   string        // HTTP listen address, for example :8080.
@@ -94,7 +98,7 @@ func Load() Config {
 	cfg.KafkaProducerTimeout = getenvDuration("KAFKA_PRODUCER_TIMEOUT", 5*time.Second)
 	cfg.KafkaProducerMaxRetries = getenvPositiveInt("KAFKA_PRODUCER_MAX_RETRIES", 3)
 	cfg.KafkaConsumerEnabled = getenvBool("KAFKA_CONSUMER_ENABLED", false)
-	cfg.KafkaConsumerGroupID = getenv("KAFKA_CONSUMER_GROUP_ID", "cpemon-writer")
+	cfg.KafkaConsumerGroupID = getenv("KAFKA_CONSUMER_GROUP_ID", DefaultKafkaConsumerGroupID)
 	cfg.KafkaConsumerReadTimeout = getenvDuration("KAFKA_CONSUMER_READ_TIMEOUT", 5*time.Second)
 	cfg.KafkaConsumerCommitTimeout = getenvDuration("KAFKA_CONSUMER_COMMIT_TIMEOUT", 5*time.Second)
 	cfg.KafkaConsumerMaxRetries = getenvPositiveInt("KAFKA_CONSUMER_MAX_RETRIES", 3)

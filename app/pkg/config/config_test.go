@@ -77,7 +77,7 @@ func TestLoadKafkaProducerDefaults(t *testing.T) {
 	if cfg.KafkaConsumerEnabled {
 		t.Fatal("KafkaConsumerEnabled = true, want false by default")
 	}
-	if cfg.KafkaConsumerGroupID != "cpemon-writer" {
+	if cfg.KafkaConsumerGroupID != DefaultKafkaConsumerGroupID {
 		t.Fatalf("KafkaConsumerGroupID = %q", cfg.KafkaConsumerGroupID)
 	}
 	if cfg.KafkaConsumerReadTimeout != 5*time.Second {

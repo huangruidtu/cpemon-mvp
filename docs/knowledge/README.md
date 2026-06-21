@@ -43,6 +43,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Bootstrap Configuration Runbook](../../ops/runbooks/kafka-bootstrap-config.md)
 - [acs-ingest Kafka Producer Integration Validation Runbook](../../ops/runbooks/acs-ingest-kafka-producer-validation.md)
 - [acs-ingest Kafka Producer Operations Runbook](../../ops/runbooks/acs-ingest-kafka-producer-operations.md)
+- [cpemon-writer Kafka Consumer Group Runbook](../../ops/runbooks/cpemon-writer-kafka-consumer-group.md)
 - [Kafka Namespace Runbook](../../ops/runbooks/kafka-namespace.md)
 - [Kafka Platform Helm Runbook](../../ops/runbooks/kafka-platform-helm.md)
 - [Kafka Produce and Consume Validation Runbook](../../ops/runbooks/kafka-produce-consume-validation.md)

@@ -65,6 +65,11 @@ Consumer group id:
 offset identity. If the group id changes, Kafka treats it as a new consumer
 group and starts from the configured offset behavior.
 
+Partition ownership:
+Within one consumer group, a topic partition is assigned to one active consumer
+at a time. Scaling `cpemon-writer` can increase parallelism only up to the
+number of partitions in the subscribed topics.
+
 ## Strong Q&A
 
 ### Why introduce `EventConsumer`?
@@ -98,6 +103,13 @@ because duplicate processing is possible.
 Because this is an incremental migration. The existing DB queue path remains the
 known-safe behavior while we add config, adapter, processing, retry, metrics,
 and validation step by step.
+
+### What happens if the consumer group id changes?
+
+Kafka treats it as a different group with a different committed offset history.
+That can be useful for a controlled replay, but it is dangerous as an accidental
+config change because it may reprocess old messages or appear to skip expected
+group progress.
 
 ### How can you test this without Kafka?
 

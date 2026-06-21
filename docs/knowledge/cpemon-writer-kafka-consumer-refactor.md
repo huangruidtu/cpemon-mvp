@@ -119,6 +119,33 @@ Interview framing:
 > explicit. The writer can remain on the DB polling path while the chart,
 > ConfigMap, and application config already agree on the consumer contract.
 
+## Consumer Group Configuration
+
+`CCPU-91` makes the consumer group id an explicit contract.
+
+Default:
+
+```text
+cpemon-writer
+```
+
+Why it matters:
+
+* Kafka stores committed offsets by consumer group id.
+* All `cpemon-writer` replicas in the same group share topic partitions.
+* A partition is owned by one group member at a time.
+* Changing the group id creates a new offset history.
+
+The default group id is defined in code as `DefaultKafkaConsumerGroupID`, wired
+through environment variable `KAFKA_CONSUMER_GROUP_ID`, and rendered by Helm as
+`appConfig.kafkaConsumerGroupId`.
+
+Operational reference:
+
+```text
+ops/runbooks/cpemon-writer-kafka-consumer-group.md
+```
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:
