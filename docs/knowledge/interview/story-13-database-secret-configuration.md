@@ -10,6 +10,76 @@ The story separates three concerns:
 - sensitive values belong in Kubernetes Secrets at runtime
 - real secret material should be managed outside Git, ideally in AWS Secrets Manager and reconciled by External Secrets Operator
 
+## Q1A: What did you decide for ESO, AWS Secrets Manager, and KMS?
+
+I selected this model:
+
+```text
+AWS Secrets Manager
+        |
+        | encrypted at rest with AWS KMS
+        v
+External Secrets Operator on EKS
+        |
+        | authenticated through IRSA
+        v
+Kubernetes Secret
+        |
+        v
+CPEmon workloads through secretKeyRef
+```
+
+The reason is separation of responsibility. Git owns the desired contract, AWS Secrets Manager owns the real values, KMS protects encryption at rest, IRSA gives the operator AWS permissions without static keys, and the application keeps consuming normal Kubernetes Secrets.
+
+## Q1B: Why not just use Kubernetes Secrets?
+
+Kubernetes Secrets are the runtime projection, not the whole source-of-truth story.
+
+If I only use manually created Kubernetes Secrets, I still need to answer:
+
+- where the real values are stored outside the cluster
+- who can read or rotate them
+- how access is audited
+- how a recreated cluster gets the same secret contract
+- how GitOps reconciles desired state without storing credentials
+
+External Secrets Operator gives that reconciliation layer while leaving the workload interface unchanged.
+
+## Q1C: What is the difference between Secrets Manager and KMS?
+
+Secrets Manager stores and versions the secret value.
+
+KMS protects the cryptographic key material used by AWS services to encrypt the secret at rest.
+
+IAM controls who can call APIs like `secretsmanager:GetSecretValue`, and KMS policy can add another boundary for using the encryption key.
+
+In an interview, I would explain it as:
+
+```text
+Secrets Manager answers: where is the secret?
+KMS answers: how is the secret protected at rest?
+IAM/IRSA answers: who is allowed to read it from EKS?
+ESO answers: how does it become a Kubernetes Secret?
+```
+
+## Q1D: Why use IRSA for ESO?
+
+ESO needs AWS API permissions to read from Secrets Manager.
+
+I do not want long-lived AWS access keys stored in Kubernetes. IRSA lets the ESO service account assume an IAM role through the EKS OIDC provider.
+
+That gives least privilege:
+
+```text
+service account external-secrets/external-secrets
+        |
+        v
+IAM role trusted by EKS OIDC subject
+        |
+        v
+secretsmanager:GetSecretValue only for approved CPEmon secret ARNs
+```
+
 ## Q2: What did you decide for MySQL in Step 1?
 
 For Step 1, I kept MySQL inside the EKS application boundary.

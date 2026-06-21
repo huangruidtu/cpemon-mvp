@@ -41,3 +41,4 @@ For Story 13, practice the database and secret migration boundary:
 - why Step 1 keeps MySQL in EKS
 - why RDS is deferred but still the production direction
 - how `DB_DSN` lets the database implementation change behind a stable application contract
+- how ESO, AWS Secrets Manager, KMS, and IRSA split responsibilities

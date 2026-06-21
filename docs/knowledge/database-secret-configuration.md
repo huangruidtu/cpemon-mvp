@@ -37,6 +37,72 @@ The important boundary:
 - IRSA gives External Secrets Operator AWS permission without static AWS keys.
 - Kubernetes Secrets become the local cluster projection consumed by Pods.
 
+## CCPU-154: ESO, AWS Secrets Manager, and KMS Decision
+
+`CCPU-154` records the secret-management architecture decision for Story 7.
+
+The ADR is:
+
+```text
+ADR/cloud-platform-upgrade-eso-aws-secrets-manager-kms.md
+```
+
+### Decision
+
+Use External Secrets Operator with AWS Secrets Manager, AWS KMS, and IRSA:
+
+```text
+AWS Secrets Manager
+        |
+        | encrypted at rest with AWS KMS
+        v
+External Secrets Operator on EKS
+        |
+        | authenticated through IRSA
+        v
+Kubernetes Secret in namespace cpemon
+        |
+        v
+CPEmon workloads through secretKeyRef
+```
+
+### Boundary
+
+Git owns the declarative contract:
+
+- `SecretStore` or `ClusterSecretStore` manifests
+- `ExternalSecret` manifests
+- Kubernetes Secret names and keys
+- workload `secretKeyRef` wiring
+- validation scripts and runbooks
+
+Git does not own real secret values.
+
+AWS Secrets Manager owns secret material. AWS KMS protects the encryption model for those secrets. IRSA gives the ESO controller permission to read only approved secrets without static AWS keys.
+
+### Why This Is Better Than Kubernetes Secret Alone
+
+A Kubernetes Secret is the local runtime projection that Pods can consume. It is not, by itself, a full production secret-management system.
+
+The missing pieces are:
+
+- central source of truth outside the cluster
+- IAM-based access control
+- cloud audit trail
+- key-management boundary
+- future rotation workflows
+- GitOps-friendly reconciliation
+
+External Secrets Operator fills the delivery gap while keeping applications on the standard Kubernetes Secret interface.
+
+### Deferred
+
+RDS credentials are deferred because Step 1 intentionally keeps MySQL in EKS. Kafka credentials are deferred because Kafka is not part of the current MVP runtime path. The ESO pattern can support both later without changing the application contract.
+
+### Interview Point
+
+I separated the secret source from the Kubernetes runtime projection. AWS Secrets Manager is the source of truth, KMS protects encryption at rest, IRSA gives ESO least-privilege AWS access, and Kubernetes Secrets remain the local interface that Pods consume. That is a production-style boundary because Git can own the desired shape without owning the secret values.
+
 ## CCPU-61: MySQL Deployment Strategy for Step 1
 
 For Step 1, CPEmon keeps MySQL inside the EKS application boundary.
