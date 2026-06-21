@@ -48,7 +48,10 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_DSN
-              value: "cpemon:17U5to6DFosEfVjOGPIdP99A9HGACRK@tcp(mysql.cpemon.svc.cluster.local:3306)/cpemon?parseTime=true"
+              valueFrom:
+                secretKeyRef:
+                  name: cpemon-db
+                  key: dsn
             - name: HTTP_ADDR
               value: ":8080"
             - name: HMAC_SECRET

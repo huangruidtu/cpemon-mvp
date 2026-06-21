@@ -157,3 +157,65 @@ MySQL is a data dependency. It is enabled only when the environment wants this c
 ### Interview Point
 
 I did not add a heavy MySQL chart dependency yet because the project needed a small, reviewable migration step. I templated the existing MySQL resource shape directly, kept it optional, and preserved the secret boundary by referencing `mysql-auth` instead of putting credentials in values. This keeps the Step 1 path understandable while leaving room to replace in-cluster MySQL with RDS or a dedicated database chart later.
+
+## CCPU-63: Refactor DB_DSN Configuration
+
+`DB_DSN` is sensitive because a MySQL DSN usually contains username, password, host, port, database name, and connection options.
+
+For `CCPU-63`, the project tightens this boundary in two places:
+
+1. Raw Kubernetes application manifests now read `DB_DSN` from Secret `cpemon-db`, key `dsn`.
+2. The Go config loader no longer prints the raw DSN in logs.
+
+### Why This Matters
+
+Kubernetes manifests and application logs are both common leak paths.
+
+If a DSN is committed directly into a Deployment, the credential leaks through:
+
+- Git history
+- pull request diffs
+- rendered YAML
+- kubectl output
+- screenshots and interview demos
+
+If the app logs the DSN at startup, the credential can leak through:
+
+- pod logs
+- log shipping agents
+- Kibana or other log search tools
+- incident tickets copied from logs
+
+### New Raw Manifest Pattern
+
+The raw manifests now use:
+
+```yaml
+- name: DB_DSN
+  valueFrom:
+    secretKeyRef:
+      name: cpemon-db
+      key: dsn
+```
+
+This matches the Helm chart pattern and keeps `DB_DSN` as the application contract while moving secret material out of the Deployment YAML.
+
+### Logging Pattern
+
+The app config log now records whether `DB_DSN` is set, not what it contains:
+
+```text
+config loaded: DB_DSN_set=true HTTPAddr=:8080 WorkerInterval=1s BatchSize=50
+```
+
+That is enough for basic troubleshooting without exposing credentials.
+
+### What Still Remains
+
+The local Go default still includes a localhost fallback DSN so developers can run the app outside Kubernetes. That fallback is not used by the EKS manifests when `DB_DSN` is supplied from a Secret.
+
+Future subtasks will define how `cpemon-db` is created through External Secrets Operator and AWS Secrets Manager.
+
+### Interview Point
+
+I treated `DB_DSN` as secret material, not just configuration. I removed committed DSN values from the raw Kubernetes app manifests and changed the app startup log so it reports only whether the DSN is configured. That closes two common leak paths: Git/Kubernetes YAML and centralized logs.

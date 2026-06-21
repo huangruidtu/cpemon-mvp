@@ -138,6 +138,54 @@ MySQL is a data dependency. Some environments may use in-cluster MySQL, while fu
 
 I avoided adding a MySQL chart dependency in Step 1 because the goal was not to adopt a full database chart lifecycle yet. The project needed a small, reviewable bridge from the current raw MySQL manifest to Helm. I copied the existing shape into an optional chart template, kept it disabled by default, and made sure it only references `mysql-auth` rather than storing credentials. That leaves the path open for RDS or a dedicated dependency later without making this story too broad.
 
+## Q13: Why is `DB_DSN` considered secret material?
+
+A database DSN often contains the username, password, host, database name, and connection options in one string.
+
+Even if the host and database name are not secret, the password usually is. It is safer to treat the whole DSN as sensitive and keep it out of Git, rendered manifests, and logs.
+
+## Q14: What did you change for `DB_DSN` in the raw manifests?
+
+The raw app manifests now read `DB_DSN` from Kubernetes Secret `cpemon-db`, key `dsn`.
+
+The pattern is:
+
+```yaml
+- name: DB_DSN
+  valueFrom:
+    secretKeyRef:
+      name: cpemon-db
+      key: dsn
+```
+
+That matches the Helm chart secret-reference model.
+
+## Q15: What logging issue did you fix?
+
+The config loader used to log the raw DSN at startup.
+
+That is risky because application logs are often shipped to centralized systems like Elasticsearch or cloud logging. A secret printed once at startup can become searchable for a long time.
+
+The app now logs only:
+
+```text
+DB_DSN_set=true
+```
+
+That proves the variable was configured without exposing the value.
+
+## Q16: Why keep a local fallback DSN in code?
+
+It preserves local developer convenience for running the app outside Kubernetes.
+
+The important production boundary is that Kubernetes manifests supply `DB_DSN` from a Secret. When the environment variable is present, the fallback is not used.
+
+In a stricter production codebase, I might make `DB_DSN` required and fail fast if it is missing. For this migration step, I kept backward compatibility but stopped leaking the DSN.
+
+## Q17: How would you summarize CCPU-63?
+
+I refactored `DB_DSN` handling so Kubernetes deployments no longer commit a literal database connection string, and the app no longer logs the raw DSN. The workloads now consume `DB_DSN` from Secret `cpemon-db` key `dsn`, which aligns raw YAML with the Helm chart and prepares the project for External Secrets Operator.
+
 ## STAR Story
 
 Situation:
