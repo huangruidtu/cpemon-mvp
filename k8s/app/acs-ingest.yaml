@@ -53,7 +53,10 @@ spec:
                   name: cpemon-db
                   key: dsn
             - name: HTTP_ADDR
-              value: ":8080"
+              valueFrom:
+                configMapKeyRef:
+                  name: cpemon-app-config
+                  key: HTTP_ADDR
             - name: HMAC_SECRET
               value: "changeme-acs-hmac"
           ports:

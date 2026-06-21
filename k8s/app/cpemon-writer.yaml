@@ -28,11 +28,20 @@ spec:
                   name: cpemon-db
                   key: dsn
             - name: HTTP_ADDR
-              value: ":8080"
+              valueFrom:
+                configMapKeyRef:
+                  name: cpemon-app-config
+                  key: HTTP_ADDR
             - name: WORKER_INTERVAL
-              value: "1s"
+              valueFrom:
+                configMapKeyRef:
+                  name: cpemon-app-config
+                  key: WORKER_INTERVAL
             - name: BATCH_SIZE
-              value: "50"
+              valueFrom:
+                configMapKeyRef:
+                  name: cpemon-app-config
+                  key: BATCH_SIZE
           ports:
             - name: http
               containerPort: 8080

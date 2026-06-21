@@ -219,3 +219,53 @@ Future subtasks will define how `cpemon-db` is created through External Secrets 
 ### Interview Point
 
 I treated `DB_DSN` as secret material, not just configuration. I removed committed DSN values from the raw Kubernetes app manifests and changed the app startup log so it reports only whether the DSN is configured. That closes two common leak paths: Git/Kubernetes YAML and centralized logs.
+
+## CCPU-64: Move Non-Sensitive Config to ConfigMap
+
+`CCPU-64` aligns the raw Kubernetes app manifests with the Helm chart ConfigMap boundary.
+
+The raw manifests now include:
+
+```text
+k8s/app/cpemon-app-config.yaml
+```
+
+This ConfigMap owns non-sensitive runtime configuration:
+
+| Key | Used by |
+| --- | --- |
+| `HTTP_ADDR` | `cpemon-api`, `acs-ingest`, `cpemon-writer` |
+| `GRAFANA_HOME_URL` | `cpemon-api` |
+| `GRAFANA_SN_DASHBOARD_URL_TEMPLATE` | `cpemon-api` |
+| `KIBANA_HOME_URL` | `cpemon-api` |
+| `KIBANA_SN_LOGS_URL_TEMPLATE` | `cpemon-api` |
+| `WORKER_INTERVAL` | `cpemon-writer` |
+| `BATCH_SIZE` | `cpemon-writer` |
+
+### Why ConfigMap
+
+These values are environment-specific, but not secret.
+
+Putting them in a ConfigMap makes the boundary explicit:
+
+- non-sensitive runtime config goes to ConfigMap
+- sensitive runtime config goes to Secret
+- application code still reads normal environment variables
+
+### Raw Manifest Pattern
+
+The raw manifests now use:
+
+```yaml
+- name: HTTP_ADDR
+  valueFrom:
+    configMapKeyRef:
+      name: cpemon-app-config
+      key: HTTP_ADDR
+```
+
+This matches the Helm chart pattern from Story 6.
+
+### Interview Point
+
+I separated environment-specific but non-sensitive configuration from the Deployment manifests. The application still reads ordinary environment variables, but Kubernetes now sources those values from a ConfigMap. That makes the raw YAML easier to review and keeps the model consistent with the Helm chart.

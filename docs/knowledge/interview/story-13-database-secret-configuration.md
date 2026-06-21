@@ -186,6 +186,48 @@ In a stricter production codebase, I might make `DB_DSN` required and fail fast 
 
 I refactored `DB_DSN` handling so Kubernetes deployments no longer commit a literal database connection string, and the app no longer logs the raw DSN. The workloads now consume `DB_DSN` from Secret `cpemon-db` key `dsn`, which aligns raw YAML with the Helm chart and prepares the project for External Secrets Operator.
 
+## Q18: What belongs in ConfigMap versus Secret?
+
+ConfigMap is for non-sensitive runtime configuration, such as ports, URLs, feature flags, and batch sizes.
+
+Secret is for sensitive runtime material, such as database passwords, DSNs, tokens, and HMAC keys.
+
+The practical rule is: if exposing the value in Git, logs, screenshots, or `kubectl get yaml` would be a security problem, use Secret.
+
+## Q19: What did you move into the raw app ConfigMap?
+
+I added `k8s/app/cpemon-app-config.yaml`.
+
+It contains:
+
+```text
+HTTP_ADDR
+GRAFANA_HOME_URL
+GRAFANA_SN_DASHBOARD_URL_TEMPLATE
+KIBANA_HOME_URL
+KIBANA_SN_LOGS_URL_TEMPLATE
+WORKER_INTERVAL
+BATCH_SIZE
+```
+
+These are environment-specific but not secret.
+
+## Q20: Why is this useful if Helm already has a ConfigMap?
+
+The raw YAML still exists as the MVP baseline and migration reference.
+
+Aligning the raw manifests with the Helm chart makes the migration easier to explain. Both paths now use the same mental model:
+
+```text
+non-secret config -> ConfigMap
+secret config -> Secret
+application reads env vars
+```
+
+## Q21: How would you summarize CCPU-64?
+
+I moved non-sensitive runtime configuration out of the raw Deployment env literals and into `cpemon-app-config`. The workloads now source those values with `configMapKeyRef`, while sensitive values remain in Secrets. This makes the raw manifests match the Helm chart boundary and gives a clearer interview story around ConfigMap versus Secret.
+
 ## STAR Story
 
 Situation:
