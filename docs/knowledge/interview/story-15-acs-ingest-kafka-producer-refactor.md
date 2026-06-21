@@ -35,3 +35,27 @@ current model this is the ACS serial number, exposed as `device_id`.
 service normalized the event. Keeping both lets us reason about delay, replay,
 and incident timelines.
 
+## CCPU-80: WAN Status Event Schema
+
+`CCPU-80` defines the normalized WAN status event contract for
+`cpemon.wan.status.v1`.
+
+### Why make WAN status a separate event from heartbeat?
+
+Heartbeat answers whether a device was seen. WAN status answers what the
+connectivity state looked like when it was seen. Keeping them as separate event
+families lets consumers subscribe to the signal they need and lets each schema
+evolve independently.
+
+### Why use the same message key as heartbeat?
+
+Both events use stable device identity as the key. That makes partitioning and
+debugging consistent: when investigating one device, the key is the same across
+`device.heartbeat` and `wan.status`.
+
+### What happens if the raw payload has no WAN data?
+
+The mapper returns an error instead of publishing a weak event. A WAN status
+event should contain either an explicit status field or a WAN IP from which the
+current implementation can derive `wan_status: up`.
+

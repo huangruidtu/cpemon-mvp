@@ -93,3 +93,57 @@ Key points to mention:
 * The schema records both event time and ingest time.
 * The schema is unit-testable without Kafka.
 
+## WAN Status Event Contract
+
+Topic:
+
+```text
+cpemon.wan.status.v1
+```
+
+Message key:
+
+```text
+device_id
+```
+
+For the current CPEmon model, `device_id` is again the ACS serial number. This
+keeps all events for a device keyed consistently across heartbeat and WAN
+status topics.
+
+Payload fields:
+
+| Field | Meaning |
+| --- | --- |
+| `schema_version` | Contract version. Current value: `v1`. |
+| `event_type` | Current value: `wan.status`. |
+| `source` | Source system, normally `acs`. |
+| `device_id` | Stable Kafka message key and device identity. |
+| `serial_number` | Original ACS serial number. |
+| `event_ts` | Timestamp from the ACS event, normalized to UTC. |
+| `received_at` | Time the ingest service created the normalized event. |
+| `wan_status` | Normalized WAN state, for example `up`. |
+| `wan_ip` | Optional WAN IP address from the ingest payload. |
+| `sw_version` | Optional software version metadata when present. |
+
+Example:
+
+```json
+{
+  "schema_version": "v1",
+  "event_type": "wan.status",
+  "source": "acs",
+  "device_id": "CPE-001",
+  "serial_number": "CPE-001",
+  "event_ts": "2026-06-21T10:30:00Z",
+  "received_at": "2026-06-21T10:31:00Z",
+  "wan_status": "up",
+  "wan_ip": "10.0.0.13",
+  "sw_version": "v1.0-demo"
+}
+```
+
+The mapper accepts `wan_status`, `wan_state`, or `status` from the raw payload.
+If the payload has `wan_ip` but no explicit status, the event derives
+`wan_status: up`. If neither status nor `wan_ip` is present, the mapper returns
+an error so the caller does not publish a misleading WAN event.
