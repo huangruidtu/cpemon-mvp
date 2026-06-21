@@ -290,6 +290,26 @@ They run fast and fail close to the code that made the decision. If a test for
 poison-message DLQ behavior fails, I know the issue is in processing logic, not
 Kafka networking, topic metadata, or local cluster state.
 
+### How do you prove Kafka-to-DB integration?
+
+Run the live validation path: enable `KAFKA_CONSUMER_ENABLED=true`, produce a
+keyed heartbeat event and a keyed WAN status event into Kafka, then verify that
+`cpemon-writer` updates `cpe_status` and `cpe_status_history` in MySQL. Also
+check the `cpemon-writer` consumer group offsets and writer Kafka metrics.
+
+### What is the boundary if no live cluster is available?
+
+The repository check can prove that the runbook, code wiring, config keys,
+commands, and docs exist. It does not prove live broker-to-DB behavior. That
+requires a running Kafka broker, `cpemon-writer`, MySQL, and real messages.
+
+### Why keep unit proof and integration proof separate?
+
+Unit tests explain whether the consumer logic is correct. Integration
+validation explains whether the deployed system works: DNS, topics, consumer
+group membership, Kafka records, database connectivity, schema, offset commits,
+and metrics.
+
 ### Why use a bounded commit timeout?
 
 Offset commits are part of the reliability path, but they should not hang
@@ -338,3 +358,8 @@ partition, offset, attempts, failure kind, `duration_ms`, and error context.
 Consolidated broker-free consumer unit coverage across interface, adapter,
 decode, routing, idempotent MySQL writes, offset commit, retry/dead-letter, and
 shutdown/fallback edge cases.
+
+Added Kafka-to-DB validation wiring and runbook: when
+`KAFKA_CONSUMER_ENABLED=true`, `cpemon-writer` starts the Kafka consumer loop,
+uses the dead-letter publisher, processes heartbeat and WAN status events, and
+the runbook verifies MySQL state plus consumer group offsets.

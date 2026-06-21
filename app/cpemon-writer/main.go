@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -120,6 +122,10 @@ func main() {
 	// 👉 启动 9100 metrics server
 	startMetricsServer()
 
+	if cfg.KafkaConsumerEnabled {
+		startKafkaConsumerRuntime(context.Background(), db, cfg)
+	}
+
 	// 4. 启动后台 worker 循环
 	go func() {
 		log.Printf("cpemon-writer worker loop started: interval=%s batchSize=%d", cfg.WorkerInterval, cfg.BatchSize)
@@ -152,6 +158,33 @@ func main() {
 	if err := r.Run(cfg.HTTPAddr); err != nil {
 		log.Fatalf("failed to start cpemon-writer: %v", err)
 	}
+}
+
+func startKafkaConsumerRuntime(ctx context.Context, exec sqlExecutor, cfg appconfig.Config) {
+	consumer, err := appevents.NewKafkaConsumerFromConfig(cfg)
+	if err != nil {
+		log.Fatalf("failed to initialize Kafka consumer: %v", err)
+	}
+	publisher, err := appevents.NewKafkaProducerFromConfig(cfg)
+	if err != nil {
+		log.Fatalf("failed to initialize Kafka dead-letter publisher: %v", err)
+	}
+
+	opts := consumerRetryOptions{
+		MaxRetries:      cfg.KafkaConsumerMaxRetries,
+		RetryBackoff:    cfg.KafkaConsumerRetryBackoff,
+		DeadLetterTopic: cfg.KafkaTopicDeadletter,
+	}
+
+	go func() {
+		log.Printf("event=writer_kafka_consumer result=start group=%s topics=%s,%s",
+			cfg.KafkaConsumerGroupID, cfg.KafkaTopicDeviceHeartbeat, cfg.KafkaTopicWANStatus)
+		if err := consumer.Consume(ctx, func(ctx context.Context, event appevents.ConsumedEvent) error {
+			return processConsumedEventWithReliability(ctx, exec, publisher, event, opts)
+		}); err != nil && !errors.Is(err, context.Canceled) {
+			log.Printf("event=writer_kafka_consumer result=error group=%s error=%q", cfg.KafkaConsumerGroupID, err.Error())
+		}
+	}()
 }
 
 // runOnce processes up to batchSize queued events in ingest_events.

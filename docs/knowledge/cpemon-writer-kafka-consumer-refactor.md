@@ -555,6 +555,64 @@ Interview framing:
 > decisions, retry/DLQ behavior, and shutdown edge cases are correct without a
 > broker.
 
+## Kafka-to-DB Integration Validation
+
+`CCPU-94` adds the live validation path for:
+
+```text
+Kafka topic -> cpemon-writer Kafka consumer -> MySQL read model
+```
+
+Runtime wiring:
+
+When `KAFKA_CONSUMER_ENABLED=true`, `cpemon-writer` starts a Kafka consumer loop
+using:
+
+* `NewKafkaConsumerFromConfig`
+* `NewKafkaProducerFromConfig` for dead-letter publication
+* `processConsumedEventWithReliability`
+* configured retry/backoff/dead-letter topic values
+
+The consumer remains disabled by default, so the current MySQL queue baseline
+does not change unless the environment explicitly enables the Kafka path.
+
+Runbook:
+
+```text
+ops/runbooks/cpemon-writer-kafka-to-db-validation.md
+```
+
+The runbook validates:
+
+* writer consumer env vars
+* startup log `event=writer_kafka_consumer result=start`
+* producing heartbeat and WAN status events with keyed Kafka messages
+* MySQL `cpe_status` current row updates
+* MySQL `cpe_status_history` rows
+* consumer group offset movement
+* writer Kafka metrics
+
+Repository check:
+
+```powershell
+make cpemon-writer-kafka-to-db-validation-check
+```
+
+Boundary:
+
+The repository check validates wiring, docs, commands, and expected evidence.
+It does not prove live broker-to-DB behavior. Live proof requires a running
+cluster with Kafka, `cpemon-writer`, and MySQL, then executing the runbook's
+produce and SQL verification steps.
+
+Interview framing:
+
+> Unit tests prove deterministic behavior without Kafka. The integration
+> runbook proves the live boundary: Kafka stores the message, `cpemon-writer`
+> consumes it, MySQL changes, offsets advance, and metrics/logs show the path.
+> I keep those two proof layers separate because they fail for different
+> reasons.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:
