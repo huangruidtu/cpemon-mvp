@@ -26,3 +26,11 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 10: EKS Provisioning Capstone and Incident Drill](story-10-eks-provisioning-capstone.md)
 - [Story 11: EKS Platform Add-ons](story-11-eks-platform-addons.md)
 - [Story 12: Helm CPEmon Application](story-12-helm-cpemon-application.md)
+
+## Practice Focus
+
+For Story 12, practice three layers:
+
+- the 90-second project story
+- the tool boundaries between Terraform, Helm, kubectl, and Argo CD
+- render failure troubleshooting with `helm lint` and `helm template`

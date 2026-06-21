@@ -543,3 +543,191 @@ Until then, the honest validation boundary is local lint and render.
 ## Q56: How would you summarize CCPU-57 in an interview?
 
 I documented the operational workflow for the CPEmon Helm chart. The runbook explains how to validate and render the chart now, what to inspect in the generated manifests, what prerequisites are needed before live install, how to check a future release, and how to roll back. I also captured the migration decision: Terraform owns infrastructure, Helm packages the application, and the chart prepares CPEmon for future Argo CD GitOps.
+
+## Interview Storyline: 90-Second Version
+
+CPEmon started as a raw Kubernetes YAML MVP, which was useful because every object was explicit and easy to learn from.
+
+As the platform upgrade moved toward EKS and future GitOps, raw YAML became harder to scale across environments. Image tags, replicas, resources, non-secret config, secret references, Ingress, monitoring, PDBs, and NetworkPolicies all needed controlled variation.
+
+I introduced a Helm chart under `deploy/helm/cpemon` to package the application layer. Terraform still owns cloud infrastructure, and Kubernetes platform add-ons still provide cluster capabilities. Helm owns the reusable application rendering layer.
+
+I built the chart in stages: scaffold, values model, workload templates, ConfigMap and Secret references, optional platform integrations, Makefile validation targets, and runbook documentation. I kept Secrets as references rather than committing secret material, and I kept optional platform features disabled by default because they depend on cluster add-ons.
+
+The chart is now validated with `helm lint` and `helm template` before any live install. That gives fast feedback and prepares the application for a future Argo CD workflow, where Git will be the source of truth and Argo CD can render and sync the Helm chart into the cluster.
+
+## Interview Storyline: STAR Format
+
+Situation:
+
+CPEmon had working Kubernetes manifests, but they were raw YAML and environment-specific values were embedded directly in repeated files.
+
+Task:
+
+The application needed a reusable packaging model that could support EKS, CI-provided image tags, safer secret handling, optional platform integrations, and future GitOps.
+
+Action:
+
+I created a Helm chart with a structured values model, reusable helpers, workload templates for the three services, ConfigMap and Secret reference handling, optional Ingress/ServiceMonitor/PDB/NetworkPolicy templates, Makefile validation targets, and runbook/interview documentation.
+
+Result:
+
+The application can now be rendered consistently with one chart and environment-specific values. The team can validate the chart locally before install, avoid committing real secrets, and later hand the chart to Argo CD for GitOps deployment.
+
+## Helm Mental Model Cheat Sheet
+
+Use this short model when answering fast interview questions:
+
+```text
+Chart = package
+templates = Kubernetes object patterns
+values = environment-specific inputs
+helpers = reusable naming/label logic
+release = installed instance of a chart
+helm lint = chart sanity check
+helm template = render without applying
+helm upgrade --install = apply or update a release
+```
+
+The CPEmon chart maps those concepts to real project files:
+
+```text
+Chart.yaml -> package metadata
+values.yaml -> default model
+values-dev.yaml -> dev overrides
+templates/*.yaml -> generated Kubernetes objects
+_helpers.tpl -> labels, names, image/env helpers
+Makefile -> repeatable validation workflow
+runbook -> operator workflow
+```
+
+## Helm vs Terraform vs kubectl apply
+
+| Tool | Owns | In this project |
+| --- | --- | --- |
+| Terraform | Cloud infrastructure lifecycle | VPC, subnets, EKS, IAM, ECR, node groups |
+| Helm | Kubernetes application packaging | CPEmon Deployments, Services, ConfigMap, optional app integrations |
+| kubectl apply | Direct Kubernetes object apply | useful for raw MVP manifests, dry-runs, and operational checks |
+| Argo CD | GitOps reconciliation | future controller that can consume the Helm chart from Git |
+
+Interview framing:
+
+> I avoid using one tool to solve every layer. Terraform provisions the cloud foundation, Helm packages the application for Kubernetes, kubectl is useful for direct inspection and emergency operations, and Argo CD later reconciles desired state from Git.
+
+## Common Helm Render Failures
+
+Q57: What common Helm render failures did you prepare for?
+
+Common failures include:
+
+- missing value
+- wrong value type
+- bad YAML indentation
+- helper name typo
+- selector/label mismatch
+- invalid image tag or repository
+- Secret reference typo
+- ConfigMap key mismatch
+- optional CRD rendered before the CRD exists
+
+Q58: How do you debug a missing value in Helm?
+
+First render locally with the same values file:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+Then check whether the missing field belongs in `values.yaml`, `values-dev.yaml`, or a CLI `--set` override. If it is a stable default, it belongs in `values.yaml`. If it is environment-specific, it belongs in an override file or CI/GitOps input.
+
+Q59: How do you debug a selector mismatch?
+
+Render the Deployment and Service together and compare:
+
+```text
+Deployment spec.selector.matchLabels
+Pod template metadata.labels
+Service spec.selector
+```
+
+For CPEmon, the chart uses shared helpers so workload labels and selector labels stay consistent.
+
+Q60: How do you debug a ServiceMonitor that does not scrape anything?
+
+Check three things:
+
+- the ServiceMonitor CRD exists
+- the ServiceMonitor selector matches Service labels
+- the selected Service has a port named `metrics`
+
+For CPEmon, ServiceMonitor is optional and disabled by default because it requires Prometheus Operator CRDs.
+
+Q61: How do you debug a NetworkPolicy issue?
+
+Start with DNS and database connectivity.
+
+If DNS egress is blocked, almost everything else looks broken. If DB egress is blocked, the app may start but fail runtime operations. The CPEmon NetworkPolicy template explicitly models DNS and core egress so those paths are reviewable before enabling the policy.
+
+## High-Frequency Interview Follow-Ups
+
+Q62: Why did you keep optional features disabled by default?
+
+Because they depend on cluster capabilities that may not exist everywhere.
+
+Ingress needs a controller, ServiceMonitor needs CRDs, NetworkPolicy needs enforcement, and PDBs need a replica model that makes sense. Disabling them by default keeps dev rendering safe.
+
+Q63: Why use Helm values instead of copying per-environment YAML?
+
+Copying YAML creates drift. A later bug fix has to be copied into every environment file.
+
+Helm keeps the object shape in one template and lets values describe environment differences.
+
+Q64: Why not store Secret values in Helm?
+
+Helm values can appear in Git, CI logs, rendered manifests, and Helm release history.
+
+The safer pattern is for the chart to reference Secret names and keys, while real secret material comes from a controlled secret-management workflow.
+
+Q65: What did you validate without a live cluster?
+
+I validated chart structure and rendering:
+
+- `helm lint`
+- `helm template`
+- values schema checks
+- selector and label consistency by rendered output review
+- ConfigMap and Secret reference shape
+- optional feature rendering with flags enabled
+
+I did not claim live rollout validation because the EKS cluster was not applied.
+
+Q66: What would you validate after live install?
+
+After live install I would check:
+
+- `helm status`
+- `helm get manifest`
+- Deployment rollout status
+- Services and endpoints
+- ConfigMap and Secret references
+- image pull events
+- application health endpoints
+- optional Ingress, ServiceMonitor, PDB, and NetworkPolicy behavior
+
+## Personal Practice Prompts
+
+Use these prompts to rehearse without memorizing:
+
+1. Explain why raw YAML was acceptable for the MVP but Helm is better for the upgrade.
+2. Walk through how `values.yaml`, `values-dev.yaml`, and `--set global.imageTag=...` merge.
+3. Explain why selectors are sensitive and why helpers reduce drift.
+4. Explain why `helm template` is valuable before `helm install`.
+5. Explain how the chart avoids committing real secrets.
+6. Explain why optional platform features are disabled by default.
+7. Explain how this Helm chart prepares the project for Argo CD.
+
+## Final Interview Summary
+
+If there is only time for one answer:
+
+> I Helmized CPEmon by turning repeated raw Kubernetes manifests into a reusable application chart. The chart separates stable Kubernetes structure from environment-specific values, uses helpers for stable labels and selectors, keeps non-secret config in a ConfigMap, references Secrets by name/key, and supports optional platform integrations behind values flags. I added Makefile validation so the chart can be linted and rendered before install, and documented the pre-apply boundary honestly because the live EKS cluster was not available yet. This makes the application deployment more repeatable today and prepares it for Argo CD GitOps later.
