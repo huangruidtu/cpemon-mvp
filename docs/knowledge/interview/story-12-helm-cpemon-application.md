@@ -167,6 +167,86 @@ Helm moves those differences into values, while keeping the Kubernetes object st
 
 ## Q15: What is the current validation boundary?
 
-At this point, the chart scaffold can be reviewed and later rendered locally.
+At this point, the chart can be linted and rendered locally.
 
-The local shell does not currently have Helm installed, and the EKS cluster has not been applied. Therefore live `helm upgrade --install` validation is intentionally deferred.
+The EKS cluster has not been applied in this local workflow, so live `helm upgrade --install` validation is intentionally deferred.
+
+## Q16: What did CCPU-53 add?
+
+`CCPU-53` added the first real workload template for the CPEmon Helm chart.
+
+The chart now renders one Deployment and one Service for each enabled workload in `.Values.workloads`:
+
+```text
+cpemon-api
+acs-ingest
+cpemon-writer
+```
+
+This turns the values model from CCPU-52 into Kubernetes manifests.
+
+## Q17: Why use one reusable workload template instead of three separate YAML files?
+
+The three CPEmon services have the same Kubernetes shape: Deployment, Service, image settings, ports, probes, resources, labels, and optional scheduling rules.
+
+The differences are workload-specific values such as name, component, repository, replicas, and env vars.
+
+Using one reusable template reduces copy-paste drift and makes future changes easier to review.
+
+## Q18: Why keep the old `app` label?
+
+Existing Kubernetes resources already depend on it.
+
+For example, ServiceMonitor and PDB selectors use labels such as:
+
+```yaml
+app: cpemon-api
+```
+
+The Helm chart keeps that compatibility label and adds recommended `app.kubernetes.io/*` labels for clearer production-style ownership.
+
+## Q19: Why are Deployment selectors designed carefully?
+
+Deployment selectors are immutable after the Deployment is created.
+
+If a selector changes, Kubernetes cannot simply patch the existing Deployment. In practice, this can force a delete and recreate.
+
+So the chart uses stable selector labels: app name, Helm release instance, and component.
+
+## Q20: How does the chart resolve container images?
+
+The chart combines:
+
+```text
+global.imageRegistry
+workload.image.repository
+workload.image.tag or global.imageTag
+```
+
+This allows normal releases to use one global image tag while still allowing per-workload overrides.
+
+## Q21: What security improvement did CCPU-53 make compared with the old raw YAML?
+
+The template renders sensitive runtime inputs through Kubernetes Secret references:
+
+```yaml
+valueFrom:
+  secretKeyRef:
+    name: cpemon-db
+    key: dsn
+```
+
+The chart commits Secret names and keys, not real secret values.
+
+## Q22: What commands validated CCPU-53?
+
+```powershell
+helm lint deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+The chart rendered successfully. `helm lint` reported only an informational icon recommendation and no chart failure.
+
+## Q23: How would you summarize CCPU-53 in an interview?
+
+I converted the CPEmon Helm chart from a values-only scaffold into a real application rendering layer. The chart now templates Deployments and Services for `cpemon-api`, `acs-ingest`, and `cpemon-writer` from a shared workload model. I kept backward-compatible `app` labels for monitoring selectors, added Kubernetes recommended labels, resolved images from global and workload-specific values, and moved sensitive env vars to Secret references. This made the application deployment more repeatable and safer while preserving the behavior of the original raw manifests.

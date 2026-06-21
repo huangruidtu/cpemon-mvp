@@ -252,6 +252,155 @@ Examples of mistakes it can catch:
 
 The schema is intentionally focused. It validates the stable parts of the values model while leaving room for later subtasks to add detailed rules for ingress, NetworkPolicy, PDB, and ServiceMonitor.
 
+## CCPU-53: Template CP Model Application Workflows
+
+`CCPU-53` is the point where the values model becomes real Kubernetes output.
+
+The task adds:
+
+```text
+deploy/helm/cpemon/templates/workloads.yaml
+```
+
+and extends:
+
+```text
+deploy/helm/cpemon/templates/_helpers.tpl
+```
+
+The chart now renders the three CPEmon application workflows:
+
+| Workload | Component | Kubernetes objects rendered |
+| --- | --- | --- |
+| `cpemon-api` | `api` | Deployment + Service |
+| `acs-ingest` | `ingest` | Deployment + Service |
+| `cpemon-writer` | `writer` | Deployment + Service |
+
+The key migration idea is:
+
+```text
+old raw YAML objects -> shared Helm values model -> reusable workload template -> rendered Kubernetes YAML
+```
+
+### Why Template the Workloads Together
+
+The three services have the same deployment shape:
+
+- image registry, repository, tag, and pull policy
+- replicas
+- HTTP and metrics ports
+- liveness and readiness probes
+- CPU and memory resources
+- image pull secret
+- optional scheduling preferences
+- ClusterIP Service
+
+Only a few things differ:
+
+- workload name
+- component label
+- image repository
+- replica count
+- environment variables
+- secret-backed environment variables
+
+This is exactly where Helm is useful. The repeated Kubernetes structure moves into the template. The workload-specific differences stay in `values.yaml`.
+
+### Label and Selector Design
+
+The templates keep the historical label:
+
+```yaml
+app: cpemon-api
+```
+
+This matters because existing monitoring and availability manifests already select workloads by the `app` label.
+
+The templates also add recommended Kubernetes labels:
+
+```yaml
+app.kubernetes.io/name
+app.kubernetes.io/instance
+app.kubernetes.io/component
+app.kubernetes.io/managed-by
+```
+
+This gives the chart a cleaner production-style ownership model without breaking existing selectors.
+
+The selector helper is intentionally small:
+
+```text
+app + release instance + component
+```
+
+Deployment selectors are immutable after creation, so selector fields should be stable and not include labels that change frequently.
+
+### Image Resolution
+
+The workload image is resolved from:
+
+```text
+global.imageRegistry + workload.image.repository + workload image tag or global.imageTag
+```
+
+For example, `cpemon-api` renders as:
+
+```text
+701573843911.dkr.ecr.eu-north-1.amazonaws.com/cpemon-api:__IMAGE_TAG__
+```
+
+This preserves the current migration behavior while preparing for CI to pass a commit SHA or release tag later.
+
+### Environment Variables and Secrets
+
+Plain environment variables render as:
+
+```yaml
+env:
+  - name: HTTP_ADDR
+    value: ":8080"
+```
+
+Secret-backed environment variables render as:
+
+```yaml
+env:
+  - name: DB_DSN
+    valueFrom:
+      secretKeyRef:
+        name: cpemon-db
+        key: dsn
+```
+
+This is a meaningful improvement over the older raw YAML, where sensitive database and HMAC values could appear directly in manifests.
+
+The interview point is:
+
+> The Helm chart stores secret references, not secret material.
+
+### Scheduling Model
+
+The template preserves the existing lab-friendly scheduling behavior:
+
+- prefer nodes labeled `cpemon-role=worker`
+- prefer spreading replicas across different nodes with pod anti-affinity
+- optionally tolerate control-plane taints for compact demo clusters
+
+This makes the chart compatible with the previous MVP behavior while keeping the scheduling model configurable from values.
+
+### Validation Result
+
+Because the local shell did not already have Helm installed, Helm was downloaded temporarily for validation.
+
+The chart passed:
+
+```powershell
+helm lint deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+`helm lint` returned one informational recommendation about adding a chart icon, and no chart failures.
+
 ## Helm Values Precedence
 
 When Helm renders a chart, values are merged from several sources.

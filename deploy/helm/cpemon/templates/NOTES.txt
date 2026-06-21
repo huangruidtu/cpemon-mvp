@@ -5,6 +5,9 @@ Release:
   Namespace: {{ include "cpemon.namespace" . }}
   Chart: {{ .Chart.Name }} {{ .Chart.Version }}
 
-This scaffold currently defines chart metadata, values, helpers, and install notes.
-Application workload templates are added in the next CCPU-6 subtasks.
+This chart now renders the CPEmon application workload model:
+  - cpemon-api
+  - acs-ingest
+  - cpemon-writer
 
+Use helm template or helm lint before applying the chart to a cluster.

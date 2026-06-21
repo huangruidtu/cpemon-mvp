@@ -18,7 +18,15 @@ Terraform AWS/EKS foundation -> Kubernetes platform add-ons -> CPEmon Helm chart
 - `templates/_helpers.tpl` centralizes names, labels, and namespace logic.
 - `templates/NOTES.txt` gives install-time guidance.
 
-The workload templates are intentionally added in later subtasks. This keeps the migration teachable: first understand chart anatomy, then values, then templating.
+`CCPU-52` expands the values model so the chart has a clear contract before templates are added.
+
+`CCPU-53` templates the three CPEmon application workflows:
+
+- `cpemon-api`
+- `acs-ingest`
+- `cpemon-writer`
+
+Each enabled workload now renders a Kubernetes Deployment and Service from the shared values model.
 
 ## Render Commands
 
@@ -119,3 +127,25 @@ It catches mistakes such as:
 - malformed secret-backed environment variables
 
 The schema is intentionally focused. It validates the stable chart contract without trying to describe every optional platform feature before those templates exist.
+
+## Workload Templates
+
+The workload template lives at:
+
+```text
+deploy/helm/cpemon/templates/workloads.yaml
+```
+
+It loops over `.Values.workloads` and renders one Deployment and one Service for each enabled workload.
+
+The template keeps these concerns reusable through `_helpers.tpl`:
+
+- stable labels and selectors
+- image registry, repository, tag, and pull policy resolution
+- plain environment variables
+- Secret-backed environment variables
+- default affinity and tolerations
+
+The rendered workloads keep the old `app` label for compatibility with existing ServiceMonitor and PDB selectors, while also adding Kubernetes recommended `app.kubernetes.io/*` labels for clearer ownership.
+
+Secret-backed values are rendered with `valueFrom.secretKeyRef`; the chart does not render raw database passwords or HMAC secrets.

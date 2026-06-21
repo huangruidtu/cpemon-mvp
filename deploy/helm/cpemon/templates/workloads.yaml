@@ -1,0 +1,111 @@
+{{- $root := . -}}
+{{- range $name, $workload := .Values.workloads }}
+{{- if $workload.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $workload.name | quote }}
+  namespace: {{ include "cpemon.namespace" $root | quote }}
+  labels:
+{{ include "cpemon.workloadLabels" (dict "root" $root "workload" $workload) | nindent 4 }}
+spec:
+  replicas: {{ $workload.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "cpemon.selectorLabels" (dict "root" $root "workload" $workload) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "cpemon.workloadLabels" (dict "root" $root "workload" $workload) | nindent 8 }}
+{{- with $root.Values.defaults.podLabels }}
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with $root.Values.defaults.podAnnotations }}
+      annotations:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+    spec:
+{{- with $root.Values.podScheduling.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- $affinity := include "cpemon.affinity" (dict "root" $root "workload" $workload) }}
+{{- if $affinity }}
+      affinity:
+{{ $affinity | nindent 8 }}
+{{- end }}
+{{- $tolerations := include "cpemon.tolerations" (dict "root" $root) }}
+{{- if $tolerations }}
+      tolerations:
+{{ $tolerations | nindent 8 }}
+{{- end }}
+{{- with $root.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+      containers:
+        - name: {{ $workload.name | quote }}
+          image: {{ include "cpemon.image" (dict "root" $root "workload" $workload) | quote }}
+          imagePullPolicy: {{ include "cpemon.imagePullPolicy" (dict "root" $root "workload" $workload) }}
+{{- if or $root.Values.defaults.env $workload.env $workload.secretEnv }}
+          env:
+{{- if $root.Values.defaults.env }}
+{{ include "cpemon.env" (dict "root" $root "env" $root.Values.defaults.env "secretEnv" list) | nindent 12 }}
+{{- end }}
+{{- if or $workload.env $workload.secretEnv }}
+{{ include "cpemon.env" (dict "root" $root "env" (default list $workload.env) "secretEnv" (default list $workload.secretEnv)) | nindent 12 }}
+{{- end }}
+{{- end }}
+{{- with $root.Values.defaults.envFrom }}
+          envFrom:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+          ports:
+            - name: {{ $root.Values.defaults.ports.http.name | quote }}
+              containerPort: {{ $root.Values.defaults.ports.http.containerPort }}
+            - name: {{ $root.Values.defaults.ports.metrics.name | quote }}
+              containerPort: {{ $root.Values.defaults.ports.metrics.containerPort }}
+{{- if $root.Values.defaults.probes.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ $root.Values.defaults.probes.path | quote }}
+              port: {{ $root.Values.defaults.ports.http.name | quote }}
+            initialDelaySeconds: {{ $root.Values.defaults.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ $root.Values.defaults.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ $root.Values.defaults.probes.path | quote }}
+              port: {{ $root.Values.defaults.ports.http.name | quote }}
+            initialDelaySeconds: {{ $root.Values.defaults.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ $root.Values.defaults.probes.readiness.periodSeconds }}
+{{- end }}
+          resources:
+{{ toYaml $root.Values.defaults.resources | nindent 12 }}
+{{- if $root.Values.defaults.service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $workload.name | quote }}
+  namespace: {{ include "cpemon.namespace" $root | quote }}
+  labels:
+{{ include "cpemon.workloadLabels" (dict "root" $root "workload" $workload) | nindent 4 }}
+{{- with $root.Values.defaults.service.annotations }}
+  annotations:
+{{ toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  type: {{ $root.Values.defaults.service.type }}
+  selector:
+{{ include "cpemon.selectorLabels" (dict "root" $root "workload" $workload) | nindent 4 }}
+  ports:
+    - name: {{ $root.Values.defaults.ports.http.name | quote }}
+      port: {{ $root.Values.defaults.ports.http.servicePort }}
+      targetPort: {{ $root.Values.defaults.ports.http.name | quote }}
+    - name: {{ $root.Values.defaults.ports.metrics.name | quote }}
+      port: {{ $root.Values.defaults.ports.metrics.servicePort }}
+      targetPort: {{ $root.Values.defaults.ports.metrics.name | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
