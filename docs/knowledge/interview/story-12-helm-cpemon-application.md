@@ -413,3 +413,66 @@ That rendered the optional resources successfully.
 ## Q40: How would you summarize CCPU-55 in an interview?
 
 I added optional platform integration templates to the Helm chart while keeping conservative defaults. The chart can now render Ingress, ServiceMonitor, PDB, and NetworkPolicy resources when the target cluster supports them. These features are disabled by default because they depend on platform add-ons or operational assumptions. This keeps dev rendering safe while preparing the chart for production-style Kubernetes environments.
+
+## Q41: What did CCPU-56 add?
+
+`CCPU-56` added repeatable Makefile targets for Helm validation:
+
+```text
+helm-check
+helm-cpemon-lint
+helm-cpemon-template
+helm-cpemon-validate
+```
+
+These targets wrap the chart's `helm lint` and `helm template` commands.
+
+## Q42: Why add Makefile targets if the Helm commands are simple?
+
+Makefile targets reduce human error and make validation repeatable.
+
+Instead of every developer typing a long command with the right chart path, namespace, release name, and values file, the team can run:
+
+```powershell
+make helm-cpemon-validate
+```
+
+That is easier to remember and easier to reuse in CI.
+
+## Q43: What does `helm lint` catch?
+
+`helm lint` checks chart structure, template syntax, values schema rules, and common chart mistakes.
+
+It does not prove the application will run, but it catches many errors before a chart is installed or reviewed.
+
+## Q44: What does `helm template` catch?
+
+`helm template` renders the chart into plain Kubernetes YAML.
+
+That lets the team inspect selectors, labels, image names, env vars, ConfigMap references, Secret references, Ingress paths, PDBs, NetworkPolicies, and ServiceMonitors before applying anything.
+
+## Q45: Why is `helm template` useful before GitOps?
+
+GitOps tools like Argo CD ultimately apply rendered Kubernetes desired state.
+
+If a chart cannot render cleanly, GitOps cannot sync it cleanly. Rendering locally gives fast feedback before the chart reaches the GitOps controller.
+
+## Q46: Why is live `helm install` still deferred?
+
+Live install needs a real cluster, required namespaces, platform add-ons, image pull access, and runtime Secrets.
+
+At this stage, the goal is pre-apply validation. The chart can be linted and rendered locally, but installing it belongs after the EKS cluster and required dependencies exist.
+
+## Q47: How can the Makefile work if `helm` is installed but not on PATH?
+
+The Makefile lets the operator override the Helm binary:
+
+```powershell
+make helm-cpemon-validate HELM="C:/path/to/helm.exe"
+```
+
+This keeps the target useful even when a newly installed tool is not visible to an already-open shell.
+
+## Q48: How would you summarize CCPU-56 in an interview?
+
+I added Makefile targets that make Helm validation repeatable. The project now has one command for linting and rendering the CPEmon chart against the dev values file. The targets fail clearly if Helm is missing and support overriding the Helm binary path. This turns manual chart checks into a team workflow that can later be reused in CI or GitOps validation.

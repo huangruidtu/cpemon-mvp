@@ -644,6 +644,96 @@ That rendered:
 - 2 PodDisruptionBudgets
 - 3 NetworkPolicies
 
+## CCPU-56: Helm Validation Makefile Targets
+
+`CCPU-56` turns the Helm validation commands into repeatable Makefile targets.
+
+The targets are:
+
+```text
+helm-check
+helm-cpemon-lint
+helm-cpemon-template
+helm-cpemon-validate
+```
+
+The Makefile variables are:
+
+```makefile
+HELM ?= helm
+HELM_CPEMON_CHART ?= deploy/helm/cpemon
+HELM_CPEMON_RELEASE ?= cpemon
+HELM_CPEMON_NAMESPACE ?= cpemon
+HELM_CPEMON_VALUES ?= deploy/helm/cpemon/values-dev.yaml
+HELM_CPEMON_RENDER_OUT ?= build/helm/cpemon-rendered.yaml
+```
+
+This means the default validation path is:
+
+```powershell
+make helm-cpemon-validate
+```
+
+That runs:
+
+```text
+helm lint
+helm template
+```
+
+against the CPEmon chart and dev values file.
+
+If `helm` is installed but not visible in the current shell's `PATH`, the binary can be passed explicitly:
+
+```powershell
+make helm-cpemon-validate HELM="C:/path/to/helm.exe"
+```
+
+### Why Add Makefile Targets
+
+Raw commands are easy to mistype:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+A Makefile target gives the team one stable entry point.
+
+That matters in real teams because the same validation should run:
+
+- on a developer laptop
+- in CI
+- before a PR review
+- before GitOps consumes the chart
+
+### What Each Target Does
+
+`helm-check` confirms Helm can run and prints a clear error if it cannot.
+
+`helm-cpemon-lint` checks chart structure, values schema, and common template problems.
+
+`helm-cpemon-template` renders the chart locally into:
+
+```text
+build/helm/cpemon-rendered.yaml
+```
+
+`helm-cpemon-validate` runs lint and template together.
+
+### Why Not Install Yet
+
+`helm template` and `helm lint` are pre-apply checks.
+
+They do not need a live cluster and do not create resources.
+
+Live install is still deferred because the EKS cluster and required runtime Secrets must exist first:
+
+```powershell
+helm upgrade --install cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+That command belongs to a later live deployment or GitOps story.
+
 ## Helm Values Precedence
 
 When Helm renders a chart, values are merged from several sources.
@@ -717,17 +807,16 @@ Helpers added in the scaffold:
 Current state:
 
 ```text
-The chart scaffold exists.
-Helm is not installed in the local shell.
+The chart exists and can be rendered locally.
+Helm is installed, although some existing shells may need PATH refresh.
 The EKS cluster has not been applied.
 No Helm release has been installed.
 ```
 
-So the safe validation goal is static review and later local rendering:
+So the safe validation goal is local lint/render:
 
 ```powershell
-helm lint deploy/helm/cpemon
-helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+make helm-cpemon-validate
 ```
 
 These commands do not create cluster resources. They only validate and render manifests locally.

@@ -39,6 +39,28 @@ helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-d
 
 These commands render locally. They do not create AWS or Kubernetes resources.
 
+The repository also provides repeatable Makefile targets:
+
+```powershell
+make helm-cpemon-lint
+make helm-cpemon-template
+make helm-cpemon-validate
+```
+
+If `helm` is installed but not on the current shell `PATH`, pass the binary explicitly:
+
+```powershell
+make helm-cpemon-validate HELM="C:/path/to/helm.exe"
+```
+
+The render target writes:
+
+```text
+build/helm/cpemon-rendered.yaml
+```
+
+Live `helm upgrade --install` is intentionally deferred until the target EKS cluster and required Secrets exist.
+
 ## Secrets Boundary
 
 Do not commit production database passwords, HMAC secrets, or image pull credentials into this chart.

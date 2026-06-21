@@ -5,8 +5,14 @@ EKS_VPC_ID ?=
 AWS_LBC_ROLE_ARN ?=
 METRICS_SERVER_CHART_VERSION ?= 3.13.1
 AWS_LBC_CHART_VERSION ?= 1.14.0
+HELM ?= helm
+HELM_CPEMON_CHART ?= deploy/helm/cpemon
+HELM_CPEMON_RELEASE ?= cpemon
+HELM_CPEMON_NAMESPACE ?= cpemon
+HELM_CPEMON_VALUES ?= deploy/helm/cpemon/values-dev.yaml
+HELM_CPEMON_RENDER_OUT ?= build/helm/cpemon-rendered.yaml
 
-.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke
+.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate
 
 platform-preflight:
 	kubectl version --client=true
@@ -36,6 +42,19 @@ helm-repos:
 	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 	helm repo add eks https://aws.github.io/eks-charts
 	helm repo update
+
+helm-check:
+	@"$(HELM)" version --short || (echo "ERROR: Helm is required for this target. Install Helm and make sure 'helm' is on PATH, or pass HELM=/absolute/path/to/helm." && exit 1)
+
+helm-cpemon-lint: helm-check
+	"$(HELM)" lint $(HELM_CPEMON_CHART) -f $(HELM_CPEMON_VALUES)
+
+helm-cpemon-template: helm-check
+	powershell -NoProfile -Command "New-Item -ItemType Directory -Force -Path 'build/helm' | Out-Null"
+	"$(HELM)" template $(HELM_CPEMON_RELEASE) $(HELM_CPEMON_CHART) -n $(HELM_CPEMON_NAMESPACE) -f $(HELM_CPEMON_VALUES) > $(HELM_CPEMON_RENDER_OUT)
+	@echo "Rendered CPEmon Helm chart to $(HELM_CPEMON_RENDER_OUT)"
+
+helm-cpemon-validate: helm-cpemon-lint helm-cpemon-template
 
 metrics-server:
 	helm upgrade --install metrics-server metrics-server/metrics-server \

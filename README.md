@@ -358,6 +358,16 @@ At a glance:
 └── README.md         # This file
 ```
 
+Helm chart validation helpers:
+
+```powershell
+make helm-cpemon-lint
+make helm-cpemon-template
+make helm-cpemon-validate
+```
+
+These render locally and do not install into a cluster. Live Helm install is deferred until the EKS cluster and required Secrets exist.
+
 ---
 
 ## 7. What a reviewer should be able to do

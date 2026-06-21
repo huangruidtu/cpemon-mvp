@@ -11,6 +11,7 @@ node_modules/
 # kubectl dumps / logs / local secrets (avoid leaking)
 *.log
 *.bak
+build/
 secrets*.yaml
 backup/velero-credentials
 k8s/cron/mysql-backup-sync-secret.yaml
