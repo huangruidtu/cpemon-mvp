@@ -652,3 +652,37 @@ Future Kafka observability should include:
 - ServiceMonitor or exporter integration
 
 The project should not claim Prometheus Kafka metrics until an exporter and ServiceMonitor are enabled and scraped.
+
+## CCPU-161: Interview Learning Notes
+
+`CCPU-161` adds the compressed interview learning sheet for Story 8.
+
+The learning notes are:
+
+```text
+docs/knowledge/interview/kafka-platform-learning-notes.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-learning-notes.ps1
+```
+
+The Makefile shortcut is:
+
+```text
+make kafka-learning-notes-check
+```
+
+The notes cover:
+
+- 60-second project story
+- core Kafka concepts
+- CPEmon-specific decisions
+- topic and config contracts
+- validation story
+- debugging order
+- strong interview answers
+- STAR story
+- one-line resume version

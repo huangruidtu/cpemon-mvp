@@ -662,6 +662,24 @@ namespace -> Helm release -> pods -> service -> PVC -> topics -> broker logs -> 
 
 That avoids jumping straight to application code when the platform itself may not be ready.
 
+## Q56: What did CCPU-161 add?
+
+`CCPU-161` added compressed Kafka interview learning notes.
+
+The key files are:
+
+```text
+docs/knowledge/interview/kafka-platform-learning-notes.md
+scripts/verify-kafka-learning-notes.ps1
+Makefile
+```
+
+## Q57: What is the purpose of the learning notes if this Q&A already exists?
+
+The Q&A is complete reference material.
+
+The learning notes are the quick interview review sheet. They collect the 60-second story, core concepts, decisions, debugging order, STAR story, and one-line resume version in one place.
+
 ## STAR Story
 
 Situation:
