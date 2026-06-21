@@ -95,3 +95,33 @@ It does not choose a Kafka client, configure retries, serialize payloads, or
 flush producer buffers. Those are concrete adapter responsibilities in later
 subtasks.
 
+## CCPU-162: Producer Configuration and Helm Wiring
+
+`CCPU-162` adds the app-side configuration contract for the future Kafka
+producer.
+
+### Why add config before implementing the producer?
+
+Configuration is part of the application contract. By defining bootstrap
+servers, topic names, timeout, retry count, and enablement before the adapter,
+the producer implementation can be small and the deployment wiring can be
+reviewed separately.
+
+### Why keep `KAFKA_PRODUCER_ENABLED` false by default?
+
+The project is still adding the producer adapter and handler refactor in later
+subtasks. Keeping the producer disabled by default prevents accidental behavior
+changes while still making the future configuration visible in Helm and raw
+Kubernetes manifests.
+
+### Which layer owns which Kafka setting?
+
+Story 8 owns the platform-level Kafka service and topic names. Story 9 owns how
+`acs-ingest` reads those settings and uses them to build a producer.
+
+### What should you say in an interview?
+
+I separated platform config from app config. Kafka can move from a Helm-based
+cluster to Strimzi or MSK later, but `acs-ingest` only needs stable bootstrap
+and topic settings from environment variables.
+

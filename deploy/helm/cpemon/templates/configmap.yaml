@@ -16,4 +16,7 @@ data:
   KAFKA_TOPIC_DEVICE_HEARTBEAT: {{ .Values.appConfig.kafkaTopicDeviceHeartbeat | quote }}
   KAFKA_TOPIC_WAN_STATUS: {{ .Values.appConfig.kafkaTopicWanStatus | quote }}
   KAFKA_TOPIC_DEADLETTER: {{ .Values.appConfig.kafkaTopicDeadletter | quote }}
+  KAFKA_PRODUCER_ENABLED: {{ .Values.appConfig.kafkaProducerEnabled | quote }}
+  KAFKA_PRODUCER_TIMEOUT: {{ .Values.appConfig.kafkaProducerTimeout | quote }}
+  KAFKA_PRODUCER_MAX_RETRIES: {{ .Values.appConfig.kafkaProducerMaxRetries | quote }}
 {{- end }}

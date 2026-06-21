@@ -176,3 +176,26 @@ Why this shape:
 
 The concrete Kafka producer remains a later adapter. This subtask only defines
 the dependency-inversion boundary used by future producer and handler wiring.
+
+## Producer Configuration Boundary
+
+`acs-ingest` reads producer configuration from environment variables that are
+wired through the CPEmon Helm chart and the raw Kubernetes ConfigMap.
+
+Application config keys:
+
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `KAFKA_PRODUCER_ENABLED` | `false` | Feature boundary for app-side producer behavior. |
+| `KAFKA_BOOTSTRAP_SERVERS` | `kafka.kafka.svc.cluster.local:9092` | Kafka bootstrap address from Story 8. |
+| `KAFKA_TOPIC_DEVICE_HEARTBEAT` | `cpemon.device.heartbeat.v1` | Heartbeat topic contract. |
+| `KAFKA_TOPIC_WAN_STATUS` | `cpemon.wan.status.v1` | WAN status topic contract. |
+| `KAFKA_TOPIC_DEADLETTER` | `cpemon.deadletter.v1` | Dead-letter topic contract. |
+| `KAFKA_PRODUCER_TIMEOUT` | `5s` | Per-publish timeout used by the producer adapter. |
+| `KAFKA_PRODUCER_MAX_RETRIES` | `3` | Maximum producer retry attempts. |
+
+The producer is disabled by default in application config because this story is
+introducing the wiring before the concrete Kafka adapter and handler refactor
+are complete. The bootstrap server and topic defaults still point at the Story
+8 Kafka platform contract, so enabling the producer later does not require
+changing application code.

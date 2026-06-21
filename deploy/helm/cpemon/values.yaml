@@ -27,6 +27,9 @@ appConfig:
   kafkaTopicDeviceHeartbeat: "cpemon.device.heartbeat.v1"
   kafkaTopicWanStatus: "cpemon.wan.status.v1"
   kafkaTopicDeadletter: "cpemon.deadletter.v1"
+  kafkaProducerEnabled: false
+  kafkaProducerTimeout: "5s"
+  kafkaProducerMaxRetries: "3"
 
 database:
   host: "mysql.cpemon.svc.cluster.local"
@@ -205,6 +208,12 @@ workloads:
         valueFromConfig: kafkaTopicWanStatus
       - name: KAFKA_TOPIC_DEADLETTER
         valueFromConfig: kafkaTopicDeadletter
+      - name: KAFKA_PRODUCER_ENABLED
+        valueFromConfig: kafkaProducerEnabled
+      - name: KAFKA_PRODUCER_TIMEOUT
+        valueFromConfig: kafkaProducerTimeout
+      - name: KAFKA_PRODUCER_MAX_RETRIES
+        valueFromConfig: kafkaProducerMaxRetries
     secretEnv:
       - name: DB_DSN
         secretName: cpemon-db

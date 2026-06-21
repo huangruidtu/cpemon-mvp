@@ -16,5 +16,8 @@ data:
   KAFKA_TOPIC_DEVICE_HEARTBEAT: "cpemon.device.heartbeat.v1"
   KAFKA_TOPIC_WAN_STATUS: "cpemon.wan.status.v1"
   KAFKA_TOPIC_DEADLETTER: "cpemon.deadletter.v1"
+  KAFKA_PRODUCER_ENABLED: "false"
+  KAFKA_PRODUCER_TIMEOUT: "5s"
+  KAFKA_PRODUCER_MAX_RETRIES: "3"
   WORKER_INTERVAL: "1s"
   BATCH_SIZE: "50"
