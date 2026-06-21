@@ -327,6 +327,27 @@ to broker availability.
 
 Kafka event, writer success log, MySQL row, API JSON response.
 
+### How would you explain the writer consumer migration decision?
+
+I moved `cpemon-writer` toward Kafka consumption because database polling is a
+good MVP buffer but Kafka gives better decoupling, consumer scaling, lag
+visibility, retry/dead-letter behavior, and replay potential. I kept the change
+behind `KAFKA_CONSUMER_ENABLED` so rollout and rollback are operational choices,
+not code rewrites.
+
+### How do you roll it back?
+
+Set `KAFKA_CONSUMER_ENABLED=false` and redeploy or restart `cpemon-writer`.
+The Kafka consumer loop stops starting, and the existing MySQL queue baseline
+remains available while the team investigates.
+
+### What was intentionally not solved yet?
+
+I did not implement exactly-once Kafka transactions, schema registry
+enforcement, CI-based live cluster integration tests, or removal of the old
+MySQL queue baseline. Those are later migration steps after the Kafka path is
+proven.
+
 ### Why use a bounded commit timeout?
 
 Offset commits are part of the reliability path, but they should not hang
@@ -384,3 +405,8 @@ the runbook verifies MySQL state plus consumer group offsets.
 Added API verification for Kafka-updated status: the runbook proves that after
 Kafka consumption updates `cpe_status`, the existing `GET /api/cpe/:sn` read
 path returns the same `last_seen`, `wan_ip`, and `sw_version` values.
+
+Added the writer consumer migration ADR and top-level operations runbook,
+covering feature-flag rollout, rollback, at-least-once tradeoffs, idempotency,
+dead-letter behavior, observability, troubleshooting, and intentional
+boundaries.

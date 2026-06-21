@@ -666,6 +666,56 @@ Interview framing:
 > The migration proof is that the Kafka consumer updates that read model and
 > the existing API returns the updated status.
 
+## Consumer Operations Runbook And Migration Decision
+
+`CCPU-173` consolidates the writer consumer migration explanation and operator
+entry point.
+
+Migration decision:
+
+```text
+ADR/cpemon-writer-kafka-consumer-migration.md
+```
+
+Top-level operations runbook:
+
+```text
+ops/runbooks/cpemon-writer-kafka-consumer-operations.md
+```
+
+The ADR explains:
+
+* why `cpemon-writer` moves from DB polling toward Kafka consumption
+* why the feature flag remains the rollout and rollback boundary
+* why the design targets at-least-once processing
+* why MySQL writes must be idempotent
+* why poison messages go to `cpemon.deadletter.v1`
+* what is intentionally out of scope, such as exactly-once transactions and
+  schema registry enforcement
+
+The operations runbook explains:
+
+* how to enable and disable the consumer
+* which env vars matter
+* how to inspect consumer group state
+* how to inspect metrics and logs
+* how to troubleshoot no messages, lag growth, decode failures, DB errors,
+  duplicate processing, and dead-letter publish errors
+* which validation runbooks to run in order
+
+Repository check:
+
+```powershell
+make cpemon-writer-kafka-consumer-operations-check
+```
+
+Interview framing:
+
+> My migration decision was staged, not a big-bang replacement. The Kafka
+> consumer is behind a feature flag, commits offsets only after durable handling,
+> keeps the API read model unchanged, and can be rolled back by disabling the
+> consumer while the old database queue baseline remains available.
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

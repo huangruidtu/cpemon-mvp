@@ -32,6 +32,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [acs-ingest Kafka Producer Migration Decision](../../ADR/acs-ingest-kafka-producer-migration.md)
 - [Kafka Platform Architecture and Migration Boundary](../../ADR/cloud-platform-upgrade-kafka-platform-architecture.md)
 - [Kafka Deployment Option for Step 1](../../ADR/cloud-platform-upgrade-kafka-deployment-step1.md)
+- [cpemon-writer Kafka Consumer Migration](../../ADR/cpemon-writer-kafka-consumer-migration.md)
 
 ## Runbooks
 
@@ -43,6 +44,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Bootstrap Configuration Runbook](../../ops/runbooks/kafka-bootstrap-config.md)
 - [acs-ingest Kafka Producer Integration Validation Runbook](../../ops/runbooks/acs-ingest-kafka-producer-validation.md)
 - [acs-ingest Kafka Producer Operations Runbook](../../ops/runbooks/acs-ingest-kafka-producer-operations.md)
+- [cpemon-writer Kafka Consumer Operations Runbook](../../ops/runbooks/cpemon-writer-kafka-consumer-operations.md)
 - [cpemon-writer Kafka Consumer Group Runbook](../../ops/runbooks/cpemon-writer-kafka-consumer-group.md)
 - [cpemon-writer Kafka Consumer Lag Runbook](../../ops/runbooks/cpemon-writer-kafka-consumer-lag.md)
 - [cpemon-writer Kafka-to-DB Integration Validation](../../ops/runbooks/cpemon-writer-kafka-to-db-validation.md)
