@@ -731,3 +731,91 @@ Use these prompts to rehearse without memorizing:
 If there is only time for one answer:
 
 > I Helmized CPEmon by turning repeated raw Kubernetes manifests into a reusable application chart. The chart separates stable Kubernetes structure from environment-specific values, uses helpers for stable labels and selectors, keeps non-secret config in a ConfigMap, references Secrets by name/key, and supports optional platform integrations behind values flags. I added Makefile validation so the chart can be linted and rendered before install, and documented the pre-apply boundary honestly because the live EKS cluster was not available yet. This makes the application deployment more repeatable today and prepares it for Argo CD GitOps later.
+
+## Q67: What did CCPU-59 validate?
+
+`CCPU-59` ran the Helm validation path and captured the exact boundary.
+
+The chart passed:
+
+```powershell
+make helm-cpemon-validate HELM=<installed helm.exe path>
+```
+
+That ran `helm lint` and `helm template`.
+
+## Q68: What did the default render produce?
+
+Default dev rendering produced:
+
+```text
+1 ConfigMap
+3 Services
+3 Deployments
+7 configMapKeyRef entries
+4 secretKeyRef entries
+3 image tag placeholders
+```
+
+Optional platform resources did not render by default, which is the intended conservative behavior.
+
+## Q69: What did you review in the rendered output?
+
+I reviewed:
+
+- Service selectors
+- Deployment selectors
+- pod labels
+- image names and tags
+- ConfigMap references
+- Secret references
+- Service target ports
+- optional feature absence in default render
+
+The important idea is that `helm template` turns a Helm review into a Kubernetes YAML review before anything is applied.
+
+## Q70: What did optional feature rendering prove?
+
+With all optional flags enabled, the chart rendered:
+
+```text
+1 Ingress
+1 ServiceMonitor
+2 PodDisruptionBudgets
+3 NetworkPolicies
+```
+
+That proves the templates can render. It does not prove the live cluster has the required ingress controller, Prometheus Operator CRDs, or NetworkPolicy enforcement.
+
+## Q71: What is the validation boundary after CCPU-59?
+
+Validated:
+
+- chart syntax and structure
+- values schema
+- local rendering
+- selector and label consistency by rendered YAML review
+- ConfigMap and Secret reference shape
+- optional template shape
+
+Not yet validated:
+
+- live Helm install
+- Kubernetes admission
+- pod scheduling
+- image pulls
+- app startup
+- database connectivity
+- Ingress routing
+- Prometheus scraping
+- NetworkPolicy enforcement
+
+## Q72: Why is this boundary important in an interview?
+
+It shows engineering honesty.
+
+I can say exactly what was validated locally and exactly what still needs a live cluster. That is stronger than pretending `helm template` proves runtime behavior.
+
+## Q73: How would you summarize CCPU-59 in an interview?
+
+I ran the Helm validation workflow and documented the boundary. The chart passed lint and rendered successfully. I reviewed the rendered YAML for workload count, selectors, service wiring, image references, ConfigMap references, Secret references, and optional feature behavior. I also documented what this does not prove yet, such as live pod startup, image pulls, database connectivity, and platform-controller behavior. That keeps the migration evidence accurate and interview-ready.

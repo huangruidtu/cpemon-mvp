@@ -153,6 +153,92 @@ Review checklist:
 - sensitive runtime values use `secretKeyRef`
 - optional resources do not render unless enabled
 
+## CCPU-59 Validation Evidence
+
+The local validation boundary for this chart was captured with Helm available locally.
+
+Command:
+
+```powershell
+make helm-cpemon-validate HELM=<installed helm.exe path>
+```
+
+Result:
+
+- `helm lint` passed.
+- `helm lint` reported only the informational chart icon recommendation.
+- `helm template` rendered successfully to `build/helm/cpemon-rendered.yaml`.
+
+Default dev render review:
+
+| Rendered item | Count |
+| --- | ---: |
+| ConfigMap | 1 |
+| Service | 3 |
+| Deployment | 3 |
+| `configMapKeyRef` | 7 |
+| `secretKeyRef` | 4 |
+| `__IMAGE_TAG__` placeholders | 3 |
+
+Rendered output checks completed:
+
+- each Service selector uses the same stable `app` and `app.kubernetes.io/component` labels as its workload
+- each Deployment selector matches its pod template labels
+- each workload renders the expected ECR image repository with the dev image tag placeholder
+- non-secret app config uses `configMapKeyRef`
+- DB and HMAC runtime values use `secretKeyRef`
+- default rendering does not create optional platform resources
+
+Optional feature render command:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml `
+  --set ingress.enabled=true `
+  --set serviceMonitor.enabled=true `
+  --set pdb.enabled=true `
+  --set networkPolicy.enabled=true
+```
+
+Optional feature render review:
+
+| Rendered item | Count |
+| --- | ---: |
+| Ingress | 1 |
+| ServiceMonitor | 1 |
+| PodDisruptionBudget | 2 |
+| NetworkPolicy | 3 |
+
+The optional render confirms template shape only. It does not prove that the target cluster has an ingress controller, Prometheus Operator CRDs, or NetworkPolicy enforcement.
+
+## Validation Boundary
+
+Validated now:
+
+- chart structure
+- values schema
+- template rendering
+- selector and label consistency in rendered YAML
+- Service target ports
+- image repository and tag rendering
+- ConfigMap references
+- Secret references
+- optional feature render shape
+
+Not validated yet:
+
+- live Helm release creation
+- Kubernetes API admission
+- pod scheduling
+- image pull from ECR
+- application startup
+- database connectivity
+- ACS HMAC behavior in cluster
+- Ingress controller reconciliation
+- Prometheus scraping
+- NetworkPolicy enforcement
+
+Those require a live EKS cluster, required Secrets, images in ECR, and platform add-ons.
+
 ## Render Optional Platform Features
 
 Optional features are disabled by default.

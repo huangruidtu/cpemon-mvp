@@ -840,6 +840,96 @@ Future post-apply work:
 
 Keeping those phases separate prevents the project from claiming live deployment validation before the EKS cluster exists.
 
+## CCPU-59: Render Checks and Validation Boundary
+
+`CCPU-59` records the exact validation boundary for the Helm chart.
+
+The chart was validated locally with:
+
+```powershell
+make helm-cpemon-validate HELM=<installed helm.exe path>
+```
+
+That target ran:
+
+```text
+helm lint
+helm template
+```
+
+The result:
+
+- `helm lint` passed.
+- The only lint note was the informational chart icon recommendation.
+- `helm template` rendered successfully to `build/helm/cpemon-rendered.yaml`.
+
+### Default Render Review
+
+Default dev rendering produced:
+
+| Rendered item | Count |
+| --- | ---: |
+| ConfigMap | 1 |
+| Service | 3 |
+| Deployment | 3 |
+| `configMapKeyRef` | 7 |
+| `secretKeyRef` | 4 |
+| image tag placeholders | 3 |
+
+The rendered YAML was reviewed for:
+
+- Service selectors matching workload labels
+- Deployment selectors matching pod template labels
+- expected image repositories
+- expected `__IMAGE_TAG__` placeholder usage
+- ConfigMap references for non-secret configuration
+- Secret references for DB and HMAC runtime values
+- absence of optional platform resources in default dev render
+
+### Optional Render Review
+
+All optional feature flags were also enabled for template-shape review:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml --set ingress.enabled=true --set serviceMonitor.enabled=true --set pdb.enabled=true --set networkPolicy.enabled=true
+```
+
+That rendered:
+
+| Rendered item | Count |
+| --- | ---: |
+| Ingress | 1 |
+| ServiceMonitor | 1 |
+| PodDisruptionBudget | 2 |
+| NetworkPolicy | 3 |
+
+### What This Proves
+
+This proves:
+
+- the chart is syntactically renderable
+- the values model satisfies the chart schema
+- the templates produce the expected Kubernetes object shapes
+- labels, selectors, ConfigMap refs, and Secret refs are reviewable before apply
+- optional platform features are controlled by values flags
+
+### What This Does Not Prove
+
+This does not prove:
+
+- pods can start in EKS
+- ECR images exist or can be pulled
+- required Secrets exist in the cluster
+- the Kubernetes API will admit every object
+- Ingress, ServiceMonitor, or NetworkPolicy behavior works in a live cluster
+- the application can connect to MySQL
+
+That distinction is important in interviews because it shows honest validation discipline.
+
+The strong phrasing is:
+
+> I validated the Helm chart as far as possible before a live cluster existed: lint, render, values schema, selectors, service wiring, ConfigMap references, Secret references, and optional template shape. I did not claim live deployment success because that requires EKS, Secrets, images, and platform add-ons.
+
 ## Helm Values Precedence
 
 When Helm renders a chart, values are merged from several sources.
