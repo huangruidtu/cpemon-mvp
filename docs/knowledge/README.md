@@ -42,6 +42,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Platform Helm Runbook](../../ops/runbooks/kafka-platform-helm.md)
 - [Kafka Produce and Consume Validation Runbook](../../ops/runbooks/kafka-produce-consume-validation.md)
 - [Kafka Topics Runbook](../../ops/runbooks/kafka-topics.md)
+- [Kafka Validation and Observability Runbook](../../ops/runbooks/kafka-validation-observability.md)
 
 ## Interview Prep
 

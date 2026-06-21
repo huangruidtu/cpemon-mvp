@@ -604,3 +604,51 @@ MySQL queue behavior is retired only after Kafka path is proven
 ```
 
 This is the core Story 8 architecture answer: Kafka is introduced as a platform event buffer first, not as a hidden application rewrite.
+
+## CCPU-160: Validation and Observability Boundary
+
+`CCPU-160` captures the overall Kafka validation and observability boundary.
+
+The runbook is:
+
+```text
+ops/runbooks/kafka-validation-observability.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-validation-observability.ps1
+```
+
+The Makefile shortcut is:
+
+```text
+make kafka-validation-observability-check
+```
+
+### Validation Layers
+
+There are two different claims:
+
+| Layer | Claim |
+| --- | --- |
+| Repository validation | Files, values, docs, scripts, and config contracts exist. |
+| Live validation | Kafka runs in a cluster and can serve topics, produce/consume, logs, and metrics. |
+
+Story 8 documentation keeps these separate.
+
+### Observability Boundary
+
+The Step 1 Kafka values keep metrics disabled while the platform contract is introduced.
+
+Future Kafka observability should include:
+
+- broker readiness and restarts
+- PVC health
+- topic traffic
+- consumer group lag
+- dead-letter topic traffic
+- ServiceMonitor or exporter integration
+
+The project should not claim Prometheus Kafka metrics until an exporter and ServiceMonitor are enabled and scraped.

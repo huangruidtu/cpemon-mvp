@@ -615,6 +615,53 @@ The sequence is:
 
 I introduced Kafka as a platform boundary before changing application code. That let me prove the Kafka namespace, Helm workflow, topics, bootstrap config, and manual validation path separately from producer and consumer logic. The current MySQL queue remains the running baseline until the Kafka path is proven. That is safer than a big-bang rewrite because each risk has its own validation step.
 
+## Q51: What did CCPU-160 add?
+
+`CCPU-160` added the top-level Kafka validation and observability runbook.
+
+The key files are:
+
+```text
+ops/runbooks/kafka-validation-observability.md
+scripts/verify-kafka-validation-observability.ps1
+Makefile
+```
+
+## Q52: What is the difference between repository validation and live validation?
+
+Repository validation proves that Git contains the expected files, values, docs, scripts, topic names, and config keys.
+
+Live validation proves that a real cluster can run Kafka: namespace exists, Helm release is deployed, pods are Ready, PVCs are Bound, topics exist, produce/consume works, and logs/metrics can be inspected.
+
+## Q53: What Kafka observability signals matter?
+
+Important signals include:
+
+- broker pod readiness
+- restarts
+- PVC health
+- topic produce/consume traffic
+- consumer group lag
+- dead-letter topic traffic
+- under-replicated partitions in multi-broker mode
+- offline partitions
+
+## Q54: Why not claim Prometheus Kafka metrics now?
+
+Because the Step 1 Kafka values keep metrics disabled while the platform contract is introduced.
+
+Prometheus Kafka metrics should only be claimed after an exporter is enabled, ServiceMonitor or scrape config is installed, and Prometheus confirms the Kafka target is being scraped.
+
+## Q55: How would you debug Kafka if produce/consume fails?
+
+I would check in layers:
+
+```text
+namespace -> Helm release -> pods -> service -> PVC -> topics -> broker logs -> producer command -> consumer command
+```
+
+That avoids jumping straight to application code when the platform itself may not be ready.
+
 ## STAR Story
 
 Situation:
@@ -627,7 +674,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, a manual produce/consume validation runbook, a topic naming convention, Kafka architecture migration docs, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, a manual produce/consume validation runbook, a topic naming convention, Kafka architecture migration docs, validation and observability notes, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 
