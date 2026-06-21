@@ -223,6 +223,70 @@ That honesty is important in platform work because a documented command is not t
 
 I added the first Kafka Helm workflow rather than jumping straight to application code. The values file defines a small internal Kafka deployment, the Makefile gives repeatable render/install/check targets, and the runbook explains validation, troubleshooting, rollback, and the bootstrap contract. Since Helm was not available in the local shell, I documented that as the validation boundary and added a repository-level workflow check rather than falsely claiming a live install.
 
+## Q19: What did CCPU-71 add?
+
+`CCPU-71` made the Kafka namespace boundary explicit and verifiable.
+
+The key files are:
+
+```text
+k8s/base/namespaces.yaml
+ops/runbooks/kafka-namespace.md
+scripts/verify-kafka-namespace.ps1
+Makefile
+```
+
+The namespace already existed in the base namespace manifest, and this subtask documented why it exists and added a focused validation path.
+
+## Q20: Why does Kafka get its own namespace?
+
+Kafka is a platform data-streaming dependency, not a CPEmon application Deployment.
+
+Putting it in its own namespace gives a cleaner boundary for:
+
+- Helm release ownership
+- storage and PVC troubleshooting
+- NetworkPolicy
+- RBAC
+- monitoring selectors
+- future Strimzi migration
+
+The application namespace can stay focused on CPEmon workloads while the `kafka` namespace owns broker resources.
+
+## Q21: What labels identify the Kafka namespace?
+
+The namespace uses:
+
+```yaml
+app.kubernetes.io/part-of: cpemon-mvp
+app.kubernetes.io/name: kafka
+cpemon.io/layer: data-streaming
+cpemon.io/managed-by: gitops-ready-manifest
+```
+
+The most important project-specific label is:
+
+```text
+cpemon.io/layer=data-streaming
+```
+
+## Q22: What is the validation boundary for CCPU-71?
+
+Local validation checks the Git manifest:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-namespace.ps1
+```
+
+Live validation requires a cluster:
+
+```powershell
+kubectl apply -f k8s/base/namespaces.yaml
+kubectl get ns kafka --show-labels
+```
+
+So the subtask can prove the namespace contract exists in Git even when a live cluster is not available.
+
 ## STAR Story
 
 Situation:
@@ -235,7 +299,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, and a workflow validation script. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 

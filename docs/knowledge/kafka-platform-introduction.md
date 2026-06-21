@@ -205,3 +205,70 @@ make kafka-check
 ```
 
 In the current local shell for `CCPU-70`, `helm` was not available on PATH, so this subtask documents the exact boundary instead of claiming live installation.
+
+## CCPU-71: Kafka Namespace Boundary
+
+`CCPU-71` documents and validates the Kubernetes namespace boundary for Kafka.
+
+The namespace manifest is:
+
+```text
+k8s/base/namespaces.yaml
+```
+
+The runbook is:
+
+```text
+ops/runbooks/kafka-namespace.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-namespace.ps1
+```
+
+The Makefile shortcut is:
+
+```text
+make kafka-namespace-check
+```
+
+### Namespace Labels
+
+The `kafka` namespace uses:
+
+```yaml
+app.kubernetes.io/part-of: cpemon-mvp
+app.kubernetes.io/name: kafka
+cpemon.io/layer: data-streaming
+cpemon.io/managed-by: gitops-ready-manifest
+```
+
+### Why Kafka Is Isolated
+
+Kafka is a platform data-streaming dependency. It should not live in the same namespace as CPEmon application Deployments.
+
+The separate namespace gives a clearer boundary for:
+
+- Helm release ownership
+- persistent volume troubleshooting
+- NetworkPolicy and RBAC
+- observability selection
+- future Strimzi migration
+- separating application operations from platform operations
+
+### Validation Boundary
+
+Local validation proves the namespace is declared correctly in Git:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-namespace.ps1
+```
+
+Live validation requires a Kubernetes cluster:
+
+```powershell
+kubectl apply -f k8s/base/namespaces.yaml
+kubectl get ns kafka --show-labels
+```
