@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -13,6 +16,7 @@ import (
 
 	appconfig "github.com/huangruidtu/cpemon-mvp/app/pkg/config"
 	appdb "github.com/huangruidtu/cpemon-mvp/app/pkg/db"
+	"github.com/huangruidtu/cpemon-mvp/app/pkg/events"
 	apphmac "github.com/huangruidtu/cpemon-mvp/app/pkg/hmac"
 	"github.com/huangruidtu/cpemon-mvp/app/pkg/model"
 	"github.com/huangruidtu/cpemon-mvp/app/pkg/queue"
@@ -75,6 +79,23 @@ func main() {
 	// 3. Register Prometheus metrics.
 	prometheus.MustRegister(webhookRequestsTotal, webhookErrorsTotal)
 
+	var publisher events.EventPublisher
+	if cfg.KafkaProducerEnabled {
+		kafkaProducer, err := events.NewKafkaProducerFromConfig(cfg)
+		if err != nil {
+			log.Fatalf("failed to initialize Kafka producer: %v", err)
+		}
+		defer func() {
+			if err := kafkaProducer.Close(); err != nil {
+				log.Printf("failed to close Kafka producer: %v", err)
+			}
+		}()
+		publisher = kafkaProducer
+		log.Printf("Kafka producer enabled for acs-ingest")
+	} else {
+		log.Printf("Kafka producer disabled for acs-ingest")
+	}
+
 	// 👉 在这里启动 9100 端口的 metrics server
 	startMetricsServer()
 
@@ -94,7 +115,7 @@ func main() {
 
 	// 7. ACS webhook endpoint.
 	r.POST("/acs/webhook", func(c *gin.Context) {
-		handleACSWebhook(c, &cfg)
+		handleACSWebhook(c, &cfg, publisher)
 	})
 
 	log.Printf("acs-ingest listening on %s\n", cfg.HTTPAddr)
@@ -111,7 +132,7 @@ func main() {
 // 2. Verify HMAC signature (if header is present).
 // 3. Parse JSON to extract SN and optional event_ts.
 // 4. Build a model.IngestEvent and enqueue it via queue.InsertOrUpdateIngestEvent.
-func handleACSWebhook(c *gin.Context, cfg *appconfig.Config) {
+func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.EventPublisher) {
 	start := time.Now()
 	ctx := c.Request.Context()
 	db := appdb.Get()
@@ -194,10 +215,45 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config) {
 		return
 	}
 
+	if err := publishACSKafkaEvents(ctx, publisher, *ev, time.Now()); err != nil {
+		webhookErrorsTotal.WithLabelValues("kafka_publish_error").Inc()
+		webhookRequestsTotal.WithLabelValues("500").Inc()
+		log.Printf("failed to publish ACS event to Kafka: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to publish event"})
+		return
+	}
+
 	duration := time.Since(start)
 	log.Printf("enqueued event for SN=%s at %s in %s",
 		ev.SN, ev.EventTS.Format(time.RFC3339Nano), duration)
 
 	webhookRequestsTotal.WithLabelValues("202").Inc()
 	c.JSON(http.StatusAccepted, gin.H{"status": "queued"})
+}
+
+func publishACSKafkaEvents(ctx context.Context, publisher events.EventPublisher, ev model.IngestEvent, receivedAt time.Time) error {
+	if publisher == nil {
+		return nil
+	}
+
+	heartbeat, err := events.NewDeviceHeartbeatEvent(ev, receivedAt)
+	if err != nil {
+		return fmt.Errorf("build heartbeat event: %w", err)
+	}
+	if err := publisher.Publish(ctx, heartbeat); err != nil {
+		return fmt.Errorf("publish heartbeat event: %w", err)
+	}
+
+	wanStatus, err := events.NewWANStatusEvent(ev, receivedAt)
+	if err != nil {
+		if errors.Is(err, events.ErrWANStatusDataMissing) {
+			return nil
+		}
+		return fmt.Errorf("build WAN status event: %w", err)
+	}
+	if err := publisher.Publish(ctx, wanStatus); err != nil {
+		return fmt.Errorf("publish WAN status event: %w", err)
+	}
+
+	return nil
 }

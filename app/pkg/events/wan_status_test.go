@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -73,6 +74,9 @@ func TestNewWANStatusEventRejectsMissingWANData(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for missing WAN status data")
 	}
+	if !errors.Is(err, ErrWANStatusDataMissing) {
+		t.Fatalf("error = %v, want ErrWANStatusDataMissing", err)
+	}
 }
 
 func TestNewWANStatusEventRejectsInvalidJSONPayload(t *testing.T) {
@@ -126,4 +130,3 @@ func TestWANStatusEventJSONContract(t *testing.T) {
 		t.Fatalf("expected event_ts and received_at in JSON payload: %s", string(data))
 	}
 }
-

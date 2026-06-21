@@ -221,3 +221,43 @@ logs can explain which publish failed.
 Retry behavior is still handled by the later retry/error-handling subtask. This
 adapter keeps the first producer implementation focused on construction,
 serialization, topic/key selection, write, and close lifecycle.
+
+## acs-ingest Publish Wiring
+
+`acs-ingest` now wires the producer into the webhook flow behind
+`KAFKA_PRODUCER_ENABLED`.
+
+Runtime behavior:
+
+* When `KAFKA_PRODUCER_ENABLED=false`, the publisher is nil and the existing
+  enqueue-only behavior is preserved.
+* When `KAFKA_PRODUCER_ENABLED=true`, startup creates a `KafkaProducer` from
+  app config and closes it during service shutdown.
+* The webhook handler still validates the request, parses the ACS payload, and
+  writes the raw ingest event to `ingest_events` first.
+* After the database enqueue succeeds, the handler publishes normalized Kafka
+  events through `EventPublisher`.
+* A heartbeat event is published for every valid ACS webhook.
+* A WAN status event is published only when the raw payload contains WAN status
+  data, or a WAN IP from which the mapper can derive `wan_status: up`.
+
+The ordering is intentional: the database remains the durable local intake
+record, and Kafka publishing happens only after the request has passed
+validation and has been persisted.
+
+Failure behavior:
+
+* If publishing fails while the producer is enabled, the handler returns `500`
+  and records `kafka_publish_error`.
+* Missing WAN data is not treated as a publish failure because many heartbeat
+  webhooks may not carry WAN details.
+* Invalid WAN JSON or invalid heartbeat fields remain real build failures and
+  are returned to the caller.
+
+Interview-ready explanation:
+
+> I kept Kafka behind a feature flag and published normalized events only after
+> the ingest record was stored. That preserves the current rollout path while
+> adding an event-driven boundary. Heartbeat is mandatory for every accepted
+> webhook; WAN status is conditional because it represents a richer signal that
+> may not be present in every ACS payload.

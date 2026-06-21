@@ -159,3 +159,43 @@ Retries, richer error classification, metrics, structured logging, application
 handler wiring, and live produce/consume validation are handled by later
 subtasks.
 
+## CCPU-81: acs-ingest Kafka Publish Wiring
+
+`CCPU-81` connects the `acs-ingest` webhook path to the `EventPublisher`
+boundary.
+
+### Where does publishing happen in the request flow?
+
+The handler validates the request, parses the ACS payload, builds
+`model.IngestEvent`, and writes it to `ingest_events` first. After that enqueue
+succeeds, it publishes normalized Kafka events.
+
+### Why publish after the database write?
+
+The database is the durable local intake record. Publishing after the DB write
+means an accepted webhook has already been captured before the service tries to
+notify downstream Kafka consumers.
+
+### What events are published?
+
+Every valid ACS webhook publishes a `device.heartbeat` event. If the raw payload
+contains WAN status data, the same flow also publishes a `wan.status` event.
+
+### What happens if the payload has no WAN data?
+
+The service skips the WAN event and still accepts the heartbeat. Missing WAN
+data is not a failure because heartbeat and WAN status are separate event
+families with different information requirements.
+
+### Why keep the producer behind `KAFKA_PRODUCER_ENABLED`?
+
+The feature flag lets the application deploy safely before Kafka publishing is
+turned on in an environment. It also keeps local development and existing tests
+from requiring a live Kafka broker.
+
+### What should you say in an interview?
+
+I separated durable intake from event publication. The webhook handler persists
+the raw event first, then emits normalized Kafka contracts through an interface.
+The feature flag gives a safe rollout path, and the unit tests verify the
+publish decisions without needing Kafka.
