@@ -21,6 +21,19 @@ eks_node_min_size            = 1
 eks_node_max_size            = 2
 eks_node_max_unavailable     = 1
 
+enable_external_secrets_irsa          = true
+external_secrets_role_name            = "cpemon-dev-external-secrets-role"
+external_secrets_namespace            = "external-secrets"
+external_secrets_service_account_name = "external-secrets"
+
+# Keep the default empty value unless you need stricter explicit ARNs.
+# Empty means Terraform uses arn:aws:secretsmanager:<region>:*:secret:cpemon/dev/*
+external_secrets_secret_arns = []
+
+# Add a customer managed KMS key ARN here when Secrets Manager secrets use one.
+# Empty is valid for dev when using the AWS managed Secrets Manager key.
+external_secrets_kms_key_arns = []
+
 eks_access_entries = {
   cpemon_terraform_admin = {
     principal_arn = "arn:aws:iam::701573843911:role/aws-reserved/sso.amazonaws.com/eu-north-1/AWSReservedSSO_CPEmonTerraformBootstrap_0241ccdc62503c71"

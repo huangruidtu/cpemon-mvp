@@ -163,3 +163,39 @@ variable "eks_node_max_unavailable" {
   type        = number
   default     = 1
 }
+
+variable "enable_external_secrets_irsa" {
+  description = "Create the IRSA IAM role and policy contract for External Secrets Operator."
+  type        = bool
+  default     = true
+}
+
+variable "external_secrets_role_name" {
+  description = "IAM role name assumed by External Secrets Operator through IRSA."
+  type        = string
+  default     = "cpemon-dev-external-secrets-role"
+}
+
+variable "external_secrets_namespace" {
+  description = "Kubernetes namespace where External Secrets Operator runs."
+  type        = string
+  default     = "external-secrets"
+}
+
+variable "external_secrets_service_account_name" {
+  description = "Kubernetes service account name used by External Secrets Operator."
+  type        = string
+  default     = "external-secrets"
+}
+
+variable "external_secrets_secret_arns" {
+  description = "Secrets Manager secret ARNs External Secrets Operator may read."
+  type        = set(string)
+  default     = []
+}
+
+variable "external_secrets_kms_key_arns" {
+  description = "Customer managed KMS key ARNs External Secrets Operator may use for decrypting Secrets Manager secrets."
+  type        = set(string)
+  default     = []
+}

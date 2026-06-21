@@ -97,3 +97,28 @@ output "eks_node_role_arn" {
   description = "IAM role ARN used by dev EKS worker nodes."
   value       = module.eks_managed_node_group.node_role_arn
 }
+
+output "eks_cluster_oidc_issuer_url" {
+  description = "Dev EKS OIDC issuer URL used for IRSA trust policies."
+  value       = module.eks_cluster.cluster_oidc_issuer_url
+}
+
+output "external_secrets_irsa_role_arn" {
+  description = "IAM role ARN to annotate on the External Secrets Operator service account."
+  value       = var.enable_external_secrets_irsa ? module.external_secrets_irsa[0].role_arn : null
+}
+
+output "eks_oidc_provider_arn" {
+  description = "IAM OIDC provider ARN used by IRSA."
+  value       = var.enable_external_secrets_irsa ? aws_iam_openid_connect_provider.eks[0].arn : null
+}
+
+output "external_secrets_irsa_policy_arn" {
+  description = "Least-privilege IAM policy ARN attached to the ESO IRSA role."
+  value       = var.enable_external_secrets_irsa ? module.external_secrets_irsa[0].policy_arn : null
+}
+
+output "external_secrets_service_account_subject" {
+  description = "OIDC subject allowed to assume the ESO IRSA role."
+  value       = var.enable_external_secrets_irsa ? module.external_secrets_irsa[0].service_account_subject : null
+}

@@ -103,6 +103,68 @@ RDS credentials are deferred because Step 1 intentionally keeps MySQL in EKS. Ka
 
 I separated the secret source from the Kubernetes runtime projection. AWS Secrets Manager is the source of truth, KMS protects encryption at rest, IRSA gives ESO least-privilege AWS access, and Kubernetes Secrets remain the local interface that Pods consume. That is a production-style boundary because Git can own the desired shape without owning the secret values.
 
+## CCPU-155: ESO IRSA and IAM Policy Contract
+
+`CCPU-155` defines the Terraform contract for External Secrets Operator AWS access.
+
+The module is:
+
+```text
+infra/terraform/modules/external_secrets_irsa
+```
+
+The dev wiring is in:
+
+```text
+infra/terraform/envs/dev/main.tf
+infra/terraform/envs/dev/variables.tf
+infra/terraform/envs/dev/outputs.tf
+infra/terraform/envs/dev/terraform.tfvars.example
+```
+
+### Service Account Contract
+
+The assumed Kubernetes identity is:
+
+```text
+namespace: external-secrets
+service account: external-secrets
+OIDC subject: system:serviceaccount:external-secrets:external-secrets
+```
+
+The ESO Helm installation later must annotate that service account with the Terraform output:
+
+```text
+external_secrets_irsa_role_arn
+```
+
+### IAM Policy Contract
+
+The module grants only:
+
+```text
+secretsmanager:DescribeSecret
+secretsmanager:GetSecretValue
+kms:Decrypt
+kms:DescribeKey
+```
+
+The KMS permissions are included only when customer managed KMS key ARNs are supplied.
+
+### Secret ARN Contract
+
+The dev default secret ARN pattern is:
+
+```text
+arn:aws:secretsmanager:<region>:*:secret:cpemon/dev/*
+```
+
+That gives CPEmon a clear naming convention without committing secret values.
+
+### Interview Point
+
+I defined ESO access as an IRSA contract instead of storing AWS access keys in Kubernetes. The trust policy allows only the `external-secrets/external-secrets` service account to assume the role, and the permission policy allows reading only approved Secrets Manager ARNs plus optional KMS decrypt on approved keys. This is least privilege across Kubernetes identity, AWS IAM, Secrets Manager, and KMS.
+
 ## CCPU-61: MySQL Deployment Strategy for Step 1
 
 For Step 1, CPEmon keeps MySQL inside the EKS application boundary.

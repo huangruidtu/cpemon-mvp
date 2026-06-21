@@ -80,6 +80,55 @@ IAM role trusted by EKS OIDC subject
 secretsmanager:GetSecretValue only for approved CPEmon secret ARNs
 ```
 
+## Q1E: What did you define for the ESO IAM policy contract?
+
+I added a Terraform module:
+
+```text
+infra/terraform/modules/external_secrets_irsa
+```
+
+It creates an IAM role for the External Secrets Operator service account and attaches a least-privilege policy.
+
+The allowed Kubernetes identity is:
+
+```text
+system:serviceaccount:external-secrets:external-secrets
+```
+
+The allowed AWS actions are:
+
+```text
+secretsmanager:DescribeSecret
+secretsmanager:GetSecretValue
+kms:Decrypt
+kms:DescribeKey
+```
+
+KMS permissions are only included when customer managed KMS key ARNs are supplied.
+
+## Q1F: What secret ARN pattern did you use for CPEmon dev?
+
+The default dev pattern is:
+
+```text
+arn:aws:secretsmanager:<region>:*:secret:cpemon/dev/*
+```
+
+The important design is the path convention:
+
+```text
+cpemon/dev/<secret-name>
+```
+
+That gives us an environment boundary and avoids a policy that can read every secret in the AWS account.
+
+## Q1G: What is the security improvement over static AWS keys?
+
+Static AWS keys in Kubernetes create a long-lived credential that can be copied, leaked, or forgotten.
+
+With IRSA, the ESO Pod receives short-lived credentials through the EKS OIDC trust chain. The IAM role trust policy is bound to one Kubernetes service account, and the permission policy is scoped to CPEmon secret ARNs. That means the blast radius is much smaller and the access path is auditable.
+
 ## Q2: What did you decide for MySQL in Step 1?
 
 For Step 1, I kept MySQL inside the EKS application boundary.
