@@ -124,6 +124,13 @@ subscription, `FetchMessage`, and close lifecycle. It converts each
 `kafka.Message` into `ConsumedEvent` so writer processing stays independent from
 the Kafka client.
 
+### Why subscribe to heartbeat as its own topic?
+
+Heartbeat is the minimum liveness signal. Keeping
+`cpemon.device.heartbeat.v1` as its own topic makes the contract easy to route,
+scale, test, and explain independently from richer event families such as WAN
+status.
+
 ### Why use `FetchMessage` instead of hiding commits?
 
 `FetchMessage` lets the application choose when to commit offsets. That matters

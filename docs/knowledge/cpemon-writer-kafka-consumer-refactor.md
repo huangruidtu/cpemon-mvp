@@ -146,6 +146,36 @@ Operational reference:
 ops/runbooks/cpemon-writer-kafka-consumer-group.md
 ```
 
+## Heartbeat Topic Subscription
+
+`CCPU-88` makes the heartbeat subscription path explicit through
+`KafkaConsumerTopicsFromConfig`.
+
+The required heartbeat topic is:
+
+```text
+cpemon.device.heartbeat.v1
+```
+
+The topic remains configurable through:
+
+```text
+KAFKA_TOPIC_DEVICE_HEARTBEAT
+```
+
+Why it matters:
+
+* heartbeat events are the minimum signal for device liveness
+* the message key is stable device identity
+* heartbeat processing can be routed separately from WAN status processing
+* tests can prove the writer subscribes to the topic before live Kafka exists
+
+Repository check:
+
+```powershell
+make cpemon-writer-heartbeat-subscription-check
+```
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

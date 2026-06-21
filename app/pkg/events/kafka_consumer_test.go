@@ -102,6 +102,20 @@ func TestNewKafkaConsumerFromConfig(t *testing.T) {
 	}
 }
 
+func TestKafkaConsumerTopicsFromConfigIncludesHeartbeatTopic(t *testing.T) {
+	topics := KafkaConsumerTopicsFromConfig(appconfig.Config{
+		KafkaTopicDeviceHeartbeat: DeviceHeartbeatTopic,
+		KafkaTopicWANStatus:       "",
+	})
+
+	if len(topics) != 1 {
+		t.Fatalf("topics = %#v, want exactly heartbeat topic", topics)
+	}
+	if topics[0] != DeviceHeartbeatTopic {
+		t.Fatalf("topics[0] = %q, want %q", topics[0], DeviceHeartbeatTopic)
+	}
+}
+
 func TestNewKafkaConsumerWithReaderRequiresReader(t *testing.T) {
 	_, err := NewKafkaConsumerWithReader(nil)
 	if err == nil {

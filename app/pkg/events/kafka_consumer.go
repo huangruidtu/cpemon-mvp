@@ -82,11 +82,15 @@ func NewKafkaConsumerFromConfig(cfg appconfig.Config) (*KafkaConsumer, error) {
 	return NewKafkaConsumer(KafkaConsumerConfig{
 		BootstrapServers: cfg.KafkaBootstrapServers,
 		GroupID:          cfg.KafkaConsumerGroupID,
-		Topics: []string{
-			cfg.KafkaTopicDeviceHeartbeat,
-			cfg.KafkaTopicWANStatus,
-		},
-		ReadTimeout: cfg.KafkaConsumerReadTimeout,
+		Topics:           KafkaConsumerTopicsFromConfig(cfg),
+		ReadTimeout:      cfg.KafkaConsumerReadTimeout,
+	})
+}
+
+func KafkaConsumerTopicsFromConfig(cfg appconfig.Config) []string {
+	return normalizeTopics([]string{
+		cfg.KafkaTopicDeviceHeartbeat,
+		cfg.KafkaTopicWANStatus,
 	})
 }
 
