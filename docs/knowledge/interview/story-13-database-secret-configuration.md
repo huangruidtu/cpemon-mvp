@@ -332,6 +332,87 @@ Without those, it would be dishonest to claim live DB connectivity.
 
 I added a safe verification path for `cpemon-api` database connectivity. The script checks that `DB_DSN` comes from `cpemon-db/dsn`, waits for the API rollout, inspects logs for database initialization failures, and checks `/healthz`. It deliberately does not print or decode the database Secret. That makes the verification useful for operations and safe from a credential-handling perspective.
 
+## Q31: Why does `cpemon-writer` need a separate DB verification from `cpemon-api`?
+
+Because `cpemon-api` and `cpemon-writer` prove different runtime paths.
+
+`cpemon-api` proves that the API can initialize its DB connection and serve health checks.
+
+`cpemon-writer` proves the queue worker path:
+
+```text
+DB_DSN -> appdb.Init -> worker loop -> runOnce -> SELECT ingest_events -> UPDATE ingest_events
+```
+
+That means a writer check should look for startup success and worker-loop DB errors.
+
+## Q32: How do you verify that `cpemon-writer` is configured correctly?
+
+I verify both sensitive and non-sensitive runtime inputs:
+
+```powershell
+kubectl -n cpemon get secret cpemon-db
+kubectl -n cpemon get configmap cpemon-app-config
+kubectl -n cpemon get deploy cpemon-writer -o yaml
+```
+
+The expected wiring is:
+
+```yaml
+- name: DB_DSN
+  valueFrom:
+    secretKeyRef:
+      name: cpemon-db
+      key: dsn
+- name: WORKER_INTERVAL
+  valueFrom:
+    configMapKeyRef:
+      name: cpemon-app-config
+      key: WORKER_INTERVAL
+- name: BATCH_SIZE
+  valueFrom:
+    configMapKeyRef:
+      name: cpemon-app-config
+      key: BATCH_SIZE
+```
+
+That proves secrets and non-secret config are separated correctly.
+
+## Q33: What failure signal matters most for the writer DB write path?
+
+The writer-specific signal is:
+
+```text
+cpemon-writer runOnce error
+```
+
+`failed to initialize database` means startup DB connection failed. `runOnce error` means the service started, but the worker could not query or update `ingest_events`. That often points to schema drift, missing table, permissions, or a DB connection problem after startup.
+
+## Q34: What script did you add for `cpemon-writer` verification?
+
+I added:
+
+```text
+scripts/verify-cpemon-writer-db.ps1
+```
+
+It checks the Secret shape, ConfigMap shape, Deployment env wiring, rollout status, recent logs, and `/healthz`.
+
+## Q35: How would you prove the full writer path end to end?
+
+The strongest proof is to insert an approved test row into `ingest_events`, wait for the worker loop, then confirm:
+
+```text
+processing ingest_event
+status='done'
+```
+
+I would only do that in a dev or test environment with an approved test-data process. In production, I would rely on controlled synthetic checks, metrics, and logs rather than manually inserting data.
+
+## Q36: How would you summarize CCPU-67?
+
+I added a safe verification path for `cpemon-writer` that checks both the secret-backed DB connection and the worker write-path signals. The script confirms `DB_DSN` comes from `cpemon-db/dsn`, worker settings come from `cpemon-app-config`, rollout succeeds, logs do not show DB startup or `runOnce` errors, and `/healthz` responds. The runbook explains how to extend that into an end-to-end queue proof when inserting test data is allowed.
+
 ## STAR Story
 
 Situation:

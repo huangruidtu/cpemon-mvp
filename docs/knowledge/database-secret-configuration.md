@@ -378,3 +378,48 @@ It cannot honestly claim live DB connectivity until a cluster, kubeconfig, MySQL
 ### Interview Point
 
 I did not verify database connectivity by printing or decoding the database password. I created a safe operational check that confirms the Secret shape, verifies the Deployment consumes the right Secret key, waits for rollout, scans logs for DB initialization failures, and checks `/healthz`. That is closer to how I would debug this in production because it validates behavior without exposing credentials.
+
+## CCPU-67: Verify cpemon-writer DB Write Path
+
+`CCPU-67` adds a repeatable verification path for `cpemon-writer`.
+
+The verification script is:
+
+```text
+scripts/verify-cpemon-writer-db.ps1
+```
+
+The runbook is:
+
+```text
+ops/runbooks/cpemon-writer-db-write-path.md
+```
+
+### Why Writer Verification Is Different
+
+`cpemon-api` mostly proves startup DB connectivity. `cpemon-writer` proves the worker side of the queue pipeline:
+
+```text
+DB_DSN -> appdb.Init -> worker loop -> runOnce -> SELECT ingest_events -> UPDATE ingest_events
+```
+
+That means the useful checks include both connection and write-path signals.
+
+### What the Script Checks
+
+The script verifies:
+
+- `kubectl` client and current context
+- Secret `cpemon-db` exists in namespace `cpemon`
+- Secret key `dsn` exists without printing the value
+- ConfigMap `cpemon-app-config` contains `HTTP_ADDR`, `WORKER_INTERVAL`, and `BATCH_SIZE`
+- `deployment/cpemon-writer` reads `DB_DSN` from `cpemon-db/dsn`
+- `deployment/cpemon-writer` reads `WORKER_INTERVAL` and `BATCH_SIZE` from `cpemon-app-config`
+- rollout status for `deployment/cpemon-writer`
+- recent logs for database initialization failures
+- recent logs for `cpemon-writer runOnce error`
+- `/healthz` through a temporary port-forward
+
+### Interview Point
+
+For a worker service, a healthy process is not enough. I verified the Secret contract, ConfigMap contract, rollout, health endpoint, and worker-specific DB error signal. The key distinction is that `cpemon-writer` can connect successfully at startup but still fail later when querying or updating `ingest_events`, so I included `runOnce` log checks and documented an optional queue-row proof for environments where inserting test data is approved.

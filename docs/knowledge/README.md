@@ -25,6 +25,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 
 - [CPEmon Helm Application Runbook](../../ops/runbooks/helm-cpemon-application.md)
 - [CPEmon API DB Connection Verification](../../ops/runbooks/cpemon-api-db-connection.md)
+- [CPEmon Writer DB Write-Path Verification](../../ops/runbooks/cpemon-writer-db-write-path.md)
 
 ## Interview Prep
 
