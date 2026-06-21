@@ -1,0 +1,31 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ printf "%s-ingress" (include "cpemon.fullname" .) | trunc 63 | trimSuffix "-" | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+{{- with .Values.ingress.annotations }}
+  annotations:
+{{ toYaml . | nindent 4 }}
+{{- end }}
+spec:
+{{- with .Values.ingress.className }}
+  ingressClassName: {{ . | quote }}
+{{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+{{- range .Values.ingress.paths }}
+{{- $workload := index $.Values.workloads .workload }}
+          - path: {{ .path | quote }}
+            pathType: {{ .pathType | quote }}
+            backend:
+              service:
+                name: {{ $workload.name | quote }}
+                port:
+                  name: {{ .port | quote }}
+{{- end }}
+{{- end }}

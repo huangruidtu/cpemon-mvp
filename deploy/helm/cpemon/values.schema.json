@@ -67,6 +67,69 @@
         "env": { "type": "array" },
         "envFrom": { "type": "array" }
       }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "host": { "type": "string" },
+        "annotations": { "type": "object" },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "pathType", "workload", "port"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "pathType": { "type": "string", "enum": ["Exact", "Prefix", "ImplementationSpecific"] },
+              "workload": { "type": "string", "minLength": 1 },
+              "port": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "mode": { "type": "string" },
+        "defaultDenyEgress": { "type": "boolean" },
+        "allowDnsEgress": { "type": "boolean" },
+        "coreWorkloads": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "mysql": { "$ref": "#/definitions/networkPolicyDestination" },
+        "monitoring": { "$ref": "#/definitions/networkPolicyNamespacePort" },
+        "logging": { "$ref": "#/definitions/networkPolicyNamespacePort" }
+      }
+    },
+    "pdb": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "minAvailable": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string", "pattern": "^[0-9]+%$" }
+          ]
+        },
+        "workloads": { "type": "object" }
+      }
+    },
+    "serviceMonitor": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "name": { "type": "string", "minLength": 1 },
+        "namespace": { "type": "string", "minLength": 1 },
+        "releaseLabel": { "type": "string", "minLength": 1 },
+        "interval": { "type": "string", "minLength": 1 },
+        "scrapeTimeout": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      }
     }
   },
   "definitions": {
@@ -120,6 +183,23 @@
         "name": { "type": "string", "minLength": 1 },
         "secretName": { "type": "string", "minLength": 1 },
         "secretKey": { "type": "string", "minLength": 1 }
+      }
+    },
+    "networkPolicyNamespacePort": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "namespace": { "type": "string", "minLength": 1 },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "networkPolicyDestination": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "namespace": { "type": "string", "minLength": 1 },
+        "podLabels": { "type": "object" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
       }
     }
   }

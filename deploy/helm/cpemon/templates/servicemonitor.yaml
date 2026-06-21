@@ -1,0 +1,29 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.serviceMonitor.name | quote }}
+  namespace: {{ .Values.serviceMonitor.namespace | quote }}
+  labels:
+    release: {{ .Values.serviceMonitor.releaseLabel | quote }}
+{{ include "cpemon.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ include "cpemon.namespace" . | quote }}
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+{{- range .Values.workloads }}
+{{- if .enabled }}
+          - {{ .name | quote }}
+{{- end }}
+{{- end }}
+  endpoints:
+    - port: {{ .Values.defaults.ports.metrics.name | quote }}
+      path: {{ .Values.serviceMonitor.path | quote }}
+      interval: {{ .Values.serviceMonitor.interval | quote }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout | quote }}
+{{- end }}

@@ -330,3 +330,86 @@ cpemon-acs-hmac key hmac-secret
 ## Q31: How would you summarize CCPU-54 in an interview?
 
 I separated non-secret application configuration from secret material in the Helm chart. Non-sensitive runtime values now render into a chart-owned ConfigMap and workloads consume them through `configMapKeyRef`. Sensitive values such as `DB_DSN` and `HMAC_SECRET` remain external Kubernetes Secret references, so the chart documents required Secret names and keys without committing credentials. This makes the chart safer, easier to configure per environment, and closer to a production deployment model.
+
+## Q32: What did CCPU-55 add?
+
+`CCPU-55` added optional platform feature templates around the CPEmon Helm chart:
+
+```text
+Ingress
+ServiceMonitor
+PodDisruptionBudget
+NetworkPolicy
+```
+
+They are controlled by values flags and disabled by default.
+
+## Q33: Why should optional platform features be controlled by values?
+
+Not every environment has the same platform add-ons.
+
+A local or early dev cluster may not have an ingress controller, Prometheus Operator CRDs, or NetworkPolicy enforcement. Values flags let the same chart render only the integrations that the target environment supports.
+
+## Q34: Why is ServiceMonitor disabled by default?
+
+`ServiceMonitor` is not a native Kubernetes kind.
+
+It is a CRD installed by Prometheus Operator or kube-prometheus-stack. If the CRD does not exist in the cluster, applying a ServiceMonitor manifest will fail.
+
+## Q35: Why is Ingress disabled by default?
+
+Ingress requires an ingress controller.
+
+The Kubernetes Ingress object only describes desired routing. Something like ingress-nginx or AWS Load Balancer Controller must actually watch the Ingress and create routing behavior.
+
+## Q36: Why not create a PDB for every workload?
+
+A PDB should match the workload's replica and availability model.
+
+For a single-replica workload, `minAvailable: 1` can block voluntary disruptions because Kubernetes cannot evict the only pod while keeping one available.
+
+In this chart, `cpemon-api` and `acs-ingest` get PDBs by default when PDB is enabled. `cpemon-writer` is disabled in the PDB map because it currently has one replica.
+
+## Q37: What does the NetworkPolicy template do?
+
+When enabled, it renders a baseline egress posture:
+
+```text
+default deny egress
+allow DNS egress
+allow core app egress to MySQL
+optionally allow monitoring/logging egress
+```
+
+This makes allowed traffic explicit instead of assuming every pod can connect everywhere.
+
+## Q38: What is the main risk with enabling NetworkPolicy?
+
+If required traffic is not allowed, applications can lose DNS, database, metrics, logging, or external connectivity.
+
+NetworkPolicy should be enabled after reviewing required traffic paths and confirming that the cluster CNI or policy engine enforces NetworkPolicy as expected.
+
+## Q39: How did you validate CCPU-55?
+
+I validated two render paths.
+
+First, default dev rendering:
+
+```powershell
+helm lint deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+That kept optional platform resources disabled.
+
+Second, enabled rendering:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml --set ingress.enabled=true --set serviceMonitor.enabled=true --set pdb.enabled=true --set networkPolicy.enabled=true
+```
+
+That rendered the optional resources successfully.
+
+## Q40: How would you summarize CCPU-55 in an interview?
+
+I added optional platform integration templates to the Helm chart while keeping conservative defaults. The chart can now render Ingress, ServiceMonitor, PDB, and NetworkPolicy resources when the target cluster supports them. These features are disabled by default because they depend on platform add-ons or operational assumptions. This keeps dev rendering safe while preparing the chart for production-style Kubernetes environments.

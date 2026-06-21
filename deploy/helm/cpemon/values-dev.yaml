@@ -23,3 +23,16 @@ workloads:
     replicaCount: 2
   cpemonWriter:
     replicaCount: 1
+
+ingress:
+  enabled: false
+  host: api.local
+
+networkPolicy:
+  enabled: false
+
+pdb:
+  enabled: false
+
+serviceMonitor:
+  enabled: false

@@ -521,6 +521,129 @@ The rendered output includes:
 - `configMapKeyRef` for non-secret config
 - `secretKeyRef` for sensitive runtime inputs
 
+## CCPU-55: Optional Platform Feature Templates
+
+`CCPU-55` adds optional platform integrations around the CPEmon application chart.
+
+The new templates are:
+
+```text
+deploy/helm/cpemon/templates/ingress.yaml
+deploy/helm/cpemon/templates/servicemonitor.yaml
+deploy/helm/cpemon/templates/pdb.yaml
+deploy/helm/cpemon/templates/networkpolicy.yaml
+```
+
+All four features are controlled by values flags and are disabled by default:
+
+```yaml
+ingress:
+  enabled: false
+serviceMonitor:
+  enabled: false
+pdb:
+  enabled: false
+networkPolicy:
+  enabled: false
+```
+
+This is deliberate. Optional platform features often depend on cluster add-ons:
+
+| Feature | Cluster dependency |
+| --- | --- |
+| Ingress | An ingress controller such as ingress-nginx or AWS Load Balancer Controller. |
+| ServiceMonitor | Prometheus Operator CRDs from kube-prometheus-stack. |
+| PDB | Kubernetes eviction behavior and enough replicas to keep available pods. |
+| NetworkPolicy | A CNI or policy engine that enforces NetworkPolicy. |
+
+The chart should be renderable in a plain dev workflow without requiring all of those platform integrations to exist.
+
+### Ingress Template
+
+The Ingress template routes external HTTP paths to internal Services:
+
+| Path | Backend workload |
+| --- | --- |
+| `/acs/webhook` | `acs-ingest` |
+| `/cpe` | `cpemon-api` |
+| `/api` | `cpemon-api` |
+
+The default host is:
+
+```text
+api.local
+```
+
+The Ingress is disabled by default because a cluster must already have a compatible ingress controller. The template preserves the old raw YAML behavior while making host, class, annotations, paths, backends, and ports configurable.
+
+### ServiceMonitor Template
+
+The ServiceMonitor template creates:
+
+```text
+cpemon-services
+```
+
+in the monitoring namespace by default.
+
+It selects Services by the compatibility `app` label and scrapes the `metrics` port. This preserves the existing monitoring behavior while letting the chart control whether monitoring integration should be rendered.
+
+The ServiceMonitor is disabled by default because `ServiceMonitor` is not a built-in Kubernetes resource. It only exists after Prometheus Operator CRDs are installed.
+
+### PDB Template
+
+The PDB template creates disruption budgets only for workloads enabled in:
+
+```yaml
+pdb:
+  workloads:
+    cpemonApi:
+      enabled: true
+    acsIngest:
+      enabled: true
+    cpemonWriter:
+      enabled: false
+```
+
+`cpemon-writer` is disabled by default because it has one replica. A `minAvailable: 1` PDB on a single-replica workload can block voluntary disruptions and make maintenance harder.
+
+### NetworkPolicy Template
+
+The NetworkPolicy template renders a baseline posture when enabled:
+
+- default deny egress for the namespace
+- allow DNS egress to kube-dns
+- allow core app egress to MySQL
+- optionally allow egress to monitoring and logging namespaces
+
+This is conservative and explicit. It teaches the important production point:
+
+> A NetworkPolicy should be enabled only when the team understands the cluster's policy enforcement mode and required traffic paths.
+
+### Validation Result
+
+The chart passed default rendering with all optional features disabled:
+
+```powershell
+helm lint deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+Default dev rendering produced no optional platform resources.
+
+The optional templates were also rendered by explicitly enabling all four flags:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml --set ingress.enabled=true --set serviceMonitor.enabled=true --set pdb.enabled=true --set networkPolicy.enabled=true
+```
+
+That rendered:
+
+- 1 Ingress
+- 1 ServiceMonitor
+- 2 PodDisruptionBudgets
+- 3 NetworkPolicies
+
 ## Helm Values Precedence
 
 When Helm renders a chart, values are merged from several sources.

@@ -149,18 +149,64 @@ podScheduling:
 
 ingress:
   enabled: false
-  className: alb
-  host: ""
-  annotations: {}
+  className: nginx
+  host: api.local
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+  paths:
+    - path: /acs/webhook
+      pathType: Prefix
+      workload: acsIngest
+      port: http
+    - path: /cpe
+      pathType: Prefix
+      workload: cpemonApi
+      port: http
+    - path: /api
+      pathType: Prefix
+      workload: cpemonApi
+      port: http
 
 networkPolicy:
   enabled: false
   mode: baseline
+  defaultDenyEgress: true
+  allowDnsEgress: true
+  coreWorkloads:
+    - cpemon-api
+    - acs-ingest
+    - cpemon-writer
+  mysql:
+    enabled: true
+    namespace: cpemon
+    podLabels:
+      app: mysql
+    port: 3306
+  monitoring:
+    enabled: true
+    namespace: monitoring
+    port: 9090
+  logging:
+    enabled: false
+    namespace: logging
+    port: 9200
 
 pdb:
   enabled: false
   minAvailable: 1
+  workloads:
+    cpemonApi:
+      enabled: true
+    acsIngest:
+      enabled: true
+    cpemonWriter:
+      enabled: false
 
 serviceMonitor:
   enabled: false
-  interval: 30s
+  name: cpemon-services
+  namespace: monitoring
+  releaseLabel: kps
+  interval: 15s
+  scrapeTimeout: 10s
+  path: /metrics

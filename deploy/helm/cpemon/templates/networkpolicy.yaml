@@ -1,0 +1,93 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- if .Values.networkPolicy.defaultDenyEgress }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-default-deny-egress
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress: []
+---
+{{- end }}
+{{- if .Values.networkPolicy.allowDnsEgress }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-allow-dns-egress
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cpemon-allow-core-app-egress
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+{{- range .Values.networkPolicy.coreWorkloads }}
+          - {{ . | quote }}
+{{- end }}
+  policyTypes:
+    - Egress
+  egress:
+{{- if .Values.networkPolicy.mysql.enabled }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.mysql.namespace | quote }}
+          podSelector:
+            matchLabels:
+{{ toYaml .Values.networkPolicy.mysql.podLabels | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.mysql.port }}
+{{- end }}
+{{- if .Values.networkPolicy.monitoring.enabled }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.monitoring.namespace | quote }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.monitoring.port }}
+{{- end }}
+{{- if .Values.networkPolicy.logging.enabled }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.logging.namespace | quote }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.logging.port }}
+{{- end }}
+{{- end }}

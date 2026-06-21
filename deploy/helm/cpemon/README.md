@@ -178,3 +178,29 @@ The chart also references the image pull Secret:
 - `cpemon-ecr-regcred`
 
 These Secrets must exist before installing the chart. This chart intentionally does not create real Secret values.
+
+## Optional Platform Features
+
+`CCPU-55` adds optional platform integration templates. They are disabled by default in dev rendering and can be enabled through values:
+
+```yaml
+ingress:
+  enabled: true
+serviceMonitor:
+  enabled: true
+pdb:
+  enabled: true
+networkPolicy:
+  enabled: true
+```
+
+The optional templates are:
+
+| Template | Purpose |
+| --- | --- |
+| `templates/ingress.yaml` | Routes external HTTP paths to `acs-ingest` and `cpemon-api`. |
+| `templates/servicemonitor.yaml` | Lets kube-prometheus-stack discover workload metrics Services. |
+| `templates/pdb.yaml` | Adds PDBs for multi-replica workloads. |
+| `templates/networkpolicy.yaml` | Adds a baseline default-deny egress posture plus explicit DNS/core egress allows. |
+
+The conservative default is important: these resources depend on platform capabilities such as an ingress controller, Prometheus Operator CRDs, and NetworkPolicy enforcement.
