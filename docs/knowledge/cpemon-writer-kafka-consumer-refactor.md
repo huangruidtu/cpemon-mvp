@@ -119,6 +119,52 @@ Interview framing:
 > explicit. The writer can remain on the DB polling path while the chart,
 > ConfigMap, and application config already agree on the consumer contract.
 
+## Kafka Consumer Adapter
+
+`CCPU-87` adds the concrete Kafka adapter:
+
+```go
+type KafkaConsumer struct {
+    reader kafkaMessageReader
+}
+```
+
+Construction:
+
+* `NewKafkaConsumerFromConfig` reads the shared app config.
+* `NewKafkaConsumer` validates bootstrap servers, group id, and topics.
+* `NewKafkaConsumerWithReader` lets unit tests inject a fake reader.
+
+Runtime behavior:
+
+* Uses `github.com/segmentio/kafka-go`.
+* Creates a consumer-group reader with `GroupTopics`.
+* Reads messages with `FetchMessage`.
+* Converts each `kafka.Message` to `ConsumedEvent`.
+* Passes the envelope to the `EventHandler`.
+* Returns structured `KafkaConsumeError` values for fetch and handler failures.
+
+Offset commit behavior is intentionally not finalized in `CCPU-87`.
+`FetchMessage` makes commit timing explicit, and `CCPU-169` owns the rule:
+commit offsets only after successful processing and MySQL write.
+
+Broker-free tests cover:
+
+* invalid construction
+* construction from app config
+* fake reader injection
+* topic/key/value/time/partition/offset mapping
+* fetch error classification
+* handler error context
+* close lifecycle
+
+Interview framing:
+
+> The Kafka adapter translates broker mechanics into the application envelope.
+> That means the rest of `cpemon-writer` can talk in CPEmon concepts while the
+> adapter owns broker connection, consumer group, topic subscription, and record
+> metadata.
+
 ## Interview Notes
 
 A strong explanation:

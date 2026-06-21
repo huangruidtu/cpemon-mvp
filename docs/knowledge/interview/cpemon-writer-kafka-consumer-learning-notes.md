@@ -105,9 +105,27 @@ Use a fake `EventConsumer` that feeds `ConsumedEvent` values into the handler.
 That tests routing, error propagation, and future write behavior without broker
 setup.
 
+### What does the Kafka adapter do?
+
+It owns Kafka mechanics: bootstrap servers, consumer group id, topic
+subscription, `FetchMessage`, and close lifecycle. It converts each
+`kafka.Message` into `ConsumedEvent` so writer processing stays independent from
+the Kafka client.
+
+### Why use `FetchMessage` instead of hiding commits?
+
+`FetchMessage` lets the application choose when to commit offsets. That matters
+because `cpemon-writer` should acknowledge progress only after the database
+write succeeds.
+
 ## Resume Bullet
 
 Defined the writer-side Kafka consumer boundary with a broker-independent
 `EventConsumer` interface and `ConsumedEvent` envelope, enabling testable
 consumer logic with explicit topic, key, payload, partition, offset, context,
 handler error, and close lifecycle behavior.
+
+Implemented the first concrete Kafka consumer adapter with `kafka-go`,
+consumer-group topic subscription, app-config construction, structured consume
+errors, broker-free fake-reader tests, and an explicit offset-commit boundary
+for the later reliability subtask.
