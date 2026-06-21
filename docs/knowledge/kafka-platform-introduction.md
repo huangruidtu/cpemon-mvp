@@ -352,3 +352,83 @@ kubectl exec -n kafka statefulset/kafka-controller -- kafka-topics.sh `
   --bootstrap-server kafka.kafka.svc.cluster.local:9092 `
   --list
 ```
+
+## CCPU-73: Kafka Bootstrap and Topic Config Boundary
+
+`CCPU-73` adds the application-facing Kafka configuration boundary.
+
+The Helm values are:
+
+```text
+deploy/helm/cpemon/values.yaml
+```
+
+The Helm ConfigMap template is:
+
+```text
+deploy/helm/cpemon/templates/configmap.yaml
+```
+
+The raw manifest bridge is:
+
+```text
+k8s/app/cpemon-app-config.yaml
+```
+
+The runbook is:
+
+```text
+ops/runbooks/kafka-bootstrap-config.md
+```
+
+The validation script is:
+
+```text
+scripts/verify-kafka-config-boundary.ps1
+```
+
+### Config Keys
+
+| Key | Value |
+| --- | --- |
+| `KAFKA_BOOTSTRAP_SERVERS` | `kafka.kafka.svc.cluster.local:9092` |
+| `KAFKA_TOPIC_DEVICE_HEARTBEAT` | `cpemon.device.heartbeat.v1` |
+| `KAFKA_TOPIC_WAN_STATUS` | `cpemon.wan.status.v1` |
+| `KAFKA_TOPIC_DEADLETTER` | `cpemon.deadletter.v1` |
+
+These values are non-secret. They belong in ConfigMap-style application configuration.
+
+Future auth material does not belong here. TLS keys, SASL credentials, tokens, or MSK IAM-specific secret material should use Secret references or External Secrets Operator.
+
+### Why This Boundary Matters
+
+Application code should depend on stable config keys, not broker implementation details.
+
+That keeps this path open:
+
+```text
+Bitnami chart Kafka
+        |
+        v
+same KAFKA_BOOTSTRAP_SERVERS key
+        |
+        v
+future Strimzi or MSK endpoint
+```
+
+The config value can change later without changing the application API.
+
+### Validation Boundary
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-config-boundary.ps1
+```
+
+Live validation requires rendered or applied ConfigMaps:
+
+```powershell
+make helm-cpemon-template
+kubectl get configmap cpemon-app-config -n cpemon -o yaml
+```

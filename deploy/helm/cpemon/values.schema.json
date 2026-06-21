@@ -49,7 +49,11 @@
         "grafanaHomeUrl": { "type": "string" },
         "grafanaSnDashboardUrlTemplate": { "type": "string" },
         "kibanaHomeUrl": { "type": "string" },
-        "kibanaSnLogsUrlTemplate": { "type": "string" }
+        "kibanaSnLogsUrlTemplate": { "type": "string" },
+        "kafkaBootstrapServers": { "type": "string", "minLength": 1 },
+        "kafkaTopicDeviceHeartbeat": { "type": "string", "minLength": 1 },
+        "kafkaTopicWanStatus": { "type": "string", "minLength": 1 },
+        "kafkaTopicDeadletter": { "type": "string", "minLength": 1 }
       }
     },
     "mysql": {

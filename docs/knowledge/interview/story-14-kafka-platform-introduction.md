@@ -350,6 +350,86 @@ kubectl exec -n kafka statefulset/kafka-controller -- kafka-topics.sh `
 
 So CCPU-72 proves the topic contract in Git, while live broker topic existence belongs to cluster validation.
 
+## Q28: What did CCPU-73 add?
+
+`CCPU-73` added the application-facing Kafka configuration boundary.
+
+The key files are:
+
+```text
+deploy/helm/cpemon/values.yaml
+deploy/helm/cpemon/templates/configmap.yaml
+deploy/helm/cpemon/values.schema.json
+k8s/app/cpemon-app-config.yaml
+ops/runbooks/kafka-bootstrap-config.md
+scripts/verify-kafka-config-boundary.ps1
+Makefile
+```
+
+## Q29: What Kafka config keys did you add?
+
+The config keys are:
+
+```text
+KAFKA_BOOTSTRAP_SERVERS
+KAFKA_TOPIC_DEVICE_HEARTBEAT
+KAFKA_TOPIC_WAN_STATUS
+KAFKA_TOPIC_DEADLETTER
+```
+
+The Step 1 bootstrap value is:
+
+```text
+kafka.kafka.svc.cluster.local:9092
+```
+
+## Q30: Why put these values in ConfigMap-style app config?
+
+The bootstrap DNS name and topic names are non-secret configuration.
+
+They should be reviewable and environment-specific, but they are not credentials. Future TLS keys, SASL passwords, tokens, or MSK IAM-related secret material should use Secret references or External Secrets Operator.
+
+## Q31: Why expose topic names as config instead of hardcoding them?
+
+Topic names are platform contracts.
+
+If application code reads topic names from config, the platform can rename, version, or migrate topics through deployment configuration. That is much easier to operate than recompiling code for every topic change.
+
+## Q32: How does this help a future Strimzi or MSK migration?
+
+The app should depend on:
+
+```text
+KAFKA_BOOTSTRAP_SERVERS
+```
+
+not on Bitnami chart internals, pod names, or a specific service implementation.
+
+Later, the value can change from:
+
+```text
+kafka.kafka.svc.cluster.local:9092
+```
+
+to a Strimzi bootstrap service or MSK broker endpoint while keeping the application contract stable.
+
+## Q33: What is the validation boundary for CCPU-73?
+
+Local validation checks the repository contract:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kafka-config-boundary.ps1
+```
+
+Live validation requires Helm rendering or an applied ConfigMap:
+
+```powershell
+make helm-cpemon-template
+kubectl get configmap cpemon-app-config -n cpemon -o yaml
+```
+
+Because Helm is still unavailable in the local shell, this subtask proves the committed config boundary but does not claim live render/apply validation.
+
 ## STAR Story
 
 Situation:
@@ -362,7 +442,7 @@ In the cloud-platform upgrade, I needed to introduce Kafka as a more realistic e
 
 Action:
 
-I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
+I chose a Helm chart based Kafka deployment for Step 1, documented why it fits the current EKS and Helm learning path, added a small Kafka values file, Makefile targets, a Helm runbook, a Kafka namespace runbook, initial topic definitions, Kafka bootstrap configuration keys, and workflow validation scripts. I explicitly deferred Strimzi and MSK until lifecycle automation or managed production operations become the main concern.
 
 Result:
 

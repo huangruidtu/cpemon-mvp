@@ -23,6 +23,10 @@ appConfig:
   grafanaSnDashboardUrlTemplate: "https://grafana.local/d/cpemon_cpe_detail?var_sn=%s"
   kibanaHomeUrl: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:''))"
   kibanaSnLogsUrlTemplate: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:'message:\"sn=%s\"'))"
+  kafkaBootstrapServers: "kafka.kafka.svc.cluster.local:9092"
+  kafkaTopicDeviceHeartbeat: "cpemon.device.heartbeat.v1"
+  kafkaTopicWanStatus: "cpemon.wan.status.v1"
+  kafkaTopicDeadletter: "cpemon.deadletter.v1"
 
 database:
   host: "mysql.cpemon.svc.cluster.local"
@@ -193,6 +197,14 @@ workloads:
         valueFromConfig: kibanaHomeUrl
       - name: KIBANA_SN_LOGS_URL_TEMPLATE
         valueFromConfig: kibanaSnLogsUrlTemplate
+      - name: KAFKA_BOOTSTRAP_SERVERS
+        valueFromConfig: kafkaBootstrapServers
+      - name: KAFKA_TOPIC_DEVICE_HEARTBEAT
+        valueFromConfig: kafkaTopicDeviceHeartbeat
+      - name: KAFKA_TOPIC_WAN_STATUS
+        valueFromConfig: kafkaTopicWanStatus
+      - name: KAFKA_TOPIC_DEADLETTER
+        valueFromConfig: kafkaTopicDeadletter
     secretEnv:
       - name: DB_DSN
         secretName: cpemon-db
@@ -209,6 +221,14 @@ workloads:
     env:
       - name: HTTP_ADDR
         valueFromConfig: httpAddr
+      - name: KAFKA_BOOTSTRAP_SERVERS
+        valueFromConfig: kafkaBootstrapServers
+      - name: KAFKA_TOPIC_DEVICE_HEARTBEAT
+        valueFromConfig: kafkaTopicDeviceHeartbeat
+      - name: KAFKA_TOPIC_WAN_STATUS
+        valueFromConfig: kafkaTopicWanStatus
+      - name: KAFKA_TOPIC_DEADLETTER
+        valueFromConfig: kafkaTopicDeadletter
     secretEnv:
       - name: DB_DSN
         secretName: cpemon-db
@@ -232,6 +252,14 @@ workloads:
         value: "1s"
       - name: BATCH_SIZE
         value: "50"
+      - name: KAFKA_BOOTSTRAP_SERVERS
+        valueFromConfig: kafkaBootstrapServers
+      - name: KAFKA_TOPIC_DEVICE_HEARTBEAT
+        valueFromConfig: kafkaTopicDeviceHeartbeat
+      - name: KAFKA_TOPIC_WAN_STATUS
+        valueFromConfig: kafkaTopicWanStatus
+      - name: KAFKA_TOPIC_DEADLETTER
+        valueFromConfig: kafkaTopicDeadletter
     secretEnv:
       - name: DB_DSN
         secretName: cpemon-db

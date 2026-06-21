@@ -12,4 +12,8 @@ data:
   GRAFANA_SN_DASHBOARD_URL_TEMPLATE: {{ .Values.appConfig.grafanaSnDashboardUrlTemplate | quote }}
   KIBANA_HOME_URL: {{ .Values.appConfig.kibanaHomeUrl | quote }}
   KIBANA_SN_LOGS_URL_TEMPLATE: {{ .Values.appConfig.kibanaSnLogsUrlTemplate | quote }}
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.appConfig.kafkaBootstrapServers | quote }}
+  KAFKA_TOPIC_DEVICE_HEARTBEAT: {{ .Values.appConfig.kafkaTopicDeviceHeartbeat | quote }}
+  KAFKA_TOPIC_WAN_STATUS: {{ .Values.appConfig.kafkaTopicWanStatus | quote }}
+  KAFKA_TOPIC_DEADLETTER: {{ .Values.appConfig.kafkaTopicDeadletter | quote }}
 {{- end }}
