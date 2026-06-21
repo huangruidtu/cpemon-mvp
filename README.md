@@ -419,6 +419,7 @@ Knowledge base:
 - `docs/knowledge/cloud-platform-architecture-migration.md` - mental model for moving from a YAML-first MVP to a managed cloud platform operating model.
 - `docs/knowledge/terraform-remote-state-workflow.md` - mental model for Terraform state, locking, validation, plan, and review.
 - `docs/knowledge/ecr-github-oidc-terraform-actions.md` - mental model for ECR, GitHub OIDC, Terraform, and GitHub Actions.
+- `docs/knowledge/database-secret-configuration.md` - mental model for database and secret configuration decisions.
 - `docs/knowledge/interview/README.md` - interview Q&A sets built from each completed upgrade story.
 
 Jira and AI workflow templates:
