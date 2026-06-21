@@ -6,6 +6,8 @@
 global:
   namespaceOverride: ""
   imageRegistry: "701573843911.dkr.ecr.eu-north-1.amazonaws.com"
+  imageTag: "dev"
+  imagePullPolicy: IfNotPresent
   imagePullSecrets:
     - name: cpemon-ecr-regcred
   commonLabels:
@@ -14,118 +16,148 @@ global:
 
 appConfig:
   httpAddr: ":8080"
-  mysqlHost: "mysql.cpemon.svc.cluster.local"
-  mysqlPort: 3306
-  mysqlDatabase: "cpemon"
   grafanaHomeUrl: "https://grafana.local/"
   grafanaSnDashboardUrlTemplate: "https://grafana.local/d/cpemon_cpe_detail?var_sn=%s"
   kibanaHomeUrl: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:''))"
   kibanaSnLogsUrlTemplate: "http://kibana.local/app/discover#/?_g=(time:(from:now-120m,to:now))&_a=(query:(language:kuery,query:'message:\"sn=%s\"'))"
 
-secretRefs:
-  database:
+database:
+  host: "mysql.cpemon.svc.cluster.local"
+  port: 3306
+  name: "cpemon"
+  dsnSecret:
+    enabled: true
     name: cpemon-db
-    usernameKey: username
-    passwordKey: password
+    key: dsn
+
+secretRefs:
   acsHmac:
     name: cpemon-acs-hmac
     secretKey: hmac-secret
+
+defaults:
+  service:
+    enabled: true
+    type: ClusterIP
+    annotations: {}
+  ports:
+    http:
+      name: http
+      containerPort: 8080
+      servicePort: 8080
+    metrics:
+      name: metrics
+      containerPort: 9100
+      servicePort: 9100
+  probes:
+    enabled: true
+    path: /healthz
+    liveness:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readiness:
+      initialDelaySeconds: 2
+      periodSeconds: 5
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  podAnnotations: {}
+  podLabels: {}
+  env: []
+  envFrom: []
 
 workloads:
   cpemonApi:
     enabled: true
     name: cpemon-api
+    component: api
     replicaCount: 2
     image:
       repository: cpemon-api
-      tag: "dev"
-      pullPolicy: IfNotPresent
-    ports:
-      http: 8080
-      metrics: 9100
-    service:
-      enabled: true
-      type: ClusterIP
-    resources:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
-    probes:
-      path: /healthz
-      livenessInitialDelaySeconds: 5
-      readinessInitialDelaySeconds: 2
+      tag: ""
+      pullPolicy: ""
+    env:
+      - name: HTTP_ADDR
+        value: ":8080"
+      - name: GRAFANA_HOME_URL
+        valueFromConfig: grafanaHomeUrl
+      - name: GRAFANA_SN_DASHBOARD_URL_TEMPLATE
+        valueFromConfig: grafanaSnDashboardUrlTemplate
+      - name: KIBANA_HOME_URL
+        valueFromConfig: kibanaHomeUrl
+      - name: KIBANA_SN_LOGS_URL_TEMPLATE
+        valueFromConfig: kibanaSnLogsUrlTemplate
+    secretEnv:
+      - name: DB_DSN
+        secretName: cpemon-db
+        secretKey: dsn
   acsIngest:
     enabled: true
     name: acs-ingest
+    component: ingest
     replicaCount: 2
     image:
       repository: acs-ingest
-      tag: "dev"
-      pullPolicy: IfNotPresent
-    ports:
-      http: 8080
-      metrics: 9100
-    service:
-      enabled: true
-      type: ClusterIP
-    resources:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
-    probes:
-      path: /healthz
-      livenessInitialDelaySeconds: 5
-      readinessInitialDelaySeconds: 2
+      tag: ""
+      pullPolicy: ""
+    env:
+      - name: HTTP_ADDR
+        value: ":8080"
+    secretEnv:
+      - name: DB_DSN
+        secretName: cpemon-db
+        secretKey: dsn
+      - name: HMAC_SECRET
+        secretName: cpemon-acs-hmac
+        secretKey: hmac-secret
   cpemonWriter:
     enabled: true
     name: cpemon-writer
+    component: writer
     replicaCount: 1
     image:
       repository: cpemon-writer
-      tag: "dev"
-      pullPolicy: IfNotPresent
-    ports:
-      http: 8080
-      metrics: 9100
-    service:
-      enabled: true
-      type: ClusterIP
-    worker:
-      interval: "1s"
-      batchSize: "50"
-    resources:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
-    probes:
-      path: /healthz
-      livenessInitialDelaySeconds: 5
-      readinessInitialDelaySeconds: 2
+      tag: ""
+      pullPolicy: ""
+    env:
+      - name: HTTP_ADDR
+        value: ":8080"
+      - name: WORKER_INTERVAL
+        value: "1s"
+      - name: BATCH_SIZE
+        value: "50"
+    secretEnv:
+      - name: DB_DSN
+        secretName: cpemon-db
+        secretKey: dsn
 
 podScheduling:
   preferWorkerNodes: true
   workerNodeLabelKey: cpemon-role
   workerNodeLabelValue: worker
   tolerateControlPlane: true
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
 
 ingress:
   enabled: false
+  className: alb
+  host: ""
+  annotations: {}
 
 networkPolicy:
   enabled: false
+  mode: baseline
 
 pdb:
   enabled: false
+  minAvailable: 1
 
 serviceMonitor:
   enabled: false
-
+  interval: 30s

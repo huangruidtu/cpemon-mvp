@@ -46,9 +46,76 @@ This chart should reference Kubernetes Secrets by name and key. The actual Secre
 Image tags are controlled through values:
 
 ```yaml
+global:
+  imageTag: "dev"
+```
+
+Workload-specific image tags may still override the global tag when needed:
+
+```yaml
 workloads:
   cpemonApi:
     image:
-      tag: "dev"
+      tag: "api-specific-tag"
 ```
 
+## Values Model
+
+The chart values are grouped by responsibility:
+
+| Section | Purpose |
+| --- | --- |
+| `global` | Namespace override, registry, default tag, pull policy, image pull secrets, and shared labels. |
+| `appConfig` | Non-secret application URLs and simple runtime configuration. |
+| `database` | Database endpoint metadata and the Secret reference used for `DB_DSN`. |
+| `secretRefs` | Named Secret references for sensitive inputs that must not be committed as raw values. |
+| `defaults` | Shared service, port, probe, resource, annotation, and env defaults. |
+| `workloads` | Per-service configuration for `cpemon-api`, `acs-ingest`, and `cpemon-writer`. |
+| `podScheduling` | Node affinity, toleration, node selector, and scheduling override model. |
+| `ingress`, `networkPolicy`, `pdb`, `serviceMonitor` | Optional platform features added in later subtasks. |
+| `values.schema.json` | JSON Schema used by Helm to validate common values mistakes during lint/render. |
+
+The model uses a global image tag by default:
+
+```yaml
+global:
+  imageRegistry: "701573843911.dkr.ecr.eu-north-1.amazonaws.com"
+  imageTag: "dev"
+```
+
+Each workload can override the repository, tag, or pull policy:
+
+```yaml
+workloads:
+  cpemonApi:
+    image:
+      repository: cpemon-api
+      tag: ""
+      pullPolicy: ""
+```
+
+An empty workload image tag means "use `global.imageTag`". An empty workload pull policy means "use `global.imagePullPolicy`".
+
+## Dev Overrides
+
+`values-dev.yaml` should stay small. It should only describe what is different in the dev/EKS environment:
+
+- namespace override
+- dev image tag placeholder
+- dev Secret names and keys
+- dev replica counts
+
+This keeps the default chart model readable while still making environment-specific rendering explicit.
+
+## Values Schema
+
+`values.schema.json` gives Helm a type contract for the most important values.
+
+It catches mistakes such as:
+
+- missing workload definitions
+- non-integer replica counts
+- invalid image pull policies
+- malformed secret-backed environment variables
+
+The schema is intentionally focused. It validates the stable chart contract without trying to describe every optional platform feature before those templates exist.

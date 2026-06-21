@@ -50,6 +50,69 @@ For CPEmon, it captures image settings, replicas, ports, resource requests/limit
 
 This is important because the same chart should be usable across environments, while each environment can override namespace, tags, replicas, endpoints, or optional features.
 
+## Q7.1: What did CCPU-52 change in the values model?
+
+It made the chart values detailed enough for future templates.
+
+The model now separates global image defaults, app config, database/secret references, shared defaults, per-workload settings, scheduling controls, and optional platform features.
+
+## Q7.2: Why use `global.imageTag` instead of repeating the tag under every workload?
+
+Most services in one deployment are usually built from the same commit or release.
+
+A global image tag lets CI/CD set one value for the whole application release. Workload-specific tags remain possible for exceptions, but the normal path avoids duplication.
+
+## Q7.3: How should a template resolve an image tag in this chart?
+
+The intended logic is:
+
+```text
+if workload.image.tag is set, use it
+otherwise use global.imageTag
+```
+
+That lets `values-dev.yaml` set one placeholder tag for all workloads while still allowing one service to be overridden later.
+
+## Q7.4: What is Helm values precedence?
+
+Helm starts with the chart's `values.yaml`, then merges each `-f` values file in order, then applies CLI overrides such as `--set`.
+
+Higher-precedence values replace lower-precedence values.
+
+For example:
+
+```powershell
+helm template cpemon deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml --set global.imageTag=sha-abc123
+```
+
+uses `sha-abc123` because `--set` has higher precedence than both files.
+
+## Q7.5: Why split `env` and `secretEnv`?
+
+Plain `env` is for non-secret values that can be committed, such as `HTTP_ADDR`.
+
+`secretEnv` is for environment variables sourced from Kubernetes Secrets, such as `DB_DSN` and `HMAC_SECRET`. The chart stores only Secret names and keys, not secret values.
+
+## Q7.6: Why have a `defaults` section?
+
+The three CPEmon workloads share service ports, probes, resources, and pod metadata patterns.
+
+A `defaults` section keeps those shared settings in one place and lets each workload override only what is different. This reduces YAML duplication and makes future review easier.
+
+## Q7.7: Why keep `values-dev.yaml` small?
+
+Environment override files should show only what differs from the default model.
+
+If `values-dev.yaml` repeats the whole chart, it becomes another copy of the chart configuration and loses the benefit of Helm's merge model.
+
+## Q7.8: What is `values.schema.json` in a Helm chart?
+
+`values.schema.json` is a JSON Schema file that Helm can use to validate chart values.
+
+It helps catch common mistakes before deployment, such as invalid image pull policies, wrong replica count types, or malformed secret environment variable definitions.
+
+It is especially useful in migration work because it turns the values model into a documented contract rather than an informal YAML convention.
+
 ## Q8: Why not put real passwords into Helm values?
 
 Helm values are usually committed, rendered in CI logs, and stored in release history unless additional precautions are used.
@@ -107,4 +170,3 @@ Helm moves those differences into values, while keeping the Kubernetes object st
 At this point, the chart scaffold can be reviewed and later rendered locally.
 
 The local shell does not currently have Helm installed, and the EKS cluster has not been applied. Therefore live `helm upgrade --install` validation is intentionally deferred.
-

@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "CPEmon Helm values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "namespaceOverride": { "type": "string" },
+        "imageRegistry": { "type": "string", "minLength": 1 },
+        "imageTag": { "type": "string", "minLength": 1 },
+        "imagePullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"]
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "workloads": {
+      "type": "object",
+      "required": ["cpemonApi", "acsIngest", "cpemonWriter"],
+      "properties": {
+        "cpemonApi": { "$ref": "#/definitions/workload" },
+        "acsIngest": { "$ref": "#/definitions/workload" },
+        "cpemonWriter": { "$ref": "#/definitions/workload" }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "service": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "type": { "type": "string" },
+            "annotations": { "type": "object" }
+          }
+        },
+        "resources": { "type": "object" },
+        "env": { "type": "array" },
+        "envFrom": { "type": "array" }
+      }
+    }
+  },
+  "definitions": {
+    "workload": {
+      "type": "object",
+      "required": ["enabled", "name", "replicaCount", "image"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "name": { "type": "string", "minLength": 1 },
+        "component": { "type": "string", "minLength": 1 },
+        "replicaCount": { "type": "integer", "minimum": 0 },
+        "image": {
+          "type": "object",
+          "required": ["repository"],
+          "properties": {
+            "repository": { "type": "string", "minLength": 1 },
+            "tag": { "type": "string" },
+            "pullPolicy": {
+              "type": "string",
+              "enum": ["", "Always", "IfNotPresent", "Never"]
+            }
+          }
+        },
+        "env": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/envVar" }
+        },
+        "secretEnv": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/secretEnvVar" }
+        }
+      }
+    },
+    "envVar": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "value": { "type": "string" },
+        "valueFromConfig": { "type": "string" }
+      },
+      "oneOf": [
+        { "required": ["value"] },
+        { "required": ["valueFromConfig"] }
+      ]
+    },
+    "secretEnvVar": {
+      "type": "object",
+      "required": ["name", "secretName", "secretKey"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "secretName": { "type": "string", "minLength": 1 },
+        "secretKey": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
+

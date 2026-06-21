@@ -4,15 +4,22 @@
 
 global:
   namespaceOverride: cpemon
+  imageTag: "__IMAGE_TAG__"
+
+database:
+  dsnSecret:
+    name: cpemon-db
+    key: dsn
+
+secretRefs:
+  acsHmac:
+    name: cpemon-acs-hmac
+    secretKey: hmac-secret
 
 workloads:
   cpemonApi:
-    image:
-      tag: "__IMAGE_TAG__"
+    replicaCount: 2
   acsIngest:
-    image:
-      tag: "__IMAGE_TAG__"
+    replicaCount: 2
   cpemonWriter:
-    image:
-      tag: "__IMAGE_TAG__"
-
+    replicaCount: 1
