@@ -59,3 +59,39 @@ The mapper returns an error instead of publishing a weak event. A WAN status
 event should contain either an explicit status field or a WAN IP from which the
 current implementation can derive `wan_status: up`.
 
+## CCPU-77: EventPublisher Interface
+
+`CCPU-77` introduces the application boundary used by `acs-ingest` before the
+Kafka client is implemented.
+
+### Why introduce `EventPublisher` before adding Kafka?
+
+Because ingestion logic should depend on a small application contract, not on a
+concrete Kafka client. That keeps parsing, validation, event mapping, and
+transport separate.
+
+### What does the interface look like?
+
+The boundary is:
+
+```go
+type EventPublisher interface {
+    Publish(ctx context.Context, event PublishableEvent) error
+}
+```
+
+The event supplies `Topic()` and `Key()`, so topic ownership and message-key
+strategy stay with the event contract.
+
+### How does this help testing?
+
+Unit tests can use a fake publisher that records events in memory. That proves
+the ingest flow asks to publish the right topic/key/event without needing a live
+Kafka broker.
+
+### What does the interface not solve yet?
+
+It does not choose a Kafka client, configure retries, serialize payloads, or
+flush producer buffers. Those are concrete adapter responsibilities in later
+subtasks.
+

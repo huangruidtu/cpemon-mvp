@@ -147,3 +147,32 @@ The mapper accepts `wan_status`, `wan_state`, or `status` from the raw payload.
 If the payload has `wan_ip` but no explicit status, the event derives
 `wan_status: up`. If neither status nor `wan_ip` is present, the mapper returns
 an error so the caller does not publish a misleading WAN event.
+
+## EventPublisher Boundary
+
+`EventPublisher` is the application-side boundary that lets `acs-ingest`
+publish normalized events without depending directly on a Kafka client.
+
+The interface is intentionally small:
+
+```go
+type PublishableEvent interface {
+    Topic() string
+    Key() string
+}
+
+type EventPublisher interface {
+    Publish(ctx context.Context, event PublishableEvent) error
+}
+```
+
+Why this shape:
+
+* `context.Context` carries request cancellation and timeout behavior.
+* `Topic()` keeps topic selection with the event contract.
+* `Key()` keeps the partition-key strategy with the event contract.
+* `error` makes publish failure explicit to the caller.
+* Tests can use a fake publisher without Kafka.
+
+The concrete Kafka producer remains a later adapter. This subtask only defines
+the dependency-inversion boundary used by future producer and handler wiring.
