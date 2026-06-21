@@ -273,6 +273,48 @@ Incident drill:
 5. If duplicates are suspected after recovery, query by device key and event
    timestamp before replaying downstream effects.
 
+## Producer Metrics and Structured Logging
+
+`CCPU-83` adds producer telemetry for success, failure, latency, and debugging
+context.
+
+Metrics exposed by `acs-ingest`:
+
+| Metric | Type | Labels | Meaning |
+| --- | --- | --- | --- |
+| `acs_ingest_kafka_producer_publishes_total` | Counter | `topic`, `result` | Completed publish calls grouped by topic and `success` or `error`. |
+| `acs_ingest_kafka_producer_publish_errors_total` | Counter | `topic`, `kind` | Publish failures grouped by topic and error kind. |
+| `acs_ingest_kafka_producer_publish_duration_seconds` | Histogram | `topic`, `result` | Publish latency grouped by topic and result. |
+
+The producer exposes collectors through `KafkaProducerCollectors()`, and
+`acs-ingest` registers them with the existing Prometheus metrics endpoint.
+
+Structured log shape:
+
+```text
+event=kafka_publish result=success topic=cpemon.device.heartbeat.v1 key=CPE-001 attempts=1 duration_ms=3
+event=kafka_publish result=error topic=cpemon.device.heartbeat.v1 key=CPE-001 kind=writer_error attempts=4 duration_ms=5001 error="..."
+```
+
+Logging boundary:
+
+* Logs include topic, key, result, attempts, duration, error kind, and error
+  message.
+* Logs do not dump full event payloads because payloads may contain sensitive
+  device or network details.
+* Metrics avoid the message key as a label because device identity would create
+  high-cardinality Prometheus series.
+
+Debug flow:
+
+1. Start from the webhook status and `acs_webhook_errors_total`.
+2. Check `event=kafka_publish` logs for topic, key, attempts, duration, and
+   error kind.
+3. Compare publish success/error counters by topic.
+4. Inspect publish duration histogram for timeout or broker latency patterns.
+5. Validate Kafka topic existence and broker health.
+6. Confirm consumers receive the expected topic/key pair.
+
 ## acs-ingest Publish Wiring
 
 `acs-ingest` now wires the producer into the webhook flow behind

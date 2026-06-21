@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/kafka-go"
 
 	appconfig "github.com/huangruidtu/cpemon-mvp/app/pkg/config"
@@ -17,6 +19,41 @@ import (
 type kafkaMessageWriter interface {
 	WriteMessages(ctx context.Context, msgs ...kafka.Message) error
 	Close() error
+}
+
+var (
+	kafkaProducerPublishesTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "acs_ingest_kafka_producer_publishes_total",
+			Help: "Total number of Kafka publish attempts completed by acs-ingest.",
+		},
+		[]string{"topic", "result"},
+	)
+
+	kafkaProducerPublishErrorsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "acs_ingest_kafka_producer_publish_errors_total",
+			Help: "Total number of Kafka publish errors grouped by topic and error kind.",
+		},
+		[]string{"topic", "kind"},
+	)
+
+	kafkaProducerPublishDurationSeconds = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "acs_ingest_kafka_producer_publish_duration_seconds",
+			Help:    "Kafka publish duration in seconds grouped by topic and result.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"topic", "result"},
+	)
+)
+
+func KafkaProducerCollectors() []prometheus.Collector {
+	return []prometheus.Collector{
+		kafkaProducerPublishesTotal,
+		kafkaProducerPublishErrorsTotal,
+		kafkaProducerPublishDurationSeconds,
+	}
 }
 
 // KafkaProducer publishes normalized CPEmon events to Kafka.
@@ -128,26 +165,27 @@ func NewKafkaProducerWithWriterAndRetry(writer kafkaMessageWriter, timeout time.
 }
 
 func (p *KafkaProducer) Publish(ctx context.Context, event PublishableEvent) error {
+	start := time.Now()
 	if p == nil || p.writer == nil {
-		return newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer is not initialized"))
+		return recordKafkaPublishFailure(start, newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer is not initialized")))
 	}
 	if event == nil {
-		return newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer requires event"))
+		return recordKafkaPublishFailure(start, newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer requires event")))
 	}
 
 	topic := strings.TrimSpace(event.Topic())
 	if topic == "" {
-		return newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer requires event topic"))
+		return recordKafkaPublishFailure(start, newKafkaPublishError(PublishErrorInvalidEvent, "", "", 0, errors.New("kafka producer requires event topic")))
 	}
 
 	key := strings.TrimSpace(event.Key())
 	if key == "" {
-		return newKafkaPublishError(PublishErrorInvalidEvent, topic, "", 0, errors.New("kafka producer requires event key"))
+		return recordKafkaPublishFailure(start, newKafkaPublishError(PublishErrorInvalidEvent, topic, "", 0, errors.New("kafka producer requires event key")))
 	}
 
 	payload, err := json.Marshal(event)
 	if err != nil {
-		return newKafkaPublishError(PublishErrorSerialization, topic, key, 0, fmt.Errorf("marshal kafka event: %w", err))
+		return recordKafkaPublishFailure(start, newKafkaPublishError(PublishErrorSerialization, topic, key, 0, fmt.Errorf("marshal kafka event: %w", err)))
 	}
 
 	attempts := p.maxRetries + 1
@@ -167,16 +205,17 @@ func (p *KafkaProducer) Publish(ctx context.Context, event PublishableEvent) err
 		})
 		cancel()
 		if err == nil {
+			recordKafkaPublishSuccess(start, topic, key, attempt)
 			return nil
 		}
 
 		lastErr = err
 		if ctx.Err() != nil {
-			return newKafkaPublishError(classifyKafkaPublishError(ctx.Err()), topic, key, attempt, ctx.Err())
+			return recordKafkaPublishFailure(start, newKafkaPublishError(classifyKafkaPublishError(ctx.Err()), topic, key, attempt, ctx.Err()))
 		}
 	}
 
-	return newKafkaPublishError(classifyKafkaPublishError(lastErr), topic, key, attempts, lastErr)
+	return recordKafkaPublishFailure(start, newKafkaPublishError(classifyKafkaPublishError(lastErr), topic, key, attempts, lastErr))
 }
 
 func (p *KafkaProducer) Close() error {
@@ -219,4 +258,38 @@ func classifyKafkaPublishError(err error) PublishErrorKind {
 		return PublishErrorTimeout
 	}
 	return PublishErrorWriter
+}
+
+func recordKafkaPublishSuccess(start time.Time, topic string, key string, attempts int) {
+	duration := time.Since(start)
+	kafkaProducerPublishesTotal.WithLabelValues(topic, "success").Inc()
+	kafkaProducerPublishDurationSeconds.WithLabelValues(topic, "success").Observe(duration.Seconds())
+	log.Printf("event=kafka_publish result=success topic=%s key=%s attempts=%d duration_ms=%d",
+		topic, key, attempts, duration.Milliseconds())
+}
+
+func recordKafkaPublishFailure(start time.Time, err error) error {
+	duration := time.Since(start)
+	topic := "unknown"
+	key := ""
+	kind := PublishErrorWriter
+	attempts := 0
+
+	var publishErr *KafkaPublishError
+	if errors.As(err, &publishErr) {
+		if publishErr.Topic != "" {
+			topic = publishErr.Topic
+		}
+		key = publishErr.Key
+		kind = publishErr.Kind
+		attempts = publishErr.Attempts
+	}
+
+	kafkaProducerPublishesTotal.WithLabelValues(topic, "error").Inc()
+	kafkaProducerPublishErrorsTotal.WithLabelValues(topic, string(kind)).Inc()
+	kafkaProducerPublishDurationSeconds.WithLabelValues(topic, "error").Observe(duration.Seconds())
+	log.Printf("event=kafka_publish result=error topic=%s key=%s kind=%s attempts=%d duration_ms=%d error=%q",
+		topic, key, kind, attempts, duration.Milliseconds(), err.Error())
+
+	return err
 }

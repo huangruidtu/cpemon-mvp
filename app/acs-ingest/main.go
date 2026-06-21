@@ -78,6 +78,7 @@ func main() {
 
 	// 3. Register Prometheus metrics.
 	prometheus.MustRegister(webhookRequestsTotal, webhookErrorsTotal)
+	prometheus.MustRegister(events.KafkaProducerCollectors()...)
 
 	var publisher events.EventPublisher
 	if cfg.KafkaProducerEnabled {

@@ -242,3 +242,49 @@ I separated permanent application errors from transient transport errors.
 Schema and validation errors fail fast; writer errors retry with bounded
 attempts and return structured context. The tradeoff is at-least-once delivery,
 so downstream consumers must be idempotent.
+
+## CCPU-83: Producer Metrics and Structured Logging
+
+`CCPU-83` adds producer-level observability.
+
+### Which metrics were added?
+
+The producer exposes:
+
+* `acs_ingest_kafka_producer_publishes_total`
+* `acs_ingest_kafka_producer_publish_errors_total`
+* `acs_ingest_kafka_producer_publish_duration_seconds`
+
+These show publish volume, failures, and latency by topic and result or error
+kind.
+
+### Why not put the device key in Prometheus labels?
+
+Device keys are high-cardinality identifiers. They are useful in logs for one
+device investigation, but they should not become Prometheus labels because that
+can create too many time series.
+
+### What do the structured logs include?
+
+Logs include `event=kafka_publish`, `result`, `topic`, `key`, `attempts`,
+`duration_ms`, and for failures, `kind` and `error`.
+
+### Why not log the full event payload?
+
+The payload may include device, network, or customer-adjacent details. Topic,
+key, attempts, duration, and error are enough to debug routing and transport
+failures without dumping sensitive content.
+
+### How would you debug a publish incident?
+
+Start with webhook status and `acs_webhook_errors_total`, then inspect
+`event=kafka_publish` logs for topic/key/error kind. Compare producer success
+and error counters by topic, check latency histograms for timeouts, validate
+topic existence and broker health, then confirm consumers receive the expected
+topic/key pair.
+
+### What should you say in an interview?
+
+I added observability at the producer boundary because it is the handoff point
+between app logic and Kafka. Metrics answer how often and how slowly publishing
+happens; logs answer which topic/key failed and why, without exposing payloads.

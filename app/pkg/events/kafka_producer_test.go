@@ -51,6 +51,13 @@ func TestNewKafkaProducerRejectsMissingBootstrapServers(t *testing.T) {
 	}
 }
 
+func TestKafkaProducerCollectorsAreExposed(t *testing.T) {
+	collectors := KafkaProducerCollectors()
+	if len(collectors) != 3 {
+		t.Fatalf("collectors = %d, want 3", len(collectors))
+	}
+}
+
 func TestNewKafkaProducerFromConfig(t *testing.T) {
 	producer, err := NewKafkaProducerFromConfig(appconfig.Config{
 		KafkaBootstrapServers:     "localhost:9092",
