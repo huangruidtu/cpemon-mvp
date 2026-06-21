@@ -176,6 +176,36 @@ Repository check:
 make cpemon-writer-heartbeat-subscription-check
 ```
 
+## WAN Status Topic Subscription
+
+`CCPU-89` adds the matching subscription proof for WAN status events.
+
+The required WAN status topic is:
+
+```text
+cpemon.wan.status.v1
+```
+
+The topic remains configurable through:
+
+```text
+KAFKA_TOPIC_WAN_STATUS
+```
+
+Why it matters:
+
+* WAN status is richer connectivity state, not just device liveness
+* heartbeat and WAN status can evolve at different rates
+* WAN-specific decoding and validation can fail without breaking heartbeat
+  routing
+* the writer can later map WAN status into a dedicated write model
+
+Repository check:
+
+```powershell
+make cpemon-writer-wan-status-subscription-check
+```
+
 ## Kafka Consumer Adapter
 
 `CCPU-87` adds the concrete Kafka adapter:

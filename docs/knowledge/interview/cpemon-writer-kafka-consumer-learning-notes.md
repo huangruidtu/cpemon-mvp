@@ -131,6 +131,13 @@ Heartbeat is the minimum liveness signal. Keeping
 scale, test, and explain independently from richer event families such as WAN
 status.
 
+### Why is WAN status a separate topic?
+
+WAN status is a richer connectivity signal. It may have different payload
+requirements, validation failures, update rules, and operational meaning than
+heartbeat. Keeping it on `cpemon.wan.status.v1` lets the writer route and debug
+it independently.
+
 ### Why use `FetchMessage` instead of hiding commits?
 
 `FetchMessage` lets the application choose when to commit offsets. That matters
