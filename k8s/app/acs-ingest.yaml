@@ -58,7 +58,10 @@ spec:
                   name: cpemon-app-config
                   key: HTTP_ADDR
             - name: HMAC_SECRET
-              value: "changeme-acs-hmac"
+              valueFrom:
+                secretKeyRef:
+                  name: cpemon-acs-hmac
+                  key: hmac-secret
           ports:
             - name: http
               containerPort: 8080

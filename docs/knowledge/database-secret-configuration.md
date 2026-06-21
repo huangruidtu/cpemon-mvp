@@ -269,3 +269,59 @@ This matches the Helm chart pattern from Story 6.
 ### Interview Point
 
 I separated environment-specific but non-sensitive configuration from the Deployment manifests. The application still reads ordinary environment variables, but Kubernetes now sources those values from a ConfigMap. That makes the raw YAML easier to review and keeps the model consistent with the Helm chart.
+
+## CCPU-65: Move Sensitive Config to Kubernetes Secret
+
+`CCPU-65` completes the raw manifest split between ConfigMap and Secret.
+
+The raw manifests now define the expected Secret shape in:
+
+```text
+k8s/app/cpemon-secrets.tmpl.yaml
+```
+
+This file is a template only. It uses placeholders such as `${CPEMON_DB_DSN}` and `${CPEMON_ACS_HMAC_SECRET}`. It must not be applied as-is to a real environment without substituting values through a secure process.
+
+### Secret Contract
+
+| Secret | Key | Used by |
+| --- | --- | --- |
+| `cpemon-db` | `dsn` | `cpemon-api`, `acs-ingest`, `cpemon-writer` |
+| `cpemon-acs-hmac` | `hmac-secret` | `acs-ingest` |
+| `mysql-auth` | `mysql-root-password` | MySQL container |
+| `mysql-auth` | `mysql-username` | MySQL container |
+| `mysql-auth` | `mysql-password` | MySQL container |
+| `mysql-auth` | `mysql-database` | MySQL container |
+
+### Why Template Secret Shape
+
+The project needs two things at once:
+
+- a reviewable contract showing which Kubernetes Secrets and keys the workloads expect
+- no real secret material committed to Git
+
+A `.tmpl.yaml` file gives that contract without storing credentials.
+
+Later subtasks can replace manual substitution with External Secrets Operator:
+
+```text
+AWS Secrets Manager -> ExternalSecret -> Kubernetes Secret -> workload secretKeyRef
+```
+
+### HMAC Secret Refactor
+
+`acs-ingest` no longer contains a literal `HMAC_SECRET` value. It now uses:
+
+```yaml
+- name: HMAC_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: cpemon-acs-hmac
+      key: hmac-secret
+```
+
+This matches the Helm chart boundary and removes the last sensitive literal from the raw app Deployment env list.
+
+### Interview Point
+
+I documented the Kubernetes Secret contract without committing the actual secrets. The manifests now show exactly which Secrets and keys the application expects, while real values are left to a secure bootstrap or External Secrets Operator. This is the right GitOps boundary: Git owns desired structure, not secret material.

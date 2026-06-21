@@ -228,6 +228,41 @@ application reads env vars
 
 I moved non-sensitive runtime configuration out of the raw Deployment env literals and into `cpemon-app-config`. The workloads now source those values with `configMapKeyRef`, while sensitive values remain in Secrets. This makes the raw manifests match the Helm chart boundary and gives a clearer interview story around ConfigMap versus Secret.
 
+## Q22: What is the Secret contract for CPEmon?
+
+The raw manifest and Helm chart agree on these Secrets:
+
+| Secret | Key | Purpose |
+| --- | --- | --- |
+| `cpemon-db` | `dsn` | Application MySQL DSN |
+| `cpemon-acs-hmac` | `hmac-secret` | ACS webhook HMAC validation |
+| `mysql-auth` | `mysql-root-password` | MySQL root password |
+| `mysql-auth` | `mysql-username` | MySQL app username |
+| `mysql-auth` | `mysql-password` | MySQL app password |
+| `mysql-auth` | `mysql-database` | MySQL database name |
+
+## Q23: Why add a Secret template file instead of a real Secret?
+
+A real Secret manifest would still put secret material in Git, even if base64 encoded.
+
+Base64 is encoding, not encryption. Anyone with repo access can decode it.
+
+The template file documents the expected Secret names and keys but uses placeholders. Real values should come from a secure bootstrap path or External Secrets Operator.
+
+## Q24: What did you change for `HMAC_SECRET`?
+
+`acs-ingest` used to have a literal placeholder value committed directly in the Deployment.
+
+It now uses Secret `cpemon-acs-hmac`, key `hmac-secret`.
+
+That makes HMAC handling consistent with `DB_DSN`: the app reads an environment variable, but Kubernetes sources it from a Secret.
+
+## Q25: What is the interview-level lesson from CCPU-65?
+
+The lesson is that Git should own the Secret contract, not the Secret values.
+
+I made the required Kubernetes Secrets reviewable by adding a template file, and I changed workloads to consume sensitive values through `secretKeyRef`. That gives a clean bridge to External Secrets Operator later, where AWS Secrets Manager becomes the source of truth for the actual secret material.
+
 ## STAR Story
 
 Situation:
