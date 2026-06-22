@@ -53,3 +53,26 @@ The platform owns the controller and CRDs. The application owns the Rollout,
 services, canary steps, and analysis references for its own workload. That
 boundary prevents application teams from accidentally duplicating or upgrading
 shared delivery infrastructure.
+
+## Q8: Why add the kubectl Argo Rollouts plugin?
+
+The plugin gives operators a purpose-built CLI for progressive delivery. Plain
+`kubectl get rollout` can show the resource, but the plugin gives clearer
+commands for status, watch, promote, abort, retry, and dashboard-style
+inspection. That matters in demos and incidents because rollout decisions are
+time-sensitive.
+
+## Q9: Is the plugin required for the controller to work?
+
+No. The controller runs in the cluster and reconciles Rollout resources whether
+or not my laptop has the plugin. The plugin is local tooling for humans. I keep
+that distinction clear because production automation should not depend on one
+developer machine.
+
+## Q10: What local tooling issue did you validate on Windows?
+
+The plugin binary existed at `C:\Users\Rui Huang\bin\kubectl-argo-rollouts.exe`,
+but the current shell did not have that directory in `PATH`. `kubectl` only
+discovers plugins when the executable follows the `kubectl-...` naming
+convention and is visible on `PATH`. After prepending the directory, `kubectl
+argo rollouts version` reported `v1.9.0+838d4e7`.

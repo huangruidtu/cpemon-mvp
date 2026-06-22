@@ -92,6 +92,59 @@ If the kubectl plugin is installed in the next subtask:
 kubectl argo rollouts version
 ```
 
+## Local kubectl Plugin
+
+The Argo Rollouts kubectl plugin is operator tooling. It is not required for
+Argo CD to sync the controller chart, but it is the cleanest CLI surface for
+rollout demos, manual promotion, aborts, retries, and status inspection.
+
+Windows install path used for this project:
+
+```powershell
+$dir = "$env:USERPROFILE\bin"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+
+Invoke-WebRequest `
+  -Uri "https://github.com/argoproj/argo-rollouts/releases/download/v1.9.0/kubectl-argo-rollouts-windows-amd64" `
+  -OutFile "$dir\kubectl-argo-rollouts.exe"
+
+$env:Path = "$dir;$env:Path"
+kubectl argo rollouts version
+```
+
+macOS install path:
+
+```bash
+curl -LO https://github.com/argoproj/argo-rollouts/releases/download/v1.9.0/kubectl-argo-rollouts-darwin-amd64
+chmod +x kubectl-argo-rollouts-darwin-amd64
+sudo mv kubectl-argo-rollouts-darwin-amd64 /usr/local/bin/kubectl-argo-rollouts
+kubectl argo rollouts version
+```
+
+If `kubectl argo rollouts version` returns `unknown command "argo"`, the
+binary is either missing from `PATH` or not named with the kubectl plugin
+convention. The expected Windows filename is:
+
+```text
+kubectl-argo-rollouts.exe
+```
+
+Useful checks:
+
+```powershell
+Get-Command kubectl-argo-rollouts -ErrorAction SilentlyContinue
+kubectl plugin list
+powershell -ExecutionPolicy Bypass -File scripts/verify-argo-rollouts-local-tooling.ps1 -RequireInstalledPlugin
+```
+
+For the current Windows workstation, the plugin was verified at:
+
+```text
+C:\Users\Rui Huang\bin\kubectl-argo-rollouts.exe
+kubectl-argo-rollouts: v1.9.0+838d4e7
+Platform: windows/amd64
+```
+
 ## Expected State
 
 `Synced` means Argo CD applied the controller chart resources.

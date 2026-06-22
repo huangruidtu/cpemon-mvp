@@ -74,3 +74,46 @@ Prometheus analysis answers: "Is the new version healthy enough to continue?"
 
 Keeping those boundaries separate makes the architecture easier to explain and
 debug.
+
+## CCPU-188: Add Argo Rollouts kubectl Plugin and Local Tooling
+
+The kubectl plugin is not the controller. It is local operator tooling that
+makes progressive delivery easier to inspect and demonstrate.
+
+Controller path:
+
+```text
+Argo CD -> argo-rollouts controller -> Kubernetes Rollout reconciliation
+```
+
+Operator tooling path:
+
+```text
+kubectl argo rollouts -> inspect/promote/abort/retry/watch Rollouts
+```
+
+The project pins the plugin to `v1.9.0`, matching the Argo Rollouts controller
+app version from chart `2.41.0`.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argo-rollouts-local-tooling.ps1
+powershell -ExecutionPolicy Bypass -File scripts/verify-argo-rollouts-local-tooling.ps1 -RequireInstalledPlugin
+kubectl argo rollouts version
+kubectl plugin list
+```
+
+Windows gotcha:
+
+`kubectl` discovers plugins from executable files on `PATH` named with the
+`kubectl-<name>` convention. For Argo Rollouts on Windows, the expected file is
+`kubectl-argo-rollouts.exe`. If it exists under `C:\Users\Rui Huang\bin` but
+`kubectl argo rollouts version` fails, prepend that directory to `PATH` or add
+it to the permanent user PATH.
+
+Interview point:
+
+The plugin is useful because canary releases are operational workflows, not
+just YAML. During a demo or incident, operators need fast status, promotion,
+abort, and retry commands without hand-writing JSONPath queries.
