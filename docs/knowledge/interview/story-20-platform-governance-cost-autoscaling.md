@@ -246,3 +246,23 @@ Chargeback needs pricing accuracy, ownership labels, business rules, review
 cadence, and finance alignment. This story only proves that the platform can
 surface cost signals. It avoids pretending the organization is already doing
 production cost allocation.
+
+## Q36: What did CCPU-208 add?
+
+It added an OpenCost access and cost investigation runbook. The main drill is a
+Kafka namespace cost increase: start with namespace allocation, drill into
+controller allocation, inspect Kafka pods/PVCs/resources, then correlate the
+result with Argo CD history and Git changes.
+
+## Q37: How does cost visibility become operationally useful?
+
+Cost visibility is useful when it leads to an action. The runbook connects
+OpenCost output to Kubernetes facts like replicas, requests, PVCs, failed pods,
+and recent chart changes. That lets an operator decide whether the cost
+increase is expected, accidental, or a follow-up optimization task.
+
+## Q38: What would you record during a cost incident?
+
+Record the OpenCost query window, the namespace and workload driving cost, the
+Argo CD revision, resource changes, whether the increase was expected, and the
+follow-up owner.

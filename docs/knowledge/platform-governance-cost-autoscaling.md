@@ -415,6 +415,46 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-opencost-namespace-cost-visibility.ps1
 ```
 
+## CCPU-208: OpenCost Access and Cost Investigation
+
+CCPU-208 turns cost visibility into an operator workflow:
+
+```text
+OpenCost access -> namespace allocation -> workload drilldown -> Kubernetes resource review -> Git/Argo CD correlation
+```
+
+The runbook focuses on a concrete incident drill:
+
+```text
+Kafka namespace cost increased unexpectedly in the last 24h.
+```
+
+The investigation path is:
+
+```powershell
+kubectl port-forward -n opencost svc/opencost 9003:9003
+Invoke-RestMethod "http://localhost:9003/allocation/compute?window=24h&aggregate=namespace"
+Invoke-RestMethod "http://localhost:9003/allocation/compute?window=24h&aggregate=controller&filter=namespace:kafka"
+kubectl get pods,svc,statefulset,pvc -n kafka
+argocd app history kafka-dev
+git log --oneline -- k8s/addons/kafka k8s/gitops/dev/applications/kafka-dev.yaml
+```
+
+This connects cost data to operational facts:
+
+* replica count
+* resource requests
+* PVC size
+* failed pods
+* chart value changes
+* Argo CD sync history
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-opencost-cost-investigation.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.
