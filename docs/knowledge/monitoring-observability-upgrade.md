@@ -58,11 +58,31 @@ because they exist. The operator watches ServiceMonitor resources, resolves
 their selectors into Services, resolves Service ports into endpoints, and then
 generates Prometheus scrape configuration.
 
+## CCPU-181 Learning Notes: acs-ingest Metrics
+
+`acs-ingest` is the first application boundary in the CPEmon pipeline. Its
+metrics answer: are webhooks arriving, are they valid, how long does ingestion
+take, how large are payloads, and where do failures occur before Kafka?
+
+The metrics added for this boundary are:
+
+| Metric | Why it matters |
+| --- | --- |
+| `acs_webhook_requests_total{code}` | Request success and error rates. |
+| `acs_webhook_errors_total{reason}` | Bounded failure classification. |
+| `acs_webhook_duration_seconds{code}` | Latency at the intake boundary. |
+| `acs_webhook_payload_bytes` | Payload-size pressure and unusual request bodies. |
+| `acs_ingest_events_total{result}` | Whether events were queued, rejected, or failed downstream. |
+
+All labels are low-cardinality. Do not put `sn`, event IDs, raw Kafka keys, or
+payload data into Prometheus labels.
+
 ## Validation
 
 ```powershell
 make monitoring-gitops-check
 make cpemon-servicemonitor-check
+make acs-ingest-ingestion-metrics-check
 make monitoring-template
 ```
 

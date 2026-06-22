@@ -8,6 +8,7 @@ import (
 
 	"github.com/huangruidtu/cpemon-mvp/app/pkg/events"
 	"github.com/huangruidtu/cpemon-mvp/app/pkg/model"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type fakeEventPublisher struct {
@@ -116,6 +117,43 @@ func TestPublishACSKafkaEventsReturnsPublishError(t *testing.T) {
 	}
 	if !errors.Is(err, wantErr) {
 		t.Fatalf("error = %v, want wrapped publish error", err)
+	}
+}
+
+func TestACSIngestCollectorsAreExposed(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	for _, collector := range acsIngestCollectors() {
+		if err := registry.Register(collector); err != nil {
+			t.Fatalf("register collector: %v", err)
+		}
+	}
+
+	webhookRequestsTotal.WithLabelValues("202").Inc()
+	webhookErrorsTotal.WithLabelValues("invalid_json").Inc()
+	webhookDurationSeconds.WithLabelValues("202").Observe(0.01)
+	webhookPayloadBytes.Observe(512)
+	acsIngestEventsTotal.WithLabelValues("queued").Inc()
+
+	metrics, err := registry.Gather()
+	if err != nil {
+		t.Fatalf("gather metrics: %v", err)
+	}
+
+	got := map[string]bool{}
+	for _, metric := range metrics {
+		got[metric.GetName()] = true
+	}
+
+	for _, want := range []string{
+		"acs_webhook_requests_total",
+		"acs_webhook_errors_total",
+		"acs_webhook_duration_seconds",
+		"acs_webhook_payload_bytes",
+		"acs_ingest_events_total",
+	} {
+		if !got[want] {
+			t.Fatalf("metric %q was not gathered", want)
+		}
 	}
 }
 

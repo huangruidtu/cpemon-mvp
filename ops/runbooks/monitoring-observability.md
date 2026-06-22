@@ -98,6 +98,30 @@ Expected contract:
 | Endpoint port | `metrics` |
 | Endpoint path | `/metrics` |
 
+## ACS Ingestion Metrics
+
+`acs-ingest` exposes entrance metrics before the pipeline reaches Kafka:
+
+| Metric | Meaning |
+| --- | --- |
+| `acs_webhook_requests_total{code}` | Webhook request rate by final HTTP status code. |
+| `acs_webhook_errors_total{reason}` | Validation, DB, and publish failures by bounded reason. |
+| `acs_webhook_duration_seconds{code}` | Webhook handling latency by final HTTP status code. |
+| `acs_webhook_payload_bytes` | Request payload size distribution. |
+| `acs_ingest_events_total{result}` | Ingestion result: `queued`, `invalid`, `db_failed`, or `publish_failed`. |
+
+These labels are intentionally low-cardinality. Device serial numbers belong in
+structured logs and traces, not Prometheus labels.
+
+Useful PromQL:
+
+```promql
+sum(rate(acs_webhook_requests_total[5m])) by (code)
+sum(rate(acs_webhook_errors_total[5m])) by (reason)
+histogram_quantile(0.95, sum(rate(acs_webhook_duration_seconds_bucket[5m])) by (le, code))
+sum(rate(acs_ingest_events_total[5m])) by (result)
+```
+
 ## Interview Framing
 
 The clean answer is:

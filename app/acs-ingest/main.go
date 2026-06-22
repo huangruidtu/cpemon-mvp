@@ -40,6 +40,31 @@ var (
 		},
 		[]string{"reason"}, // e.g. "invalid_json", "missing_sn", "db_error"
 	)
+
+	webhookDurationSeconds = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "acs_webhook_duration_seconds",
+			Help:    "Duration of ACS webhook handling grouped by final HTTP status code.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"code"},
+	)
+
+	webhookPayloadBytes = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "acs_webhook_payload_bytes",
+			Help:    "Size of ACS webhook request payloads in bytes.",
+			Buckets: []float64{128, 512, 1024, 4096, 16384, 65536},
+		},
+	)
+
+	acsIngestEventsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "acs_ingest_events_total",
+			Help: "Total number of ACS ingest events grouped by processing result.",
+		},
+		[]string{"result"},
+	)
 )
 
 // acsWebhookPayload defines the minimal fields we expect from the webhook.
@@ -67,6 +92,24 @@ func startMetricsServer() {
 	}()
 }
 
+func acsIngestCollectors() []prometheus.Collector {
+	return []prometheus.Collector{
+		webhookRequestsTotal,
+		webhookErrorsTotal,
+		webhookDurationSeconds,
+		webhookPayloadBytes,
+		acsIngestEventsTotal,
+	}
+}
+
+func recordWebhookOutcome(code string, start time.Time, payloadBytes int) {
+	webhookRequestsTotal.WithLabelValues(code).Inc()
+	webhookDurationSeconds.WithLabelValues(code).Observe(time.Since(start).Seconds())
+	if payloadBytes >= 0 {
+		webhookPayloadBytes.Observe(float64(payloadBytes))
+	}
+}
+
 func main() {
 	// 1. Load configuration (from environment variables with defaults).
 	cfg := appconfig.Load()
@@ -77,7 +120,7 @@ func main() {
 	}
 
 	// 3. Register Prometheus metrics.
-	prometheus.MustRegister(webhookRequestsTotal, webhookErrorsTotal)
+	prometheus.MustRegister(acsIngestCollectors()...)
 	prometheus.MustRegister(events.KafkaProducerCollectors()...)
 
 	var publisher events.EventPublisher
@@ -141,7 +184,8 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.Ev
 	// Ensure DB is initialized.
 	if db == nil {
 		webhookErrorsTotal.WithLabelValues("db_not_initialized").Inc()
-		webhookRequestsTotal.WithLabelValues("500").Inc()
+		acsIngestEventsTotal.WithLabelValues("db_failed").Inc()
+		recordWebhookOutcome("500", start, -1)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "database not initialized"})
 		return
 	}
@@ -150,7 +194,8 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.Ev
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		webhookErrorsTotal.WithLabelValues("read_body_error").Inc()
-		webhookRequestsTotal.WithLabelValues("400").Inc()
+		acsIngestEventsTotal.WithLabelValues("invalid").Inc()
+		recordWebhookOutcome("400", start, -1)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
 		return
 	}
@@ -160,7 +205,8 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.Ev
 	if signature != "" {
 		if !apphmac.VerifySHA256Hex(body, cfg.HMACSecret, signature) {
 			webhookErrorsTotal.WithLabelValues("invalid_signature").Inc()
-			webhookRequestsTotal.WithLabelValues("401").Inc()
+			acsIngestEventsTotal.WithLabelValues("invalid").Inc()
+			recordWebhookOutcome("401", start, len(body))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
 			return
 		}
@@ -173,14 +219,16 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.Ev
 	var payload acsWebhookPayload
 	if err := json.Unmarshal(body, &payload); err != nil {
 		webhookErrorsTotal.WithLabelValues("invalid_json").Inc()
-		webhookRequestsTotal.WithLabelValues("400").Inc()
+		acsIngestEventsTotal.WithLabelValues("invalid").Inc()
+		recordWebhookOutcome("400", start, len(body))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON payload"})
 		return
 	}
 
 	if payload.SN == "" {
 		webhookErrorsTotal.WithLabelValues("missing_sn").Inc()
-		webhookRequestsTotal.WithLabelValues("400").Inc()
+		acsIngestEventsTotal.WithLabelValues("invalid").Inc()
+		recordWebhookOutcome("400", start, len(body))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing sn field"})
 		return
 	}
@@ -210,7 +258,8 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.Ev
 	// 6. Enqueue event into ingest_events table.
 	if err := queue.InsertOrUpdateIngestEvent(ctx, db, ev); err != nil {
 		webhookErrorsTotal.WithLabelValues("db_error").Inc()
-		webhookRequestsTotal.WithLabelValues("500").Inc()
+		acsIngestEventsTotal.WithLabelValues("db_failed").Inc()
+		recordWebhookOutcome("500", start, len(body))
 		log.Printf("failed to enqueue ingest event: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to enqueue event"})
 		return
@@ -218,7 +267,8 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.Ev
 
 	if err := publishACSKafkaEvents(ctx, publisher, *ev, time.Now()); err != nil {
 		webhookErrorsTotal.WithLabelValues("kafka_publish_error").Inc()
-		webhookRequestsTotal.WithLabelValues("500").Inc()
+		acsIngestEventsTotal.WithLabelValues("publish_failed").Inc()
+		recordWebhookOutcome("500", start, len(body))
 		log.Printf("failed to publish ACS event to Kafka: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to publish event"})
 		return
@@ -228,7 +278,8 @@ func handleACSWebhook(c *gin.Context, cfg *appconfig.Config, publisher events.Ev
 	log.Printf("enqueued event for SN=%s at %s in %s",
 		ev.SN, ev.EventTS.Format(time.RFC3339Nano), duration)
 
-	webhookRequestsTotal.WithLabelValues("202").Inc()
+	acsIngestEventsTotal.WithLabelValues("queued").Inc()
+	recordWebhookOutcome("202", start, len(body))
 	c.JSON(http.StatusAccepted, gin.H{"status": "queued"})
 }
 

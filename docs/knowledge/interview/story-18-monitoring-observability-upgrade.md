@@ -50,3 +50,17 @@ namespace `cpemon`, port `metrics`, path `/metrics`, and selectors for
 The common failures are missing CRDs, wrong namespace, missing `release: kps`,
 selector labels that do not match the Service, a Service port not named
 `metrics`, or an application that does not actually serve `/metrics`.
+
+## Q7: What acs-ingest metrics did you add?
+
+I added request count, error count, duration histogram, payload-size histogram,
+and ingestion-result count. Together they show whether webhooks are arriving,
+whether they are valid, how long intake takes, whether payload size is unusual,
+and whether failures happen before or after the database/Kafka handoff.
+
+## Q8: Why are the labels low-cardinality?
+
+Prometheus labels create time series. If we label metrics by device serial
+number or raw event key, every device creates new series and the monitoring
+system becomes expensive and noisy. I keep labels like `code`, `reason`, and
+`result` in metrics, and put device-specific identifiers in logs and traces.
