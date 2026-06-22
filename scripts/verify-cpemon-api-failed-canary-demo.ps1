@@ -40,6 +40,9 @@ foreach ($needle in @(
     "p95 latency rises above the configured threshold",
     "rollout phase is Degraded",
     "Stable Service still has ready endpoints",
+    "Failure Evidence Checklist",
+    "CCPU-125",
+    "Decision Tree",
     "blast-radius reduction",
     "Interview Narrative"
 )) {
@@ -47,10 +50,15 @@ foreach ($needle in @(
 }
 
 Assert-Contains $runbookPath "CCPU-193: Failed Canary Demo Scenario"
+Assert-Contains $runbookPath "CCPU-125"
+Assert-Contains $runbookPath "failed canary acceptance path"
 Assert-Contains $runbookPath "ops/demos/argo-rollouts/cpemon-api-failed-canary.md"
 Assert-Contains $knowledgePath "CCPU-193: Failed Canary Demo Scenario"
+Assert-Contains $knowledgePath "CCPU-125: Create Failed Canary Demo"
 Assert-Contains $interviewPath "Q38: How would you demo a failed canary rollout?"
 Assert-Contains $interviewPath "Q40: What should you say after a canary fails?"
+Assert-Contains $interviewPath "Q57: What makes a failed canary demo valuable?"
+Assert-Contains $interviewPath "Q58: How do you decide abort, retry, fix forward, or rollback?"
 
 $rendered = & helm template cpemon $chartPath -n cpemon -f $devValuesPath 2>&1
 if ($LASTEXITCODE -ne 0) {

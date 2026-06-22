@@ -99,6 +99,25 @@ Stable Service still has ready endpoints.
 The operator does not promote the canary.
 ```
 
+## Failure Evidence Checklist
+
+Use this checklist before deciding whether to abort, retry, fix forward, or roll
+back:
+
+```text
+Which signal failed: 5xx, p95, readiness, endpoints, or manual operator check?
+Was the failed signal canary-specific or also affecting stable traffic?
+How much traffic reached the bad canary before progression stopped?
+Is the stable Service still backed by ready endpoints?
+Is there an AnalysisRun result that records the failed threshold?
+Do logs or traces explain the regression?
+Can the operator explain the next action and why it is safer than promotion?
+```
+
+This checklist is the core of `CCPU-125`: the failed demo should prove
+detection, blast-radius reduction, stable-path protection, and an explicit
+operator decision.
+
 Abort when the canary is unsafe:
 
 ```powershell
@@ -124,6 +143,20 @@ Stable path remains the safe serving path.
 Failed AnalysisRun records the reason for the stop.
 The next action is fix, retry, or rollback through the normal release process.
 ```
+
+## Decision Tree
+
+After a failed canary:
+
+```text
+temporary external issue -> retry after confirming stable health
+bad image or config -> rollback through Git or revert the image tag
+known small fix -> fix forward only if exposure remains controlled
+unclear evidence -> keep aborted, investigate, and do not promote
+```
+
+The important rule is that promotion is not a recovery strategy. Promotion only
+happens when the evidence is healthy.
 
 ## Scripted Demo
 

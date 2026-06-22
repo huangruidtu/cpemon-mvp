@@ -676,6 +676,28 @@ serving path, and gives operators enough evidence to decide rollback, retry, or
 fix forward.
 ```
 
+## CCPU-125: Create Failed Canary Demo
+
+`CCPU-125` turns the bad path into a safety story:
+
+```text
+limited canary exposure -> failed signal -> stop progression -> inspect evidence -> abort or roll back
+```
+
+The key demo point is that a failed canary is not just a red status. It should
+prove:
+
+* Which signal failed: 5xx, p95, readiness, endpoints, or manual operator check.
+* Whether the failure was canary-specific.
+* How much traffic reached the canary before progression stopped.
+* Whether stable endpoints stayed ready.
+* Which AnalysisRun recorded the failed threshold.
+* What next decision is safest: abort, retry, fix forward, or Git rollback.
+
+This is one of the strongest interview stories because it shows release
+engineering maturity: good platforms are designed to make bad releases
+observable and containable.
+
 Validation:
 
 ```powershell

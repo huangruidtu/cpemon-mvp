@@ -390,3 +390,18 @@ It is convincing when I show the evidence behind each promotion: rollout phase,
 ReplicaSet readiness, stable/canary endpoints, successful AnalysisRuns, 5xx and
 p95 thresholds, and clean logs or traces. The point is not that the final status
 became Healthy; the point is that every traffic increase was justified.
+
+## Q57: What makes a failed canary demo valuable?
+
+It proves the delivery system protects users when a release is bad. I want to
+show the failed signal, limited exposure, stable endpoint health, failed
+AnalysisRun evidence, and the operator decision. A failed canary is valuable
+because it turns an unsafe release into a controlled, observable event.
+
+## Q58: How do you decide abort, retry, fix forward, or rollback?
+
+If the evidence is unclear or the canary is unsafe, I abort first to stop
+progression. If it was a temporary external issue, I may retry after stable
+health is confirmed. If the image or config is bad, I roll back through Git. I
+only fix forward when the change is small, understood, and exposure remains
+controlled.

@@ -301,6 +301,19 @@ ops/demos/argo-rollouts/cpemon-api-failed-canary.md
 Use it when the canary image or configuration intentionally creates a controlled
 5xx, latency, readiness, or endpoint failure in a dev environment.
 
+`CCPU-125` uses this scenario as the failed canary acceptance path. The operator
+must collect failure evidence before choosing abort, retry, fix forward, or
+rollback: failed signal, canary-specific impact, exposure level, stable endpoint
+health, AnalysisRun result, and log/trace explanation.
+
+The interview phrasing is:
+
+```text
+The failed canary is a success of the delivery system. It detected the bad
+release, limited exposure, preserved the stable path, and gave me evidence for
+the next operator decision.
+```
+
 Expected failed path:
 
 ```text
