@@ -342,3 +342,30 @@ HPA scales Kubernetes workloads from native resource or metrics signals. KEDA
 extends autoscaling to event sources such as Kafka, queues, schedules, and
 external metrics. I used HPA first because the API needed CPU-based scaling and
 saved KEDA for the point where event backlog becomes the primary signal.
+
+## Q51: What did CCPU-212 add?
+
+It added a long-lived ADR and interview note that connect the Story 20 decisions
+together: Kyverno for governance, OpenCost for cost visibility, HPA for
+`cpemon-api`, and KEDA as a future event-driven scaling step.
+
+## Q52: What is the best one-minute story for this platform work?
+
+I added a small platform-control layer. Kyverno gives policy-as-code guardrails,
+OpenCost gives namespace-level cost visibility, and HPA gives `cpemon-api` a
+conservative CPU-based scaling path. I intentionally kept the first version
+small: visibility before chargeback, HPA before KEDA, and baseline guardrails
+before a broad compliance program.
+
+## Q53: What tradeoffs should you mention?
+
+Kyverno starts with baseline policies rather than full compliance. OpenCost
+starts with visibility rather than finance-grade chargeback. HPA is a good API
+CPU scaling baseline but not enough for Kafka lag-driven workers. KEDA is
+deferred until the platform has stable event metrics and thresholds.
+
+## Q54: What should you avoid overclaiming?
+
+Do not say OpenCost implements chargeback, HPA proves production capacity, KEDA
+is always better than HPA, or Kyverno makes the platform fully compliant. Say
+the platform now has clear first-step controls and documented future boundaries.

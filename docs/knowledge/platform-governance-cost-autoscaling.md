@@ -543,6 +543,34 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-keda-step2-decision.ps1
 ```
 
+## CCPU-212: Governance, Cost, and Autoscaling ADRs
+
+This task adds the long-lived decision record for Story 20:
+
+```text
+ADR/cloud-platform-upgrade-governance-cost-autoscaling.md
+ops/runbooks/platform-governance-cost-autoscaling-interview.md
+```
+
+The ADR ties the individual choices together:
+
+* Kyverno for baseline platform governance.
+* OpenCost for visibility before chargeback.
+* HPA for the first `cpemon-api` CPU autoscaling path.
+* KEDA deferred until event-driven scaling is justified.
+
+The interview note turns the implementation into a repeatable answer using:
+
+```text
+Problem -> Decision -> Tradeoff -> Validation -> Future work
+```
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-platform-governance-cost-autoscaling-docs.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.
