@@ -54,20 +54,25 @@ foreach ($needle in @(
 
 foreach ($needle in @(
     "CCPU-196: Rollback and Incident Response",
+    "CCPU-126: Rollback Behavior",
     "kubectl argo rollouts abort cpemon-api -n cpemon",
     "git revert <bad-release-commit>",
     "Incident response checklist",
+    "abort stops unsafe in-flight progression",
     "ADR/cloud-platform-upgrade-argo-rollouts-canary-deployment.md"
 )) {
     Assert-Contains $runbookPath $needle
 }
 
 Assert-Contains $knowledgePath "CCPU-196: Rollback, ADR, Runbook, and Interview Notes"
+Assert-Contains $knowledgePath "CCPU-126: Document Rollback Behavior"
 Assert-Contains $knowledgeIndexPath "Argo Rollouts Canary Deployment Decision"
 Assert-Contains $knowledgeIndexPath "Argo Rollouts CPEmon API Runbook"
 Assert-Contains $interviewIndexPath "Story 19: Argo Rollouts Canary Deployment"
 Assert-Contains $interviewPath "Q45: What is the difference between abort and rollback?"
 Assert-Contains $interviewPath "Q47: What is the final Story 19 interview summary?"
+Assert-Contains $interviewPath "Q59: How would you explain CPEmon rollback behavior?"
+Assert-Contains $interviewPath "Q60: Why is Git-first rollback important in a GitOps platform?"
 Assert-Contains $healthyDemoPath "scripts/demo-cpemon-api-successful-rollout.ps1"
 Assert-Contains $failedDemoPath "scripts/demo-cpemon-api-failed-rollout.ps1"
 

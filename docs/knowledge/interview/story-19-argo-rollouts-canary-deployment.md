@@ -405,3 +405,18 @@ progression. If it was a temporary external issue, I may retry after stable
 health is confirmed. If the image or config is bad, I roll back through Git. I
 only fix forward when the change is small, understood, and exposure remains
 controlled.
+
+## Q59: How would you explain CPEmon rollback behavior?
+
+I separate immediate safety from desired-state correction. If the canary is
+unsafe, I abort to stop progression and verify stable endpoints. If the image or
+configuration in Git is wrong, I revert that Git change and let Argo CD sync the
+known-good desired state. Then I verify Rollout status, endpoints, and
+AnalysisRun evidence.
+
+## Q60: Why is Git-first rollback important in a GitOps platform?
+
+Because the cluster should converge from Git. If I only patch the cluster, Argo
+CD may later reapply the bad desired state. Reverting Git creates an auditable
+recovery change and lets Argo CD and Argo Rollouts bring the workload back to a
+known-good version consistently.

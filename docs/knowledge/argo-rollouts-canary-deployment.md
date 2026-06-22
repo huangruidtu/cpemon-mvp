@@ -791,6 +791,31 @@ Validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-argo-rollouts-final-docs.ps1
 ```
 
+## CCPU-126: Document Rollback Behavior
+
+`CCPU-126` captures the rollback decision model for failed Prometheus analysis:
+
+```text
+abort: stop unsafe in-flight canary progression
+rollback: revert Git desired state to a known-good version
+```
+
+The operator flow is:
+
+```text
+inspect failed AnalysisRun
+verify stable endpoints
+abort if exposure is unsafe
+preserve evidence
+revert Git if the release artifact/config is wrong
+let Argo CD sync the known-good desired state
+confirm the Rollout and endpoints are safe
+```
+
+The interview point is that abort and rollback solve different problems. Abort
+protects users immediately. Git rollback corrects the desired state so the
+cluster converges to the version the team actually wants.
+
 ## CCPU-197: Prometheus Metrics and Query Inputs
 
 The Prometheus input runbook is:

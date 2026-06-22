@@ -399,3 +399,52 @@ A strong answer is:
 > weight, ReplicaSets, services, endpoints, and AnalysisRuns. If the rollout is
 > paused, I treat that as a decision point. If it is degraded or aborted, I do
 > not promote blindly.
+
+## CCPU-126: Rollback Behavior
+
+`CCPU-126` focuses on the operator decision boundary after Prometheus analysis
+shows an unsafe `cpemon-api` canary.
+
+The short rule is:
+
+```text
+abort stops unsafe in-flight progression
+rollback changes Git desired state back to known-good
+```
+
+Use abort immediately when the canary is actively unsafe:
+
+```powershell
+kubectl argo rollouts abort cpemon-api -n cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+kubectl get endpoints cpemon-api-stable cpemon-api-canary -n cpemon
+kubectl get analysisrun -n cpemon
+```
+
+Use Git rollback when the release artifact or configuration is wrong:
+
+```powershell
+git revert <bad-release-commit>
+git push
+argocd app sync cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+```
+
+Verification after either path:
+
+```text
+stable endpoints are ready
+bad canary is not receiving more traffic
+failed AnalysisRun evidence is preserved
+Git desired state matches the intended recovery version
+incident notes explain the failed signal and operator decision
+```
+
+Interview framing:
+
+```text
+I do not treat rollback as one magic command. First I stop unsafe exposure with
+abort if needed. Then, if the desired state is wrong, I revert Git and let Argo
+CD reconcile the known-good version. That keeps emergency action and desired
+state correction separate.
+```
