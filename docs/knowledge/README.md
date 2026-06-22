@@ -30,6 +30,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo Rollouts Canary Deployment](argo-rollouts-canary-deployment.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
 - [CPEmon API Prometheus Analysis Inputs](../../ops/runbooks/cpemon-api-prometheus-analysis-inputs.md)
+- [CPEmon API HTTP 5xx AnalysisTemplate](../../ops/runbooks/cpemon-api-http5xx-analysis.md)
 - [Argo Rollouts Healthy Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-healthy-canary.md)
 - [Argo Rollouts Failed Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-failed-canary.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
@@ -81,6 +82,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD GitOps Layout Runbook](../../ops/runbooks/argocd-gitops-layout.md)
 - [Monitoring Observability Runbook](../../ops/runbooks/monitoring-observability.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
+- [CPEmon API HTTP 5xx AnalysisTemplate](../../ops/runbooks/cpemon-api-http5xx-analysis.md)
 
 ## Interview Prep
 

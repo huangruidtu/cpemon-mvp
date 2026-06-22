@@ -342,3 +342,17 @@ High-cardinality labels can make queries expensive, noisy, or unreliable. For
 canary gates I keep labels to method, route template, status code, and histogram
 bucket. I avoid request IDs, device serial numbers, customer IDs, and raw URL
 parameters.
+
+## Q50: What exactly does the HTTP 5xx AnalysisTemplate measure?
+
+It measures the ratio of server-error responses to total API responses for
+`cpemon-api` over a short Prometheus rate window. That makes the rollout
+decision traffic-aware: a few errors during tiny traffic and many errors during
+heavy traffic are interpreted as a percentage instead of a raw count.
+
+## Q51: Why use `clamp_min` in the 5xx PromQL denominator?
+
+`clamp_min` prevents divide-by-zero behavior when Prometheus has little or no
+traffic in the query window. It keeps the AnalysisRun deterministic during
+low-traffic canary checks while still letting real 5xx traffic push the ratio
+toward failure.

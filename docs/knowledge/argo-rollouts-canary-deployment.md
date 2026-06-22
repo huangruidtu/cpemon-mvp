@@ -257,6 +257,12 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-canary-steps.
 
 The first automated canary signal is HTTP 5xx rate for `cpemon-api`.
 
+The focused runbook is:
+
+```text
+ops/runbooks/cpemon-api-http5xx-analysis.md
+```
+
 Template:
 
 ```text
@@ -300,6 +306,34 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-http5xx-analysis.ps1
 ```
+
+## CCPU-121: Create AnalysisTemplate for 5xx Rate
+
+`CCPU-121` closes the 5xx gate as an interview-ready implementation task. The
+resource already renders from Helm, and the runbook records the operational
+contract:
+
+```text
+metric: cpemon_api_http_requests_total
+query: 5xx request rate / total request rate
+threshold: result[0] < 0.05
+resource: AnalysisTemplate/cpemon-api-http-5xx-rate
+```
+
+The key design choices are:
+
+* Use a ratio instead of a raw count, because traffic volume changes the meaning
+  of an error count.
+* Use bounded labels, especially HTTP status code, so the query is safe for
+  release automation.
+* Use `clamp_min` on the denominator so low-traffic windows do not create
+  divide-by-zero behavior.
+* Keep the threshold in chart values so reviewers can tune it without rewriting
+  templates.
+
+In an interview, describe this as the first automated reliability gate: Argo
+Rollouts asks Prometheus whether the canary is producing too many server
+errors, and promotion stops when the signal crosses the configured threshold.
 
 ## CCPU-190: Add Prometheus AnalysisTemplate for p95 Latency
 

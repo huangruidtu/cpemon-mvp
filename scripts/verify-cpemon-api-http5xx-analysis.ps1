@@ -8,6 +8,7 @@ $schemaPath = Join-Path $chartPath "values.schema.json"
 $chartReadmePath = Join-Path $chartPath "README.md"
 $knowledgePath = Join-Path $root "docs/knowledge/argo-rollouts-canary-deployment.md"
 $interviewPath = Join-Path $root "docs/knowledge/interview/story-19-argo-rollouts-canary-deployment.md"
+$runbookPath = Join-Path $root "ops/runbooks/cpemon-api-http5xx-analysis.md"
 $devValuesPath = Join-Path $chartPath "values-dev.yaml"
 
 function Assert-File {
@@ -34,6 +35,7 @@ Assert-File $schemaPath
 Assert-File $chartReadmePath
 Assert-File $knowledgePath
 Assert-File $interviewPath
+Assert-File $runbookPath
 
 foreach ($needle in @(
     "cpemon-api-http-5xx-rate",
@@ -51,7 +53,14 @@ Assert-Contains $templatePath "prometheus:"
 Assert-Contains $schemaPath '"rolloutAnalysis"'
 Assert-Contains $chartReadmePath "Rollout AnalysisTemplates"
 Assert-Contains $knowledgePath "CCPU-189: Add Prometheus AnalysisTemplate for HTTP 5xx Rate"
+Assert-Contains $knowledgePath "CCPU-121: Create AnalysisTemplate for 5xx Rate"
 Assert-Contains $interviewPath "Q20: Why use HTTP 5xx rate as the first analysis signal?"
+Assert-Contains $interviewPath "Q50: What exactly does the HTTP 5xx AnalysisTemplate measure?"
+Assert-Contains $interviewPath 'Q51: Why use `clamp_min` in the 5xx PromQL denominator?'
+Assert-Contains $runbookPath "CPEmon API HTTP 5xx AnalysisTemplate Runbook"
+Assert-Contains $runbookPath "result[0] < 0.05"
+Assert-Contains $runbookPath "clamp_min"
+Assert-Contains $runbookPath "low-cardinality"
 
 $rendered = & helm template cpemon $chartPath -n cpemon -f $devValuesPath 2>&1
 if ($LASTEXITCODE -ne 0) {
