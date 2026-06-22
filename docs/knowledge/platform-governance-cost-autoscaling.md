@@ -571,6 +571,32 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-platform-governance-cost-autoscaling-docs.ps1
 ```
 
+## CCPU-213: Final Validation Checklist and Story Index
+
+This task adds the final Story 20 runbook index:
+
+```text
+ops/runbooks/platform-governance-cost-autoscaling-final-checklist.md
+```
+
+It collects:
+
+* all Kyverno runbooks and verification scripts
+* all OpenCost runbooks and verification scripts
+* HPA implementation and validation runbooks
+* KEDA Step 2 decision material
+* ADRs, knowledge notes, and interview notes
+* local validation commands and live-cluster commands
+
+The purpose is interview readiness: this story can now be rehearsed from the
+repo without asking for missing context.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-platform-governance-cost-autoscaling-final.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.
