@@ -294,3 +294,32 @@ must record the desired tag in Git first.
 After image promotion is clear, health checks are stable, prune behavior is
 tested, RBAC is hardened, and each platform Application has rollback and
 troubleshooting guidance.
+
+## Q46: What did CCPU-178 add?
+
+It added a dedicated prune and self-heal guardrail runbook and validation
+script. The decision is that prune and self-heal remain disabled for the
+current dev Applications.
+
+## Q47: Why does prune deserve special care?
+
+Prune deletes live resources that are missing from Git. That can be correct,
+but it can also delete stateful resources, CRDs, shared objects, or resources
+renamed by a chart change if ownership is not clear.
+
+## Q48: Why can self-heal be risky during incidents?
+
+Self-heal reverts live drift automatically. If an operator temporarily patches
+or scales a workload during debugging, self-heal may undo that action before
+the incident is understood.
+
+## Q49: When would you enable prune?
+
+After Application ownership is clean, deletion behavior is tested in dev,
+stateful resources are protected, and rollback or restore procedures are
+documented.
+
+## Q50: How do you validate this guardrail?
+
+The validation script checks all dev Application manifests for prune/self-heal
+disabled annotations and fails if it finds `prune: true` or `selfHeal: true`.

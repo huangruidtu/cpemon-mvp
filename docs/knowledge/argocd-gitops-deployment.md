@@ -477,3 +477,40 @@ argocd app sync monitoring-dev
 argocd app sync external-secrets-dev
 argocd app sync policy-security-dev
 ```
+
+## CCPU-178: Configure Self-Heal and Prune Guardrails
+
+The current decision is:
+
+```text
+prune:     disabled
+self-heal: disabled
+```
+
+This is not because the features are bad. It is because they are powerful.
+
+Prune deletes resources that are no longer in Git. That needs special care for
+stateful workloads, CRDs, shared namespaces, operator-owned resources, and
+chart renames.
+
+Self-heal reverts live drift back to Git. That is useful after Git ownership is
+clear, but during learning or incident response it can undo a deliberate
+temporary patch before the operator has finished debugging.
+
+The guardrail runbook is:
+
+```text
+ops/runbooks/argocd-prune-self-heal-guardrails.md
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-prune-self-heal-guardrails.ps1
+```
+
+Interview framing:
+
+> I did not enable prune and self-heal blindly. I kept them disabled while the
+> project is still proving resource ownership, CRD ordering, stateful behavior,
+> NetworkPolicy enforcement, and rollback procedures.
