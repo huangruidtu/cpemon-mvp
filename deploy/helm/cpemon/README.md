@@ -212,18 +212,35 @@ The initial canary strategy renders an empty `steps` list:
 ```yaml
 strategy:
   canary:
+    stableService: cpemon-api-stable
+    canaryService: cpemon-api-canary
     steps: []
 ```
 
-That is deliberate for `CCPU-115`. Later Argo Rollouts subtasks add stable and
-canary Services, weighted canary steps, Prometheus AnalysisTemplates, and
-promotion/abort demos. This keeps the migration reviewable: first replace only
-the workload controller kind, then add progressive delivery behavior.
+That is deliberate for `CCPU-115` and `CCPU-116`. The first task replaces only
+the workload controller kind. The next task adds the stable and canary Service
+boundary. Later Argo Rollouts subtasks add weighted canary steps, Prometheus
+AnalysisTemplates, and promotion/abort demos.
+
+When rollout mode is enabled, the chart also renders:
+
+```text
+Service/cpemon-api
+Service/cpemon-api-stable
+Service/cpemon-api-canary
+```
+
+`cpemon-api` remains as the existing application Service so current ingress,
+monitoring, and operator commands keep a stable entrypoint. The stable/canary
+Services are the Argo Rollouts traffic-shaping boundary. They start with the
+same selector labels as the Rollout pod template; the Rollouts controller can
+then manage them as ReplicaSets change.
 
 Validate the first Rollout boundary with:
 
 ```powershell
 make cpemon-api-rollout-check
+make cpemon-api-rollout-services-check
 helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
 ```
 

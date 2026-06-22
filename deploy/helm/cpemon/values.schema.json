@@ -270,6 +270,13 @@
           "properties": {
             "enabled": { "type": "boolean" },
             "strategy": { "type": "string", "enum": ["canary"] },
+            "services": {
+              "type": "object",
+              "properties": {
+                "stable": { "$ref": "#/definitions/rolloutService" },
+                "canary": { "$ref": "#/definitions/rolloutService" }
+              }
+            },
             "canary": {
               "type": "object",
               "properties": {
@@ -349,6 +356,14 @@
         "namespace": { "type": "string", "minLength": 1 },
         "podLabels": { "type": "object" },
         "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "rolloutService": {
+      "type": "object",
+      "required": ["enabled", "name"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "name": { "type": "string", "minLength": 1 }
       }
     }
   }

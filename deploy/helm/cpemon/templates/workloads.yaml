@@ -18,6 +18,12 @@ spec:
 {{- if $useRollout }}
   strategy:
     canary:
+{{- if and $workload.rollout.services.stable.enabled $workload.rollout.services.stable.name }}
+      stableService: {{ $workload.rollout.services.stable.name | quote }}
+{{- end }}
+{{- if and $workload.rollout.services.canary.enabled $workload.rollout.services.canary.name }}
+      canaryService: {{ $workload.rollout.services.canary.name | quote }}
+{{- end }}
 {{- with $workload.rollout.canary.steps }}
       steps:
 {{ toYaml . | nindent 8 }}
@@ -106,6 +112,50 @@ metadata:
   annotations:
 {{ toYaml . | nindent 4 }}
 {{- end }}
+spec:
+  type: {{ $root.Values.defaults.service.type }}
+  selector:
+{{ include "cpemon.selectorLabels" (dict "root" $root "workload" $workload) | nindent 4 }}
+  ports:
+    - name: {{ $root.Values.defaults.ports.http.name | quote }}
+      port: {{ $root.Values.defaults.ports.http.servicePort }}
+      targetPort: {{ $root.Values.defaults.ports.http.name | quote }}
+    - name: {{ $root.Values.defaults.ports.metrics.name | quote }}
+      port: {{ $root.Values.defaults.ports.metrics.servicePort }}
+      targetPort: {{ $root.Values.defaults.ports.metrics.name | quote }}
+{{- end }}
+{{- if and $useRollout $workload.rollout.services.stable.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $workload.rollout.services.stable.name | quote }}
+  namespace: {{ include "cpemon.namespace" $root | quote }}
+  labels:
+{{ include "cpemon.workloadLabels" (dict "root" $root "workload" $workload) | nindent 4 }}
+    cpemon.io/rollout-service: stable
+spec:
+  type: {{ $root.Values.defaults.service.type }}
+  selector:
+{{ include "cpemon.selectorLabels" (dict "root" $root "workload" $workload) | nindent 4 }}
+  ports:
+    - name: {{ $root.Values.defaults.ports.http.name | quote }}
+      port: {{ $root.Values.defaults.ports.http.servicePort }}
+      targetPort: {{ $root.Values.defaults.ports.http.name | quote }}
+    - name: {{ $root.Values.defaults.ports.metrics.name | quote }}
+      port: {{ $root.Values.defaults.ports.metrics.servicePort }}
+      targetPort: {{ $root.Values.defaults.ports.metrics.name | quote }}
+{{- end }}
+{{- if and $useRollout $workload.rollout.services.canary.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $workload.rollout.services.canary.name | quote }}
+  namespace: {{ include "cpemon.namespace" $root | quote }}
+  labels:
+{{ include "cpemon.workloadLabels" (dict "root" $root "workload" $workload) | nindent 4 }}
+    cpemon.io/rollout-service: canary
 spec:
   type: {{ $root.Values.defaults.service.type }}
   selector:

@@ -194,6 +194,13 @@ workloads:
     rollout:
       enabled: false
       strategy: canary
+      services:
+        stable:
+          enabled: true
+          name: cpemon-api-stable
+        canary:
+          enabled: true
+          name: cpemon-api-canary
       canary:
         steps: []
     image:

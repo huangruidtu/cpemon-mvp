@@ -98,3 +98,32 @@ Empty steps make the first change about the controller-kind migration, not
 about traffic shifting. That is easier to validate and review. Later subtasks
 can add stable/canary Services, weights, pauses, and Prometheus analysis after
 the Rollout resource itself is rendering correctly.
+
+## Q14: Why add stable and canary Services?
+
+The stable Service represents traffic that should continue going to the proven
+ReplicaSet. The canary Service represents traffic that can reach the new
+ReplicaSet while it is being evaluated. Argo Rollouts uses those Service
+boundaries to separate old and new versions during progressive delivery.
+
+## Q15: Why keep the existing cpemon-api Service?
+
+Keeping `cpemon-api` avoids breaking existing ingress, monitoring, and operator
+habits while the Rollouts migration is introduced. The new `cpemon-api-stable`
+and `cpemon-api-canary` Services are progressive-delivery boundaries; the
+original Service remains the application entrypoint until routing is fully
+decided.
+
+## Q16: How do you inspect which ReplicaSet a Service targets?
+
+I would inspect the Service selector and endpoints:
+
+```powershell
+kubectl describe svc cpemon-api-stable -n cpemon
+kubectl describe svc cpemon-api-canary -n cpemon
+kubectl get endpoints cpemon-api-stable cpemon-api-canary -n cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon
+```
+
+The important idea is that the Service selector and endpoints show where
+traffic can actually go, while the Rollout status explains the rollout phase.

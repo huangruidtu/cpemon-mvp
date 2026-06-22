@@ -160,3 +160,52 @@ Validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-rollout.ps1
 helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
 ```
+
+## CCPU-116: Create Stable and Canary Services
+
+Argo Rollouts needs service boundaries so stable and canary ReplicaSets can be
+addressed separately.
+
+The chart now renders three Services for `cpemon-api` when Rollout mode is
+enabled:
+
+```text
+cpemon-api          existing application Service
+cpemon-api-stable   stable traffic boundary
+cpemon-api-canary   canary traffic boundary
+```
+
+The Rollout strategy references:
+
+```yaml
+strategy:
+  canary:
+    stableService: cpemon-api-stable
+    canaryService: cpemon-api-canary
+```
+
+The stable and canary Services initially use the same selector labels as the
+Rollout pod template:
+
+```text
+app=cpemon-api
+app.kubernetes.io/instance=cpemon
+app.kubernetes.io/component=api
+```
+
+In a live cluster, the Rollouts controller can update stable/canary service
+selectors as ReplicaSets move through the rollout. That is why service
+inspection matters during demos:
+
+```powershell
+kubectl get svc cpemon-api cpemon-api-stable cpemon-api-canary -n cpemon
+kubectl get endpoints cpemon-api-stable cpemon-api-canary -n cpemon
+kubectl describe svc cpemon-api-stable -n cpemon
+kubectl describe svc cpemon-api-canary -n cpemon
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-rollout-services.ps1
+```
