@@ -262,3 +262,22 @@ canary was exposed.
 It proves the normal operating path. In interviews, that lets me explain the
 release contract: low initial exposure, metrics-based gates, manual decision
 points, and clear evidence before promotion.
+
+## Q38: How would you demo a failed canary rollout?
+
+I start from a Healthy stable rollout, introduce a dev-only bad canary that
+causes 5xx, latency, readiness, or endpoint failure, and watch Argo Rollouts
+stop progression. I inspect the AnalysisRun, rollout phase, pods, ReplicaSets,
+services, endpoints, logs, and traces. If the evidence is unsafe, I abort.
+
+## Q39: What does the failed canary prove?
+
+It proves blast-radius reduction. The bad version receives limited exposure,
+runtime signals detect the regression, and the stable Service remains the safe
+serving path instead of letting the bad version become stable.
+
+## Q40: What should you say after a canary fails?
+
+I should explain the failed signal, the user impact boundary, and the next
+decision: rollback, retry, or fix forward. A failed canary is not just an error;
+it is useful release evidence.

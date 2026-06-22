@@ -267,6 +267,45 @@ kubectl argo rollouts promote cpemon-api -n cpemon
 The scenario is safe for dev because it uses the existing rollout gates,
 explicit operator checkpoints, and documented stop conditions before promotion.
 
+## CCPU-193: Failed Canary Demo Scenario
+
+The failed canary scenario is documented in:
+
+```text
+ops/demos/argo-rollouts/cpemon-api-failed-canary.md
+```
+
+Use it when the canary image or configuration intentionally creates a controlled
+5xx, latency, readiness, or endpoint failure in a dev environment.
+
+Expected failed path:
+
+```text
+stable version serves traffic
+20% canary -> pause -> failed 5xx or p95 analysis
+rollout becomes Degraded or operator aborts
+stable path remains available
+```
+
+Failure investigation commands:
+
+```powershell
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+kubectl get analysisrun -n cpemon
+kubectl describe analysisrun -n cpemon
+kubectl get rs,pods,svc,endpoints -n cpemon -l app=cpemon-api
+kubectl describe rollout cpemon-api -n cpemon
+```
+
+Abort the unsafe canary:
+
+```powershell
+kubectl argo rollouts abort cpemon-api -n cpemon
+```
+
+The operator should be able to explain why the rollout stopped before deciding
+whether to retry, rollback, or fix forward.
+
 ## Interview Framing
 
 A strong answer is:

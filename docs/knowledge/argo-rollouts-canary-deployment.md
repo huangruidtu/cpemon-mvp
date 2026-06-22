@@ -521,3 +521,41 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-healthy-canary-demo.ps1
 ```
+
+## CCPU-193: Failed Canary Demo Scenario
+
+The failed canary demo is:
+
+```text
+ops/demos/argo-rollouts/cpemon-api-failed-canary.md
+```
+
+It demonstrates the protected failure path:
+
+```text
+stable traffic
+bad canary ReplicaSet
+limited canary exposure
+failed 5xx or p95 analysis
+Degraded or Aborted rollout
+stable path remains available
+```
+
+The important lesson is blast-radius reduction. A bad release is allowed to
+prove itself under small exposure, but it is not allowed to silently become the
+stable version when runtime evidence is bad.
+
+Good interview language:
+
+```text
+I do not need to prove that deployments never fail. I need to prove that when a
+deployment fails, the platform detects it, limits exposure, preserves a stable
+serving path, and gives operators enough evidence to decide rollback, retry, or
+fix forward.
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-failed-canary-demo.ps1
+```
