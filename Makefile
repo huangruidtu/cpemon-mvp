@@ -184,6 +184,9 @@ minimal-tracing-check:
 trace-id-structured-logs-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-trace-id-structured-logs.ps1
 
+trace-export-boundary-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-trace-export-boundary.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 

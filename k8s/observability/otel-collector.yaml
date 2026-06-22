@@ -43,7 +43,7 @@ data:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [debug]
+          exporters: [debug, otlp/trace-backend]
 ---
 apiVersion: apps/v1
 kind: Deployment

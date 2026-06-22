@@ -155,3 +155,20 @@ I keep this field in logs because logs are usually the fastest evidence source
 when an incident starts. I do not put device serial numbers or payload values in
 Prometheus labels, and I avoid putting raw payload data in shared request logs.
 That keeps telemetry useful without creating high-cardinality or privacy risk.
+
+## Q20: Why choose Tempo before Jaeger here?
+
+I chose Tempo first because the story is already Grafana-centered: Prometheus
+for metrics, Grafana dashboards for visualization, and Tempo for traces. That
+creates one coherent operator workflow in Grafana.
+
+Jaeger is a strong tracing backend too, especially for standalone trace
+exploration. For this project, Tempo is the cleaner first choice because it
+integrates naturally with Grafana and works well when logs carry `trace_id`.
+
+## Q21: How is Tempo different from Prometheus?
+
+Prometheus stores aggregated time series such as request counts, error rates,
+and latency histograms. Tempo stores traces, which represent individual request
+paths and span timings. In an incident, Prometheus tells me that latency is
+high; Tempo helps me inspect one slow request and see where the time went.

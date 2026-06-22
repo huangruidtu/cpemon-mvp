@@ -224,6 +224,32 @@ The structured request log avoids device serial numbers and raw payload data.
 Those details can appear in carefully scoped application logs when needed, but
 they should not become the default correlation fields for every request.
 
+## CCPU-186 Learning Notes: Tempo trace export
+
+Tempo is the first trace backend for this story. The decision is intentional:
+Prometheus and Grafana already anchor the metrics and dashboard experience, so
+Tempo keeps traces in the same Grafana-centered operating model.
+
+The export path is:
+
+```text
+application OTLP -> OpenTelemetry Collector -> Tempo -> Grafana
+```
+
+`k8s/observability/tempo.yaml` stages a minimal single-pod Tempo deployment for
+the dev learning environment. `k8s/observability/otel-collector.yaml` exports
+traces to `tempo.observability.svc.cluster.local:4317` while keeping the
+`debug` exporter enabled for early troubleshooting.
+
+Interview framing:
+
+* Prometheus stores aggregated time series; it does not store request paths.
+* Tempo stores traces, which are per-request timing graphs.
+* Logs include `trace_id` so a concrete request can be found in both logs and
+  Tempo.
+* Jaeger would also work, but Tempo fits better when Grafana is already the
+  primary UI.
+
 ## Validation
 
 ```powershell
@@ -239,6 +265,7 @@ make prometheus-alert-baseline-check
 make otel-collector-boundary-check
 make minimal-tracing-check
 make trace-id-structured-logs-check
+make trace-export-boundary-check
 make monitoring-template
 ```
 

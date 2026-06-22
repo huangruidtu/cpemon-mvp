@@ -336,6 +336,44 @@ Validate:
 make trace-id-structured-logs-check
 ```
 
+## Trace backend: Tempo
+
+The first trace backend is Tempo, staged in
+`k8s/observability/tempo.yaml`.
+
+Tempo was chosen for this story because the rest of the monitoring surface is
+already Grafana-centered. Jaeger is still a valid backend, but Tempo gives a
+cleaner learning path for Grafana dashboards, logs, and traces in one operating
+model.
+
+Trace export path:
+
+```text
+application OTLP -> otel-collector.observability.svc.cluster.local:4317/4318
+otel-collector -> tempo.observability.svc.cluster.local:4317
+Grafana -> Tempo query API on port 3200
+```
+
+Repository validation:
+
+```powershell
+make trace-export-boundary-check
+```
+
+Live validation after the cluster is available:
+
+```powershell
+kubectl apply -f k8s/observability/tempo.yaml
+kubectl apply -f k8s/observability/otel-collector.yaml
+kubectl get pods,svc -n observability
+kubectl logs deploy/otel-collector -n observability
+kubectl port-forward svc/tempo -n observability 3200:3200
+```
+
+In Grafana, add Tempo as a data source pointing at
+`http://tempo.observability.svc.cluster.local:3200`. Then search by `trace_id`
+from the structured request log.
+
 ## Interview Framing
 
 The clean answer is:
