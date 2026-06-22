@@ -495,6 +495,30 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-hpa.ps1
 helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
 ```
 
+## CCPU-210: HPA Validation and Dev Load Test
+
+This task separates HPA implementation from live validation. The implementation
+proves the chart can render an HPA. The validation runbook explains how to test
+that object in a dev cluster.
+
+The runbook checks three layers:
+
+```text
+metrics layer:  metrics-server and kubectl top
+target layer:   HPA scaleTargetRef points to cpemon-api
+behavior layer: dev load can raise CPU enough to observe HPA decisions
+```
+
+This is intentionally not production capacity tuning. A dev load test can prove
+that autoscaling is wired correctly, but final production values need real
+traffic patterns, latency targets, cost constraints, and historical metrics.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-hpa-validation.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

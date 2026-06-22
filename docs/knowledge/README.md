@@ -39,6 +39,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [OpenCost Namespace Cost Visibility Runbook](../../ops/runbooks/opencost-namespace-cost-visibility.md)
 - [OpenCost Access and Cost Investigation Runbook](../../ops/runbooks/opencost-cost-investigation.md)
 - [cpemon-api HPA Runbook](../../ops/runbooks/cpemon-api-hpa.md)
+- [cpemon-api HPA Validation and Load-Test Runbook](../../ops/runbooks/cpemon-api-hpa-validation-load-test.md)
 - [Platform Governance Boundary Runbook](../../ops/runbooks/platform-governance-boundary.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
 - [CPEmon API Prometheus Analysis Inputs](../../ops/runbooks/cpemon-api-prometheus-analysis-inputs.md)

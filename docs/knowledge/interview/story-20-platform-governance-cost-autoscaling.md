@@ -291,3 +291,27 @@ disabled, it targets the normal `apps/v1` Deployment.
 It needs metrics-server and CPU requests on the containers. Metrics-server
 provides the CPU utilization data, and requests give Kubernetes the baseline
 needed to calculate utilization percentage.
+
+## Q43: What did CCPU-210 add?
+
+It added a runbook for validating the `cpemon-api` HPA in a dev cluster,
+including metrics-server checks, `kubectl get hpa`, `kubectl describe hpa`, a
+dev-only load-test path, cleanup, troubleshooting, and rollback.
+
+## Q44: What does an HPA load test prove and not prove?
+
+It proves the HPA object is wired correctly, can read metrics, and targets the
+right workload. It does not prove production capacity, final SLO tuning, or
+cost optimization because those need real traffic and historical metrics.
+
+## Q45: Why mention `<unknown>` CPU targets?
+
+`<unknown>` is the classic HPA symptom when metrics are unavailable. It usually
+means metrics-server is unhealthy, `kubectl top` is not returning data, or the
+containers do not have CPU requests.
+
+## Q46: How do you roll back this HPA path?
+
+Set `workloads.cpemonApi.autoscaling.enabled=false` for the environment and
+sync the Helm release again. The workload then returns to the fixed
+`replicaCount` behavior.
