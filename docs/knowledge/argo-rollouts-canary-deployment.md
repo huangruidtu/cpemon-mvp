@@ -209,3 +209,46 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-rollout-services.ps1
 ```
+
+## CCPU-117: Configure Canary Steps
+
+The first canary ladder is simple enough to explain during an interview and
+safe enough to operate manually:
+
+```yaml
+steps:
+  - setWeight: 20
+  - pause:
+      duration: 60s
+  - setWeight: 50
+  - pause:
+      duration: 120s
+  - setWeight: 100
+```
+
+Why this shape:
+
+* `20%` gives the new ReplicaSet real traffic while limiting blast radius.
+* The first pause gives the operator a fast check window.
+* `50%` proves the canary under more meaningful load.
+* The second pause gives time to inspect metrics, logs, traces, and rollout
+  status before full promotion.
+* `100%` completes promotion after the operator is comfortable.
+
+This is still a manual promotion ladder. It does not yet include Prometheus
+analysis. The next analysis subtasks add metric-based gates for HTTP 5xx rate
+and p95 latency.
+
+Useful commands:
+
+```powershell
+kubectl argo rollouts get rollout cpemon-api -n cpemon
+kubectl argo rollouts promote cpemon-api -n cpemon
+kubectl argo rollouts abort cpemon-api -n cpemon
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-canary-steps.ps1
+```

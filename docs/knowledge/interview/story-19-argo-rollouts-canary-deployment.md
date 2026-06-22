@@ -127,3 +127,22 @@ kubectl argo rollouts get rollout cpemon-api -n cpemon
 
 The important idea is that the Service selector and endpoints show where
 traffic can actually go, while the Rollout status explains the rollout phase.
+
+## Q17: Why use 20%, pause, 50%, pause, 100%?
+
+It gives a simple gradual exposure path. At 20%, the new version gets real
+traffic but the stable version still serves most users. At 50%, the team sees
+whether behavior holds under more load. The pauses create inspection windows
+before the operator promotes further.
+
+## Q18: What do the pauses mean operationally?
+
+The pauses are deliberate decision points. During a pause, I would inspect
+Rollout status, service endpoints, dashboards, HTTP 5xx rate, latency, logs,
+and traces. If the canary looks bad, I abort. If it looks healthy, I promote.
+
+## Q19: Why not add Prometheus analysis in the same step?
+
+Separating the steps keeps the migration teachable. First I prove the Rollout
+resource, then Services, then manual canary steps, then automated metric-based
+analysis. That sequence makes each failure mode easier to debug and explain.

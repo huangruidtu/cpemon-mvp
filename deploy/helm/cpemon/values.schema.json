@@ -280,7 +280,13 @@
             "canary": {
               "type": "object",
               "properties": {
-                "steps": { "type": "array" }
+                "steps": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "minProperties": 1
+                  }
+                }
               }
             }
           }

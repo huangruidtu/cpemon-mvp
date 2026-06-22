@@ -202,7 +202,14 @@ workloads:
           enabled: true
           name: cpemon-api-canary
       canary:
-        steps: []
+        steps:
+          - setWeight: 20
+          - pause:
+              duration: 60s
+          - setWeight: 50
+          - pause:
+              duration: 120s
+          - setWeight: 100
     image:
       repository: cpemon-api
       tag: ""

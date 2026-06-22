@@ -207,20 +207,30 @@ The Rollout keeps the same pod template, labels, selector, image, env,
 Secret references, ports, probes, resources, affinity, tolerations, and
 Service selector used by the previous Deployment path.
 
-The initial canary strategy renders an empty `steps` list:
+The initial canary strategy renders a simple manual promotion ladder:
 
 ```yaml
 strategy:
   canary:
     stableService: cpemon-api-stable
     canaryService: cpemon-api-canary
-    steps: []
+    steps:
+      - setWeight: 20
+      - pause:
+          duration: 60s
+      - setWeight: 50
+      - pause:
+          duration: 120s
+      - setWeight: 100
 ```
 
-That is deliberate for `CCPU-115` and `CCPU-116`. The first task replaces only
-the workload controller kind. The next task adds the stable and canary Service
-boundary. Later Argo Rollouts subtasks add weighted canary steps, Prometheus
-AnalysisTemplates, and promotion/abort demos.
+The first exposure is 20% so the new ReplicaSet receives real traffic while
+most users stay on the stable path. The second exposure is 50% after a short
+operator review window. The final step promotes to full traffic.
+
+The pauses are deliberately time-bound manual inspection windows. Prometheus
+AnalysisTemplates are added in later subtasks, so this step does not yet claim
+automatic health gating.
 
 When rollout mode is enabled, the chart also renders:
 
@@ -241,6 +251,7 @@ Validate the first Rollout boundary with:
 ```powershell
 make cpemon-api-rollout-check
 make cpemon-api-rollout-services-check
+make cpemon-api-canary-steps-check
 helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
 ```
 
