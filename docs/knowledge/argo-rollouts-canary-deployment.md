@@ -481,3 +481,43 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-promote-abort-runbook.ps1
 ```
+
+## CCPU-192: Healthy Canary Demo Scenario
+
+The healthy canary demo is:
+
+```text
+ops/demos/argo-rollouts/cpemon-api-healthy-canary.md
+```
+
+It demonstrates the good path:
+
+```text
+stable traffic
+new canary ReplicaSet
+20% traffic
+successful 5xx and p95 analysis
+50% traffic
+successful 5xx and p95 analysis
+100% traffic
+Healthy rollout
+```
+
+The key learning point is that a successful rollout is still evidence-driven.
+Even when the canary is expected to pass, the operator checks:
+
+* Rollout phase and current step.
+* ReplicaSet and pod readiness.
+* Stable and canary Service endpoints.
+* AnalysisRun status.
+* 5xx and p95 metric thresholds.
+* Logs and traces for new error patterns.
+
+In an interview, this is the difference between "I deployed something" and "I
+can operate a progressive delivery workflow safely."
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-healthy-canary-demo.ps1
+```

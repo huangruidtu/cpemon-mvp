@@ -229,6 +229,44 @@ canary exposure -> abort -> rollout stops progressing -> stable path remains
 
 The most important demo habit is to show status before and after each command.
 
+## CCPU-192: Healthy Canary Demo Scenario
+
+The healthy canary scenario is documented in:
+
+```text
+ops/demos/argo-rollouts/cpemon-api-healthy-canary.md
+```
+
+Use it when the canary image is known-good and the goal is to show a successful
+progressive delivery path.
+
+Expected healthy path:
+
+```text
+stable version serves traffic
+20% canary -> pause -> successful 5xx and p95 analysis
+50% canary -> pause -> successful 5xx and p95 analysis
+100% traffic -> Healthy
+```
+
+Operator checkpoints:
+
+```powershell
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+kubectl get analysisrun -n cpemon
+kubectl describe analysisrun -n cpemon
+kubectl get endpoints cpemon-api-stable cpemon-api-canary -n cpemon
+```
+
+Promote one pause at a time after evidence is healthy:
+
+```powershell
+kubectl argo rollouts promote cpemon-api -n cpemon
+```
+
+The scenario is safe for dev because it uses the existing rollout gates,
+explicit operator checkpoints, and documented stop conditions before promotion.
+
 ## Interview Framing
 
 A strong answer is:

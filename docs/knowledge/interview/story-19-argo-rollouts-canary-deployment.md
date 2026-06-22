@@ -242,3 +242,23 @@ canary is investigated.
 `promote --full` skips remaining pause decision points. It is useful in a demo
 when I intentionally want to finish the rollout, but production-style operation
 should normally promote one step at a time after checking evidence.
+
+## Q35: How would you demo a healthy canary rollout?
+
+I start from a Healthy stable rollout, introduce a known-good `cpemon-api`
+image, then watch the Rollout move through 20% traffic, pause, analysis, 50%
+traffic, another pause, analysis, and finally 100%. At each pause I check pods,
+endpoints, AnalysisRuns, 5xx, p95 latency, logs, and traces before promoting.
+
+## Q36: What proves the healthy canary succeeded?
+
+The Rollout returns to Healthy, the new ReplicaSet becomes the stable
+ReplicaSet, recent AnalysisRuns are Successful, and traffic is no longer
+partially split. I also verify that no new error pattern appeared while the
+canary was exposed.
+
+## Q37: Why is a healthy demo still valuable if nothing fails?
+
+It proves the normal operating path. In interviews, that lets me explain the
+release contract: low initial exposure, metrics-based gates, manual decision
+points, and clear evidence before promotion.
