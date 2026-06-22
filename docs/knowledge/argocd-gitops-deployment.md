@@ -429,3 +429,51 @@ kubectl get application policy-security-dev -n argocd
 kubectl describe application policy-security-dev -n argocd
 argocd app get policy-security-dev
 ```
+
+## CCPU-101: Configure Sync Policy
+
+Story 11 uses manual sync for the current dev GitOps boundary.
+
+The decision is recorded in every dev Application:
+
+```yaml
+annotations:
+  cpemon.io/sync-policy: manual
+  cpemon.io/sync-prune: "disabled"
+  cpemon.io/sync-self-heal: "disabled"
+```
+
+The Applications intentionally do not include:
+
+```yaml
+spec:
+  syncPolicy:
+    automated:
+```
+
+Why:
+
+* CPEmon image tag promotion is still a deliberate Git handoff.
+* Kafka and monitoring are stateful platform add-ons.
+* External Secrets depends on CRDs, IRSA, AWS Secrets Manager, and KMS.
+* NetworkPolicy needs real CNI enforcement and connectivity testing.
+
+Manual sync is a safety boundary while the platform is being introduced. It
+lets the operator inspect diff, order Applications, and verify health before
+automation is added.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-sync-policy.ps1
+```
+
+Manual sync commands:
+
+```powershell
+argocd app sync cpemon-dev
+argocd app sync kafka-dev
+argocd app sync monitoring-dev
+argocd app sync external-secrets-dev
+argocd app sync policy-security-dev
+```

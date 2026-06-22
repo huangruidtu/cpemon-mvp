@@ -31,6 +31,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Monitoring Application Runbook](../../ops/runbooks/argocd-monitoring-application.md)
 - [Argo CD External Secrets Application Runbook](../../ops/runbooks/argocd-external-secrets-application.md)
 - [Argo CD Policy and Security Application Runbook](../../ops/runbooks/argocd-policy-security-application.md)
+- [Argo CD Sync Policy Runbook](../../ops/runbooks/argocd-sync-policy.md)
 
 ## Architecture Decisions
 

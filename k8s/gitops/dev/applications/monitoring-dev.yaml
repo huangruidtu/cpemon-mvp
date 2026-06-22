@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: monitoring-dev
   namespace: argocd
+  annotations:
+    cpemon.io/sync-policy: manual
+    cpemon.io/sync-prune: "disabled"
+    cpemon.io/sync-self-heal: "disabled"
   labels:
     app.kubernetes.io/name: kube-prometheus-stack
     app.kubernetes.io/part-of: cpemon-mvp

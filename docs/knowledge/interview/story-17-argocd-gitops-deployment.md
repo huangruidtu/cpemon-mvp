@@ -264,3 +264,33 @@ The CPEmon app namespace has known dependencies such as DNS, MySQL, and
 monitoring. Starting there makes the policy reviewable. Broad default-deny
 across platform namespaces can break controllers before their traffic patterns
 are mapped.
+
+## Q41: What did CCPU-101 add?
+
+It made the sync policy explicit across the dev Argo CD Applications. Each
+Application records manual sync, prune disabled, and self-heal disabled through
+metadata annotations, and the validation script checks that `automated:` is not
+enabled.
+
+## Q42: Is manual sync the same as not using GitOps?
+
+No. Git still owns desired state and Argo CD still compares Git to the cluster.
+Manual sync only means a human chooses when reconciliation is applied.
+
+## Q43: Why not enable automated sync immediately?
+
+The story still has stateful add-ons, operator CRDs, secrets, and NetworkPolicy
+guardrails. Manual sync lets the operator inspect diffs and sequence changes
+before automated reconciliation starts changing the cluster.
+
+## Q44: Does Argo CD sync build images?
+
+No. CI builds, tests, and publishes images. Argo CD sync applies desired
+Kubernetes state from Git. If a new image should deploy, CI or a promotion step
+must record the desired tag in Git first.
+
+## Q45: When would automated sync be safer?
+
+After image promotion is clear, health checks are stable, prune behavior is
+tested, RBAC is hardened, and each platform Application has rollback and
+troubleshooting guidance.

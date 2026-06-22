@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: kafka-dev
   namespace: argocd
+  annotations:
+    cpemon.io/sync-policy: manual
+    cpemon.io/sync-prune: "disabled"
+    cpemon.io/sync-self-heal: "disabled"
   labels:
     app.kubernetes.io/name: kafka
     app.kubernetes.io/part-of: cpemon-mvp
