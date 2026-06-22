@@ -288,6 +288,27 @@ Dashboards help operators see trends. Alerts should be fewer and action-oriented
 they must indicate a user-impacting or pipeline-impacting condition with a
 clear first-check path.
 
+## OpenTelemetry Collector boundary
+
+The first tracing boundary is staged in
+`k8s/observability/otel-collector.yaml`.
+
+It defines:
+
+| Component | Purpose |
+| --- | --- |
+| `otlp` receiver | Accepts traces over OTLP gRPC `4317` and HTTP `4318`. |
+| `memory_limiter` and `batch` processors | Protect and batch the telemetry pipeline. |
+| `debug` exporter | Keeps the first deployment verifiable without requiring Tempo/Jaeger to exist. |
+| `otlp/trace-backend` exporter | Documents the future Tempo/Jaeger handoff endpoint. |
+
+Validate:
+
+```powershell
+make otel-collector-boundary-check
+kubectl apply --dry-run=client -f k8s/observability/otel-collector.yaml
+```
+
 ## Interview Framing
 
 The clean answer is:

@@ -179,6 +179,16 @@ The baseline alerts cover:
 The expressions use implemented metrics from this story rather than future or
 external-only metrics. This keeps the alert baseline honest and testable.
 
+## CCPU-183 Learning Notes: OpenTelemetry Collector Boundary
+
+The Collector is telemetry pipeline infrastructure. Applications emit telemetry;
+the Collector receives, batches, limits, and exports it to a backend such as
+Tempo or Jaeger.
+
+This story stages a minimal Collector boundary with OTLP gRPC/HTTP receivers,
+`memory_limiter`, `batch`, and a `debug` exporter. The debug exporter makes the
+first deployment testable before a trace backend is live.
+
 ## Validation
 
 ```powershell
@@ -191,6 +201,7 @@ make cpemon-api-http-metrics-check
 make grafana-pipeline-dashboard-check
 make grafana-api-health-dashboard-check
 make prometheus-alert-baseline-check
+make otel-collector-boundary-check
 make monitoring-template
 ```
 

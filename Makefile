@@ -175,6 +175,9 @@ grafana-api-health-dashboard-check:
 prometheus-alert-baseline-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-prometheus-alert-baseline.ps1
 
+otel-collector-boundary-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-otel-collector-boundary.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 

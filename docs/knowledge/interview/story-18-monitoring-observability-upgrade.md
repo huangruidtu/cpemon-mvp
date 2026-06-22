@@ -129,3 +129,10 @@ baseline alerts focused on conditions that should trigger an operator response:
 service scrape failure, API 5xx rate, API latency, ingest errors, writer
 dead-letter activity, and Kafka metrics scrape failure. Each alert has bounded
 labels and a runbook pointer.
+
+## Q17: How do you explain the Collector as telemetry pipeline infrastructure?
+
+The application should not know every backend detail. It emits telemetry through
+OTLP, and the OpenTelemetry Collector receives, batches, limits, and exports
+that data. That gives the platform one place to change exporters, sampling,
+resource attributes, and backend endpoints without rewriting every service.
