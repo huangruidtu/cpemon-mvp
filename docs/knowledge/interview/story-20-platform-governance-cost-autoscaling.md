@@ -266,3 +266,28 @@ increase is expected, accidental, or a follow-up optimization task.
 Record the OpenCost query window, the namespace and workload driving cost, the
 Argo CD revision, resource changes, whether the increase was expected, and the
 follow-up owner.
+
+## Q39: What did CCPU-209 add?
+
+It added a Helm-rendered `HorizontalPodAutoscaler` for `cpemon-api`. The chart
+now has an `autoscaling` values block with `enabled`, `minReplicas`,
+`maxReplicas`, and `targetCPUUtilizationPercentage`.
+
+## Q40: Why is HPA disabled in base values but enabled in dev values?
+
+The base chart should be conservative and environment-neutral. Enabling HPA in
+dev values gives the team a visible rendered manifest for review and validation
+without forcing every future environment to autoscale automatically.
+
+## Q41: Why does the HPA target Rollout when canary deployment is enabled?
+
+When Argo Rollouts is enabled, the Rollout object owns the desired replica
+state. The HPA must scale the object that controls the pods, so the template
+uses `argoproj.io/v1alpha1` and `kind: Rollout` in that mode. When rollout is
+disabled, it targets the normal `apps/v1` Deployment.
+
+## Q42: What dependencies does CPU-based HPA need?
+
+It needs metrics-server and CPU requests on the containers. Metrics-server
+provides the CPU utilization data, and requests give Kubernetes the baseline
+needed to calculate utilization percentage.

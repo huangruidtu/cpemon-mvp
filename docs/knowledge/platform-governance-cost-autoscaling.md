@@ -455,6 +455,46 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-opencost-cost-investigation.ps1
 ```
 
+## CCPU-209: cpemon-api HPA Template and Values
+
+This task adds the first autoscaling implementation for the platform:
+`cpemon-api` can now render a Kubernetes `HorizontalPodAutoscaler` from the
+Helm chart.
+
+The values contract is:
+
+```yaml
+workloads:
+  cpemonApi:
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+```
+
+The base chart keeps HPA disabled so production environments opt in
+intentionally. The dev values enable it so the rendered manifest is visible
+during local validation and GitOps review.
+
+The HPA target follows the workload type:
+
+```text
+rollout.enabled=false -> Deployment/apps/v1
+rollout.enabled=true  -> Rollout/argoproj.io/v1alpha1
+```
+
+That design is important because the Argo Rollouts controller owns the replica
+set when canary deployment is enabled. Scaling the Deployment in that mode would
+be the wrong control plane target.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-hpa.ps1
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

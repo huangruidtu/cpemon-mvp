@@ -1,0 +1,27 @@
+{{- $root := . -}}
+{{- $api := .Values.workloads.cpemonApi -}}
+{{- if and $api.enabled $api.autoscaling.enabled }}
+{{- $useRollout := default false $api.rollout.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ printf "%s-hpa" $api.name | quote }}
+  namespace: {{ include "cpemon.namespace" $root | quote }}
+  labels:
+{{ include "cpemon.workloadLabels" (dict "root" $root "workload" $api) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: {{ ternary "argoproj.io/v1alpha1" "apps/v1" $useRollout | quote }}
+    kind: {{ ternary "Rollout" "Deployment" $useRollout | quote }}
+    name: {{ $api.name | quote }}
+  minReplicas: {{ $api.autoscaling.minReplicas }}
+  maxReplicas: {{ $api.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $api.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
