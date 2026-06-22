@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cpemon-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: cpemon
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/environment: dev
+    cpemon.io/layer: application
+    cpemon.io/managed-by: argocd
+spec:
+  project: cpemon
+  source:
+    repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+    targetRevision: HEAD
+    path: deploy/helm/cpemon
+    helm:
+      releaseName: cpemon
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cpemon
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

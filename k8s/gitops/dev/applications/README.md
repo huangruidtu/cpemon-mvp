@@ -1,6 +1,6 @@
 # Dev Argo CD Applications
 
-This directory will contain Argo CD `Application` manifests for the CPEmon dev
+This directory contains Argo CD `Application` manifests for the CPEmon dev
 environment.
 
 Planned Applications:
@@ -16,3 +16,19 @@ Planned Applications:
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
 
+## `cpemon-dev`
+
+`cpemon-dev.yaml` deploys the CPEmon Helm chart:
+
+```text
+repoURL:        https://github.com/huangruidtu/cpemon-mvp.git
+targetRevision: HEAD
+path:           deploy/helm/cpemon
+values:         values-dev.yaml
+destination:    https://kubernetes.default.svc / cpemon
+project:        cpemon
+```
+
+The Application uses manual sync by default. Automated sync, prune, and
+self-heal are introduced as a separate operational decision so the first
+Application remains easy to inspect.

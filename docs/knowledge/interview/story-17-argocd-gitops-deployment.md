@@ -101,3 +101,36 @@ good future option when there are many Applications or multiple environments.
 It added the GitOps directory layout, dev Application directory, layout runbook,
 validation script, and interview explanation for why repository paths are part
 of deployment architecture.
+
+## Q16: What did CCPU-98 add?
+
+It added the first Argo CD workload Application: `cpemon-dev`. The Application
+points Argo CD at the CPEmon Helm chart path, uses `values-dev.yaml`, belongs
+to the `cpemon` AppProject, and targets the `cpemon` namespace.
+
+## Q17: What is the difference between `Synced` and `Healthy`?
+
+`Synced` means the live cluster matches the desired Git state for the
+Application. `Healthy` means the resulting Kubernetes resources are actually
+running well. An app can be synced but not healthy if the manifests were
+applied but Pods, Services, Secrets, or dependencies are not ready.
+
+## Q18: Why does CI still matter after adding Argo CD?
+
+Argo CD does not build the CPEmon containers. CI still runs tests and publishes
+images. The GitOps handoff happens when a concrete image tag is recorded in
+Git, and Argo CD reconciles that desired tag into Kubernetes.
+
+## Q19: Why keep automated sync out of the first Application?
+
+Manual sync makes the first Application easier to inspect during learning. It
+lets the team verify repository path, chart rendering, destination namespace,
+and project permissions before deciding whether automated prune and self-heal
+are appropriate.
+
+## Q20: What would you check if `cpemon-dev` is `OutOfSync` or `Degraded`?
+
+For `OutOfSync`, compare Git desired state with live resources and check
+whether the configured revision is correct. For `Degraded`, inspect workload
+Pods, required Secrets, database access, Kafka readiness, and optional CRDs
+such as `ServiceMonitor`.

@@ -16,6 +16,7 @@ k8s/gitops/
   dev/
     applications/
       README.md
+      cpemon-dev.yaml
 ```
 
 Bootstrap resources stay under `k8s/addons/argocd` because they install and
@@ -64,9 +65,17 @@ Argo CD Application manifests:
 k8s/gitops/dev/applications
 ```
 
+First application:
+
+```text
+k8s/gitops/dev/applications/cpemon-dev.yaml
+```
+
+`cpemon-dev` reconciles the CPEmon Helm chart from
+`deploy/helm/cpemon` with `values-dev.yaml` into the `cpemon` namespace.
+
 ## Interview Framing
 
 GitOps layout is architecture. It tells an interviewer where desired state
 lives, which files are bootstrap-only, which files are reconciled by Argo CD,
 and how Helm chart paths map to deployed applications.
-

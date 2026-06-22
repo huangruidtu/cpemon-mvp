@@ -144,3 +144,47 @@ Interview framing:
 > GitOps layout is architecture. It tells the team which files bootstrap Argo
 > CD, which files Argo CD reconciles, and how Helm chart paths map to deployed
 > applications.
+
+## CCPU-98: Create Application for CPEmon Helm Chart
+
+The first workload Application is:
+
+```text
+k8s/gitops/dev/applications/cpemon-dev.yaml
+```
+
+It tells Argo CD:
+
+* use the `cpemon` AppProject
+* read from `https://github.com/huangruidtu/cpemon-mvp.git`
+* follow the configured Git revision, currently `HEAD`
+* render `deploy/helm/cpemon`
+* apply the Helm values file `values-dev.yaml`
+* deploy into the in-cluster Kubernetes API and `cpemon` namespace
+
+The Application intentionally does not own image building. CI owns image build,
+test, and push. Git owns the desired image tag. Argo CD owns reconciliation of
+that desired state into the cluster.
+
+The dev values file still contains `__IMAGE_TAG__` as a learning placeholder.
+For a live sync, CI should promote a concrete tag into Git, or the lab operator
+should replace the placeholder before applying the Application.
+
+Manual sync is used at this point. Automated sync, prune, and self-heal are
+separate operational choices and are handled later in the story.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-cpemon-application.ps1
+helm lint deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+Live Argo CD inspection:
+
+```powershell
+kubectl get application cpemon-dev -n argocd
+kubectl describe application cpemon-dev -n argocd
+argocd app get cpemon-dev
+```
