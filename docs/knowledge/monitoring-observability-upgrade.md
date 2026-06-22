@@ -189,6 +189,15 @@ This story stages a minimal Collector boundary with OTLP gRPC/HTTP receivers,
 `memory_limiter`, `batch`, and a `debug` exporter. The debug exporter makes the
 first deployment testable before a trace backend is live.
 
+## CCPU-184 Learning Notes: Minimal Tracing
+
+Minimal tracing starts with context propagation. `cpemon-api` now accepts an
+incoming W3C `traceparent` header or `X-Trace-Id`, creates one when absent, and
+returns both headers to the caller.
+
+This is not a full tracing backend yet. It is the service-path contract that
+lets later work attach spans and exports without changing every handler again.
+
 ## Validation
 
 ```powershell
@@ -202,6 +211,7 @@ make grafana-pipeline-dashboard-check
 make grafana-api-health-dashboard-check
 make prometheus-alert-baseline-check
 make otel-collector-boundary-check
+make minimal-tracing-check
 make monitoring-template
 ```
 

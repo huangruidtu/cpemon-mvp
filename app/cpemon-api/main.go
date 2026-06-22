@@ -19,6 +19,7 @@ import (
 	appconfig "github.com/huangruidtu/cpemon-mvp/app/pkg/config"
 	appdb "github.com/huangruidtu/cpemon-mvp/app/pkg/db"
 	"github.com/huangruidtu/cpemon-mvp/app/pkg/model"
+	"github.com/huangruidtu/cpemon-mvp/app/pkg/tracecontext"
 )
 
 // ---- Prometheus metrics ----
@@ -401,6 +402,18 @@ func prometheusHTTPMiddleware() gin.HandlerFunc {
 	}
 }
 
+func traceContextMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		traceID, traceparent := tracecontext.FromHTTPHeader(c.Request.Header)
+		ctx := tracecontext.WithTrace(c.Request.Context(), traceID, traceparent)
+		c.Request = c.Request.WithContext(ctx)
+		c.Set("trace_id", traceID)
+		c.Header(tracecontext.TraceparentHeader, traceparent)
+		c.Header(tracecontext.TraceIDHeader, traceID)
+		c.Next()
+	}
+}
+
 func main() {
 	// 1. Load configuration (DB_DSN, HTTP_ADDR, etc.)
 	cfg := appconfig.Load()
@@ -418,6 +431,7 @@ func main() {
 
 	// 4. Create Gin router.
 	r := gin.Default()
+	r.Use(traceContextMiddleware())
 	r.Use(prometheusHTTPMiddleware())
 
 	// ---- Admin Basic Auth 设置 ----

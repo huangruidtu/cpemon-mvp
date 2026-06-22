@@ -136,3 +136,10 @@ The application should not know every backend detail. It emits telemetry through
 OTLP, and the OpenTelemetry Collector receives, batches, limits, and exports
 that data. That gives the platform one place to change exporters, sampling,
 resource attributes, and backend endpoints without rewriting every service.
+
+## Q18: How do you explain traces as latency path evidence?
+
+Metrics tell me that something is slow or failing. Traces show the path of one
+request through service boundaries. The first step is propagating a trace
+context such as W3C `traceparent`; then spans and exporters can attach detailed
+timing evidence to that same trace.

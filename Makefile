@@ -178,6 +178,9 @@ prometheus-alert-baseline-check:
 otel-collector-boundary-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-otel-collector-boundary.ps1
 
+minimal-tracing-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-minimal-tracing.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 
