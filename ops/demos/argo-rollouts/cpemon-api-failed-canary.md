@@ -125,6 +125,27 @@ Failed AnalysisRun records the reason for the stop.
 The next action is fix, retry, or rollback through the normal release process.
 ```
 
+## Scripted Demo
+
+The safe local script is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-failed-rollout.ps1
+```
+
+By default the script runs in dry-run mode. It prints the live inspection and
+abort commands without changing a cluster.
+
+Run live commands only in an isolated dev environment with a controlled bad
+canary:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-failed-rollout.ps1 -Execute
+```
+
+The script walks through starting status, stable/canary endpoints, failed
+AnalysisRun evidence, workload inspection, abort, and stable-path verification.
+
 ## Interview Narrative
 
 A concise interview answer:
@@ -135,4 +156,3 @@ A concise interview answer:
 > abort rather than promote. The key production value is blast-radius reduction:
 > the bad version is exposed narrowly while the stable Service remains the safe
 > path.
-

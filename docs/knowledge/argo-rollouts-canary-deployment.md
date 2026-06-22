@@ -586,3 +586,29 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-successful-rollout-demo-script.ps1
 ```
+
+## CCPU-195: Failed Rollout Demo Script
+
+The failed rollout script is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-failed-rollout.ps1
+```
+
+It defaults to dry-run mode and prints the failed-canary investigation and abort
+sequence. With `-Execute`, it checks the current dev cluster context and runs
+the live commands.
+
+The script demonstrates rollback safety by collecting:
+
+* Starting rollout status.
+* Stable and canary endpoints.
+* Failed AnalysisRun details.
+* ReplicaSet, pod, service, and endpoint evidence.
+* Abort command and post-abort verification.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-failed-rollout-demo-script.ps1
+```

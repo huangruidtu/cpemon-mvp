@@ -293,3 +293,15 @@ usable in a controlled dev cluster.
 It collects rollout status, stable/canary endpoints, AnalysisRuns, promotion
 steps, and final Healthy status. That evidence lets me explain not just that a
 release completed, but why it was safe to promote.
+
+## Q43: What does the failed rollout script prove?
+
+It proves the platform can stop a bad release using runtime evidence. The
+script shows rollout status, failed AnalysisRuns, workload state, abort, and
+stable endpoint verification.
+
+## Q44: Why is abort part of the demo instead of only watching failure?
+
+Watching failure proves detection. Abort proves operator control. It shows that
+I can stop unsafe progression, protect the stable path, and create time to
+decide retry, rollback, or fix forward.

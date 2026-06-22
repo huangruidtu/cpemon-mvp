@@ -316,6 +316,16 @@ kubectl argo rollouts abort cpemon-api -n cpemon
 The operator should be able to explain why the rollout stopped before deciding
 whether to retry, rollback, or fix forward.
 
+Scripted failed demo:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-failed-rollout.ps1
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-failed-rollout.ps1 -Execute
+```
+
+The first command is the default safe dry-run. The second command is for an
+isolated dev cluster only.
+
 ## Interview Framing
 
 A strong answer is:
