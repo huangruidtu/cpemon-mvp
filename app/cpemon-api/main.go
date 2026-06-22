@@ -414,6 +414,27 @@ func traceContextMiddleware() gin.HandlerFunc {
 	}
 }
 
+func traceLoggingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+
+		route := c.FullPath()
+		if route == "" {
+			route = "unmatched"
+		}
+
+		log.Printf(
+			"event=http_request service=cpemon-api trace_id=%s method=%s route=%s code=%d duration_ms=%d",
+			tracecontext.TraceID(c.Request.Context()),
+			c.Request.Method,
+			route,
+			c.Writer.Status(),
+			time.Since(start).Milliseconds(),
+		)
+	}
+}
+
 func main() {
 	// 1. Load configuration (DB_DSN, HTTP_ADDR, etc.)
 	cfg := appconfig.Load()
@@ -432,6 +453,7 @@ func main() {
 	// 4. Create Gin router.
 	r := gin.Default()
 	r.Use(traceContextMiddleware())
+	r.Use(traceLoggingMiddleware())
 	r.Use(prometheusHTTPMiddleware())
 
 	// ---- Admin Basic Auth 设置 ----

@@ -309,6 +309,33 @@ make otel-collector-boundary-check
 kubectl apply --dry-run=client -f k8s/observability/otel-collector.yaml
 ```
 
+## trace_id structured logs
+
+`cpemon-api` now adds a trace context to every HTTP request and writes a
+structured request log after the handler finishes:
+
+```text
+event=http_request service=cpemon-api trace_id=<trace-id> method=<method> route=<route> code=<status> duration_ms=<duration>
+```
+
+Use this as the bridge from metrics and traces to concrete log lines:
+
+1. Start with the alert or dashboard symptom, such as high API latency.
+2. Narrow the route from the Grafana API health dashboard.
+3. Find a slow or failing request log for that route and status code.
+4. Copy `trace_id` into the trace backend search or log query.
+5. Compare the trace path with service logs before changing code or scaling.
+
+The request log intentionally uses the route template, status code, and
+duration. Device identifiers and payload fields stay out of this shared request
+log to avoid high-cardinality and sensitive-data leakage.
+
+Validate:
+
+```powershell
+make trace-id-structured-logs-check
+```
+
 ## Interview Framing
 
 The clean answer is:

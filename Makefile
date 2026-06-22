@@ -181,6 +181,9 @@ otel-collector-boundary-check:
 minimal-tracing-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-minimal-tracing.ps1
 
+trace-id-structured-logs-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-trace-id-structured-logs.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 

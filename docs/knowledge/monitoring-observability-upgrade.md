@@ -198,6 +198,32 @@ returns both headers to the caller.
 This is not a full tracing backend yet. It is the service-path contract that
 lets later work attach spans and exports without changing every handler again.
 
+## CCPU-185 Learning Notes: trace_id structured logs
+
+`trace_id` is the join key between request logs and traces. `cpemon-api` now
+logs one structured HTTP request event after each handler finishes:
+
+```text
+event=http_request service=cpemon-api trace_id=<trace-id> method=<method> route=<route> code=<status> duration_ms=<duration>
+```
+
+The incident workflow becomes:
+
+```text
+metric symptom -> dashboard -> trace_id -> logs -> trace path
+```
+
+This is interview-important because it shows the difference between telemetry
+types:
+
+* metrics answer "how many, how slow, how often?"
+* logs answer "what happened for this concrete request?"
+* traces answer "where did this request spend time across boundaries?"
+
+The structured request log avoids device serial numbers and raw payload data.
+Those details can appear in carefully scoped application logs when needed, but
+they should not become the default correlation fields for every request.
+
 ## Validation
 
 ```powershell
@@ -212,6 +238,7 @@ make grafana-api-health-dashboard-check
 make prometheus-alert-baseline-check
 make otel-collector-boundary-check
 make minimal-tracing-check
+make trace-id-structured-logs-check
 make monitoring-template
 ```
 

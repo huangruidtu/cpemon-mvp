@@ -143,3 +143,15 @@ Metrics tell me that something is slow or failing. Traces show the path of one
 request through service boundaries. The first step is propagating a trace
 context such as W3C `traceparent`; then spans and exporters can attach detailed
 timing evidence to that same trace.
+
+## Q19: Why put trace_id into structured logs?
+
+`trace_id` is the practical join key during an incident. A dashboard can show
+that `/api/cpe/:sn` is slow, but a structured log with `trace_id`, route,
+status, and duration lets me find one concrete request. Then I can search the
+trace backend for the same `trace_id` and inspect where time was spent.
+
+I keep this field in logs because logs are usually the fastest evidence source
+when an incident starts. I do not put device serial numbers or payload values in
+Prometheus labels, and I avoid putting raw payload data in shared request logs.
+That keeps telemetry useful without creating high-cardinality or privacy risk.
