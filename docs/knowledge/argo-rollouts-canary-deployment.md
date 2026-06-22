@@ -612,3 +612,37 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-failed-rollout-demo-script.ps1
 ```
+
+## CCPU-196: Rollback, ADR, Runbook, and Interview Notes
+
+The long-lived decision record is:
+
+```text
+ADR/cloud-platform-upgrade-argo-rollouts-canary-deployment.md
+```
+
+The runbook is:
+
+```text
+ops/runbooks/argo-rollouts-cpemon-api.md
+```
+
+The two demo paths are:
+
+```text
+ops/demos/argo-rollouts/cpemon-api-healthy-canary.md
+ops/demos/argo-rollouts/cpemon-api-failed-canary.md
+```
+
+The core interview distinction:
+
+```text
+abort stops unsafe in-flight rollout progression
+rollback changes Git desired state back to a known-good version
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argo-rollouts-final-docs.ps1
+```

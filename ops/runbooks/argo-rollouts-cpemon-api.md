@@ -326,6 +326,44 @@ powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-failed-rollout.
 The first command is the default safe dry-run. The second command is for an
 isolated dev cluster only.
 
+## CCPU-196: Rollback and Incident Response
+
+Use abort when the in-flight canary is unsafe and should stop progressing:
+
+```powershell
+kubectl argo rollouts abort cpemon-api -n cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+kubectl get endpoints cpemon-api-stable cpemon-api-canary -n cpemon
+```
+
+Use rollback when Git desired state should return to the previous known-good
+version:
+
+```powershell
+git revert <bad-release-commit>
+git push
+argocd app sync cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+```
+
+Incident response checklist:
+
+```text
+1. Freeze promotion.
+2. Capture rollout status, ReplicaSets, pods, services, endpoints, and AnalysisRuns.
+3. Decide whether to abort immediately based on user impact.
+4. Preserve the failed AnalysisRun evidence for the incident notes.
+5. Revert desired state in Git if the release artifact is wrong.
+6. Verify stable endpoints and Healthy rollout status after recovery.
+7. Document the failed signal and follow-up action.
+```
+
+ADR:
+
+```text
+ADR/cloud-platform-upgrade-argo-rollouts-canary-deployment.md
+```
+
 ## Interview Framing
 
 A strong answer is:

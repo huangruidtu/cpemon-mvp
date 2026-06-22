@@ -31,6 +31,8 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 15: acs-ingest Kafka Producer Refactor](story-15-acs-ingest-kafka-producer-refactor.md)
 - [Story 16: cpemon-writer Kafka Consumer Refactor](story-16-cpemon-writer-kafka-consumer-refactor.md)
 - [Story 17: Argo CD GitOps Deployment](story-17-argocd-gitops-deployment.md)
+- [Story 18: Monitoring and Observability Upgrade](story-18-monitoring-observability-upgrade.md)
+- [Story 19: Argo Rollouts Canary Deployment](story-19-argo-rollouts-canary-deployment.md)
 - [acs-ingest Kafka Producer Learning Notes](acs-ingest-kafka-producer-learning-notes.md)
 - [cpemon-writer Kafka Consumer Learning Notes](cpemon-writer-kafka-consumer-learning-notes.md)
 - [Kafka Platform Learning Notes](kafka-platform-learning-notes.md)
@@ -89,3 +91,13 @@ narrative:
 - why manual sync, prune disabled, and self-heal disabled are deliberate guardrails
 - how drift detection works and why rollback should be Git-first
 - how to debug OutOfSync, Degraded, missing CRDs, bad image tags, wrong paths, and AppProject permission failures
+
+For Story 19, practice the Argo Rollouts canary narrative:
+
+- why `cpemon-api` moved from Deployment to Rollout
+- how stable and canary Services support limited exposure
+- why 20% and 50% gates are useful interview examples
+- how 5xx and p95 AnalysisRuns protect reliability and latency
+- how manual promote differs from `promote --full`
+- how abort differs from Git-first rollback
+- how the healthy and failed demo scripts prove both success and safety paths

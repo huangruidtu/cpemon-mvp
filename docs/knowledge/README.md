@@ -28,6 +28,9 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD GitOps Deployment](argocd-gitops-deployment.md)
 - [Monitoring and Observability Upgrade](monitoring-observability-upgrade.md)
 - [Argo Rollouts Canary Deployment](argo-rollouts-canary-deployment.md)
+- [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
+- [Argo Rollouts Healthy Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-healthy-canary.md)
+- [Argo Rollouts Failed Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-failed-canary.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
 - [Argo CD Kafka Application Runbook](../../ops/runbooks/argocd-kafka-application.md)
 - [Argo CD Monitoring Application Runbook](../../ops/runbooks/argocd-monitoring-application.md)
@@ -50,6 +53,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [cpemon-writer Kafka Consumer Migration](../../ADR/cpemon-writer-kafka-consumer-migration.md)
 - [Argo CD GitOps Deployment Decision](../../ADR/cloud-platform-upgrade-argocd-gitops-deployment.md)
 - [Monitoring and Observability Upgrade Decision](../../ADR/cloud-platform-upgrade-monitoring-observability.md)
+- [Argo Rollouts Canary Deployment Decision](../../ADR/cloud-platform-upgrade-argo-rollouts-canary-deployment.md)
 
 ## Runbooks
 
@@ -75,6 +79,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Project Runbook](../../ops/runbooks/argocd-project.md)
 - [Argo CD GitOps Layout Runbook](../../ops/runbooks/argocd-gitops-layout.md)
 - [Monitoring Observability Runbook](../../ops/runbooks/monitoring-observability.md)
+- [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
 
 ## Interview Prep
 

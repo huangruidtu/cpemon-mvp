@@ -305,3 +305,25 @@ stable endpoint verification.
 Watching failure proves detection. Abort proves operator control. It shows that
 I can stop unsafe progression, protect the stable path, and create time to
 decide retry, rollback, or fix forward.
+
+## Q45: What is the difference between abort and rollback?
+
+Abort stops the current canary from progressing. Rollback changes desired state
+back to a known-good version, usually by reverting the Git change and letting
+Argo CD sync it. Abort is about stopping exposure now; rollback is about
+changing what the cluster should converge to.
+
+## Q46: Why did you write an ADR for Argo Rollouts?
+
+Because progressive delivery is an architectural decision, not only a YAML
+change. The ADR records why `cpemon-api` needs canary behavior, why plain
+Deployments are not enough for this story, what operational benefits we get,
+and what new complexity we accept.
+
+## Q47: What is the final Story 19 interview summary?
+
+I converted `cpemon-api` into an Argo Rollouts canary so releases can move
+through limited traffic exposure, pause gates, Prometheus analysis, manual
+promotion, abort, and Git-first rollback. The project includes Helm templates,
+runbooks, healthy and failed demo scripts, an ADR, and interview notes, so I can
+explain both implementation and operations.
