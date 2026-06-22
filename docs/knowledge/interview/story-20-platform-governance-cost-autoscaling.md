@@ -187,3 +187,16 @@ Use `kubectl get cpol` to confirm `ClusterPolicy` resources exist. Use
 `kubectl get policyreport -A` to inspect policy evaluation results. Then apply
 the valid fixture and invalid fixtures to demonstrate allowed and denied
 admission paths.
+
+## Q27: What did CCPU-205 add?
+
+It added OpenCost as a GitOps-managed platform add-on. The `opencost-dev` Argo
+CD Application pins the OpenCost Helm chart to `2.5.23`, reads values from
+`k8s/addons/opencost/values.yaml`, and deploys into the `opencost` namespace.
+
+## Q28: Why is OpenCost part of platform operations?
+
+Cost is an operational signal, like availability or latency. Once the platform
+has namespaces for CPEmon, Kafka, monitoring, Argo CD, Kyverno, and OpenCost,
+operators need visibility into where spend is coming from. This story starts
+with visibility before chargeback or optimization.

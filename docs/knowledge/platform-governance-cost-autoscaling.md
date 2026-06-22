@@ -291,6 +291,34 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-policy-fixtures.ps1
 ```
 
+## CCPU-205: OpenCost Platform Installation
+
+OpenCost is installed through the `opencost-dev` Argo CD Application:
+
+```text
+Application:    k8s/gitops/dev/applications/opencost-dev.yaml
+Chart repo:     https://opencost.github.io/opencost-helm-chart
+Chart:          opencost
+Chart version:  2.5.23
+App version:    1.120.3
+Values file:    k8s/addons/opencost/values.yaml
+Namespace:      opencost
+```
+
+The Step 1 goal is cost visibility, not chargeback. OpenCost gives operators a
+place to inspect namespace and workload cost signals before the platform tries
+to allocate spend to teams, enforce budgets, or optimize workloads.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-opencost-installation.ps1
+helm template opencost opencost/opencost `
+  --version 2.5.23 `
+  --namespace opencost `
+  --values k8s/addons/opencost/values.yaml
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

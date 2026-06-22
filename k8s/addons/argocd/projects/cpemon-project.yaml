@@ -17,6 +17,7 @@ spec:
     - https://charts.external-secrets.io
     - https://argoproj.github.io/argo-helm
     - https://kyverno.github.io/kyverno/
+    - https://opencost.github.io/opencost-helm-chart
   destinations:
     - namespace: cpemon
       server: https://kubernetes.default.svc
@@ -31,6 +32,8 @@ spec:
     - namespace: argo-rollouts
       server: https://kubernetes.default.svc
     - namespace: kyverno
+      server: https://kubernetes.default.svc
+    - namespace: opencost
       server: https://kubernetes.default.svc
     - namespace: platform
       server: https://kubernetes.default.svc

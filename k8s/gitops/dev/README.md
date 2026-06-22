@@ -10,6 +10,7 @@ exist in the upgrade:
 * Kafka values: `k8s/addons/kafka/values.yaml`
 * Kyverno values: `k8s/addons/kyverno/values.yaml`
 * Kyverno policies: `k8s/policies/kyverno`
+* OpenCost values: `k8s/addons/opencost/values.yaml`
 * Argo CD Application manifests: `k8s/gitops/dev/applications`
 
 The environment is intentionally simple. Production promotion, multiple

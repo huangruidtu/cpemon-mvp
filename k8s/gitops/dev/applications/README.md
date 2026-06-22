@@ -15,6 +15,7 @@ Planned Applications:
 | `argo-rollouts-dev` | `argo-rollouts` | Argo Rollouts chart `2.41.0` with `k8s/addons/argo-rollouts/values.yaml` |
 | `kyverno-dev` | `kyverno` | Kyverno chart `3.8.1` with `k8s/addons/kyverno/values.yaml` |
 | `kyverno-policies-dev` | `kyverno` | CPEmon Kyverno policies from `k8s/policies/kyverno` |
+| `opencost-dev` | `opencost` | OpenCost chart `2.5.23` with `k8s/addons/opencost/values.yaml` |
 
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
@@ -160,3 +161,22 @@ project:        cpemon
 The first policy requires CPU and memory requests and limits for Pods in the
 `cpemon` namespace. It is intentionally deployed after `kyverno-dev` so the
 controller and CRDs exist before `ClusterPolicy` resources are synced.
+
+## `opencost-dev`
+
+`opencost-dev.yaml` deploys the OpenCost cost visibility stack:
+
+```text
+chart repo:     https://opencost.github.io/opencost-helm-chart
+chart:          opencost
+chart version:  2.5.23
+release:        opencost
+values repo:    https://github.com/huangruidtu/cpemon-mvp.git
+values file:    k8s/addons/opencost/values.yaml
+destination:    https://kubernetes.default.svc / opencost
+project:        cpemon
+```
+
+OpenCost is platform visibility infrastructure. It is added before chargeback
+or budget workflows so operators can first see namespace and workload cost
+signals.

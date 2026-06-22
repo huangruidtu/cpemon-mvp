@@ -11,7 +11,7 @@ This runbook covers the dev GitOps boundary created in Story 11:
 * AppProject `cpemon`
 * dev Applications under `k8s/gitops/dev/applications`
 * CPEmon Helm chart deployment
-* Kafka, monitoring, External Secrets, Kyverno, and policy/security add-ons
+* Kafka, monitoring, External Secrets, Kyverno, OpenCost, and policy/security add-ons
 
 It assumes Argo CD is already installed and kubeconfig points to the target
 cluster.
@@ -27,6 +27,7 @@ cluster.
 | `policy-security-dev` | NetworkPolicy baseline | `k8s/netpol/baseline` | `cpemon` |
 | `kyverno-dev` | Kubernetes policy engine | Kyverno chart plus CPEmon values | `kyverno` |
 | `kyverno-policies-dev` | Kyverno policy package | `k8s/policies/kyverno` | `kyverno` |
+| `opencost-dev` | Cost visibility | OpenCost chart plus CPEmon values | `opencost` |
 
 ## Standard Inspection
 
@@ -54,8 +55,9 @@ For a clean dev environment, use this order:
 3. `monitoring-dev`
 4. `kyverno-dev`
 5. `kyverno-policies-dev`
-6. `policy-security-dev`
-7. `cpemon-dev`
+6. `opencost-dev`
+7. `policy-security-dev`
+8. `cpemon-dev`
 
 Reason:
 
@@ -64,6 +66,7 @@ Reason:
 * Monitoring installs CRDs before CPEmon metrics objects depend on them.
 * Kyverno installs the policy engine before Kyverno policies are applied.
 * Kyverno policies should be reviewed before CPEmon workloads are synced.
+* OpenCost can be synced after monitoring is available so cost metrics can be queried.
 * Policy/security should be reviewed before or alongside workload rollout.
 * CPEmon workloads are last because they depend on platform services.
 
