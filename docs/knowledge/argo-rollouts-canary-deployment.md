@@ -252,3 +252,51 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-canary-steps.ps1
 ```
+
+## CCPU-189: Add Prometheus AnalysisTemplate for HTTP 5xx Rate
+
+The first automated canary signal is HTTP 5xx rate for `cpemon-api`.
+
+Template:
+
+```text
+AnalysisTemplate/cpemon-api-http-5xx-rate
+```
+
+Metric:
+
+```text
+cpemon_api_http_requests_total
+```
+
+Query:
+
+```promql
+sum(rate(cpemon_api_http_requests_total{code=~"5.."}[2m]))
+/
+clamp_min(sum(rate(cpemon_api_http_requests_total[2m])), 1)
+```
+
+Threshold:
+
+```text
+successCondition: result[0] < 0.05
+```
+
+Why this signal:
+
+* 5xx responses indicate server-side failure.
+* The metric uses bounded labels such as `code`, not device identifiers.
+* A ratio is better than a raw count because it accounts for traffic volume.
+* `clamp_min(..., 1)` avoids divide-by-zero behavior when there is little or no
+  traffic in a dev environment.
+
+This subtask only renders the AnalysisTemplate. It does not yet attach the
+template to the Rollout. That connection happens after both 5xx and p95 latency
+templates exist.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-http5xx-analysis.ps1
+```

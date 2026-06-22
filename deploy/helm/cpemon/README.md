@@ -252,8 +252,41 @@ Validate the first Rollout boundary with:
 make cpemon-api-rollout-check
 make cpemon-api-rollout-services-check
 make cpemon-api-canary-steps-check
+make cpemon-api-http5xx-analysis-check
 helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
 ```
+
+## Rollout AnalysisTemplates
+
+`CCPU-189` adds the first Prometheus-backed AnalysisTemplate:
+
+```text
+AnalysisTemplate/cpemon-api-http-5xx-rate
+```
+
+It uses the Story 12 API RED metric:
+
+```text
+cpemon_api_http_requests_total
+```
+
+The query calculates the 5xx request ratio over two minutes:
+
+```promql
+sum(rate(cpemon_api_http_requests_total{code=~"5.."}[2m]))
+/
+clamp_min(sum(rate(cpemon_api_http_requests_total[2m])), 1)
+```
+
+The dev threshold is:
+
+```text
+successCondition: result[0] < 0.05
+```
+
+That means the canary should only continue when the measured 5xx ratio is below
+5%. The template is rendered independently first; a later subtask connects it
+to the Rollout steps.
 
 ## ConfigMap and Secret References
 

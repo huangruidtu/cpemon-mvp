@@ -1,0 +1,23 @@
+{{- if and .Values.rolloutAnalysis.enabled .Values.rolloutAnalysis.templates.http5xxRate.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ .Values.rolloutAnalysis.templates.http5xxRate.name | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: "api"
+    cpemon.io/analysis-signal: http-5xx-rate
+spec:
+  metrics:
+    - name: {{ .Values.rolloutAnalysis.templates.http5xxRate.metricName | quote }}
+      interval: {{ .Values.rolloutAnalysis.templates.http5xxRate.interval | quote }}
+      count: {{ .Values.rolloutAnalysis.templates.http5xxRate.count }}
+      failureLimit: {{ .Values.rolloutAnalysis.templates.http5xxRate.failureLimit }}
+      successCondition: {{ .Values.rolloutAnalysis.templates.http5xxRate.successCondition | quote }}
+      provider:
+        prometheus:
+          address: {{ .Values.rolloutAnalysis.prometheus.address | quote }}
+          query: |
+{{ .Values.rolloutAnalysis.templates.http5xxRate.query | nindent 12 }}
+{{- end }}

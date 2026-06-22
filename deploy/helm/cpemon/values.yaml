@@ -383,3 +383,21 @@ serviceMonitor:
   interval: 15s
   scrapeTimeout: 10s
   path: /metrics
+
+rolloutAnalysis:
+  enabled: true
+  prometheus:
+    address: http://kps-kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+  templates:
+    http5xxRate:
+      enabled: true
+      name: cpemon-api-http-5xx-rate
+      metricName: http-5xx-rate
+      interval: 30s
+      count: 3
+      failureLimit: 1
+      successCondition: result[0] < 0.05
+      query: |
+        sum(rate(cpemon_api_http_requests_total{code=~"5.."}[2m]))
+        /
+        clamp_min(sum(rate(cpemon_api_http_requests_total[2m])), 1)

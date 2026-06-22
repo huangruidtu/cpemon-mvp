@@ -146,3 +146,21 @@ and traces. If the canary looks bad, I abort. If it looks healthy, I promote.
 Separating the steps keeps the migration teachable. First I prove the Rollout
 resource, then Services, then manual canary steps, then automated metric-based
 analysis. That sequence makes each failure mode easier to debug and explain.
+
+## Q20: Why use HTTP 5xx rate as the first analysis signal?
+
+5xx rate is a direct API reliability signal. If the canary creates server-side
+errors, the rollout should stop before more users are exposed. It is also easy
+to explain from RED metrics: request rate, error rate, and duration.
+
+## Q21: Why use a ratio instead of a raw 5xx count?
+
+A raw count depends on traffic volume. Five errors during ten requests is very
+different from five errors during ten thousand requests. A ratio makes the
+threshold meaningful across different traffic levels.
+
+## Q22: Why is the Prometheus query low-cardinality?
+
+The query filters on bounded labels such as HTTP status code. It does not group
+by device serial number, raw route parameter, payload value, or customer ID.
+That keeps Prometheus cardinality controlled during canary analysis.
