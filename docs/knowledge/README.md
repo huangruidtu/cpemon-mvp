@@ -27,6 +27,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [cpemon-writer Kafka Consumer Refactor](cpemon-writer-kafka-consumer-refactor.md)
 - [Argo CD GitOps Deployment](argocd-gitops-deployment.md)
 - [Monitoring and Observability Upgrade](monitoring-observability-upgrade.md)
+- [Argo Rollouts Canary Deployment](argo-rollouts-canary-deployment.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
 - [Argo CD Kafka Application Runbook](../../ops/runbooks/argocd-kafka-application.md)
 - [Argo CD Monitoring Application Runbook](../../ops/runbooks/argocd-monitoring-application.md)
@@ -38,6 +39,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Drift Detection Validation Runbook](../../ops/runbooks/argocd-drift-detection-validation.md)
 - [Argo CD CI/CD Separation Runbook](../../ops/runbooks/argocd-ci-cd-separation.md)
 - [Argo CD Operations Runbook](../../ops/runbooks/argocd-operations.md)
+- [Argo Rollouts Controller Runbook](../../ops/runbooks/argo-rollouts-controller.md)
 
 ## Architecture Decisions
 
@@ -81,3 +83,4 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [cpemon-writer Kafka Consumer Learning Notes](interview/cpemon-writer-kafka-consumer-learning-notes.md)
 - [Argo CD GitOps Deployment Interview Q&A](interview/story-17-argocd-gitops-deployment.md)
 - [Monitoring and Observability Upgrade Interview Q&A](interview/story-18-monitoring-observability-upgrade.md)
+- [Argo Rollouts Canary Deployment Interview Q&A](interview/story-19-argo-rollouts-canary-deployment.md)

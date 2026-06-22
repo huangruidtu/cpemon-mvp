@@ -1,0 +1,55 @@
+# Story 19 - Argo Rollouts Canary Deployment
+
+## Interview Narrative
+
+I introduced Argo Rollouts as CPEmon's progressive delivery layer. The first
+step was not changing the application Deployment; it was installing the shared
+controller through GitOps, pinning the chart version, documenting the namespace
+and ownership boundary, and validating that the controller can reconcile
+Rollout and Analysis resources before the application depends on them.
+
+## Q1: Why is Argo Rollouts platform delivery infrastructure?
+
+Argo Rollouts installs CRDs and a controller that can manage progressive
+delivery for many workloads. That makes it a shared delivery control plane, not
+an application library. CPEmon should define its Rollout strategy, but it should
+not install the controller inside its own application chart.
+
+## Q2: Why install the controller before replacing the Deployment?
+
+A `Rollout` resource cannot reconcile until the CRD and controller exist. If I
+convert the application first, the cluster may reject the manifest or leave the
+rollout unmanaged. Installing the controller first creates a safe dependency
+order.
+
+## Q3: What did CCPU-114 add?
+
+It added an Argo CD Application named `argo-rollouts-dev`, a pinned
+`argo-rollouts` Helm chart version, controller values, the `argo-rollouts`
+namespace boundary, AppProject source/destination permissions, a runbook, a
+knowledge note, and static validation.
+
+## Q4: Why pin the chart version?
+
+Pinning makes the GitOps desired state reproducible. Without a pinned chart
+version, the same commit could render different controller manifests later,
+which is risky for CRDs and delivery controllers.
+
+## Q5: How would you validate the controller?
+
+I would validate in layers: first run the repository script, then render the
+Helm chart locally, then inspect the Argo CD Application, controller Deployment,
+pods, services, and CRDs in the live cluster.
+
+## Q6: What is the difference between Argo CD and Argo Rollouts?
+
+Argo CD reconciles Git desired state into Kubernetes. Argo Rollouts controls
+how a workload progresses from one version to another using strategies such as
+canary, blue-green, manual promotion, abort, and metric-based analysis.
+
+## Q7: What is the most important ownership boundary?
+
+The platform owns the controller and CRDs. The application owns the Rollout,
+services, canary steps, and analysis references for its own workload. That
+boundary prevents application teams from accidentally duplicating or upgrading
+shared delivery infrastructure.

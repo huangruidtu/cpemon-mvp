@@ -81,6 +81,16 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: argo-rollouts
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: argo-rollouts
+    cpemon.io/layer: progressive-delivery
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: ingress-nginx
   labels:
     app.kubernetes.io/part-of: cpemon-mvp

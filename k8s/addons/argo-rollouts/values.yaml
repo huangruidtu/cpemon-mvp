@@ -1,0 +1,8 @@
+installCRDs: true
+keepCRDs: true
+
+controller:
+  replicas: 2
+
+dashboard:
+  enabled: false

@@ -15,6 +15,7 @@ spec:
     - registry-1.docker.io/bitnamicharts
     - ghcr.io/prometheus-community/charts
     - https://charts.external-secrets.io
+    - https://argoproj.github.io/argo-helm
   destinations:
     - namespace: cpemon
       server: https://kubernetes.default.svc
@@ -25,6 +26,8 @@ spec:
     - namespace: security
       server: https://kubernetes.default.svc
     - namespace: external-secrets
+      server: https://kubernetes.default.svc
+    - namespace: argo-rollouts
       server: https://kubernetes.default.svc
     - namespace: platform
       server: https://kubernetes.default.svc

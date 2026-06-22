@@ -12,6 +12,7 @@ Planned Applications:
 | `monitoring-dev` | `monitoring` | kube-prometheus-stack chart `86.3.2` with `k8s/monitoring/kube-prometheus-stack-values.yaml` |
 | `external-secrets-dev` | `external-secrets` | External Secrets Operator chart `2.6.0` with `k8s/addons/external-secrets/values.yaml` |
 | `policy-security-dev` | `cpemon` | CPEmon baseline NetworkPolicy candidate from `k8s/netpol/baseline` |
+| `argo-rollouts-dev` | `argo-rollouts` | Argo Rollouts chart `2.41.0` with `k8s/addons/argo-rollouts/values.yaml` |
 
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
@@ -102,3 +103,22 @@ project:        cpemon
 Kyverno remains deferred. The current repository has NetworkPolicy candidate
 manifests and validation docs, but it does not yet have a pinned Kyverno chart,
 values file, policy package, or live validation plan.
+
+## `argo-rollouts-dev`
+
+`argo-rollouts-dev.yaml` deploys the progressive delivery controller:
+
+```text
+chart repo:     https://argoproj.github.io/argo-helm
+chart:          argo-rollouts
+chart version:  2.41.0
+release:        argo-rollouts
+values repo:    https://github.com/huangruidtu/cpemon-mvp.git
+values file:    k8s/addons/argo-rollouts/values.yaml
+destination:    https://kubernetes.default.svc / argo-rollouts
+project:        cpemon
+```
+
+The controller is platform delivery infrastructure. CPEmon application charts
+can later define `Rollout`, stable Service, canary Service, and analysis
+resources, but the controller itself stays outside the application chart.
