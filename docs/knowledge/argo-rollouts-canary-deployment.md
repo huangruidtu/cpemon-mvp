@@ -394,3 +394,44 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-analysis-wiring.ps1
 ```
+
+## CCPU-118: Verify Rollout Status with kubectl argo rollouts
+
+The operator status command is:
+
+```powershell
+kubectl argo rollouts get rollout cpemon-api -n cpemon
+```
+
+The command gives a rollout-centered view: current phase, step, traffic weight,
+ReplicaSets, pods, and AnalysisRuns.
+
+Important companion checks:
+
+```powershell
+kubectl get rollout cpemon-api -n cpemon -o yaml
+kubectl get rs,pods,svc,endpoints,analysisrun -n cpemon -l app=cpemon-api
+kubectl describe rollout cpemon-api -n cpemon
+kubectl describe analysisrun -n cpemon
+```
+
+Status meanings:
+
+* Healthy means the rollout completed or is serving the desired version.
+* Progressing means the rollout is moving through steps or waiting for pods and
+  analysis.
+* Paused means the rollout is intentionally waiting at a decision point.
+* Degraded means the controller has evidence of failure.
+* Aborted means rollout progression was stopped and should not be promoted.
+
+The runbook is:
+
+```text
+ops/runbooks/argo-rollouts-cpemon-api.md
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-rollout-status-runbook.ps1
+```

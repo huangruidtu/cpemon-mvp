@@ -201,3 +201,24 @@ signals before getting more traffic.
 An AnalysisRun is the runtime execution of an AnalysisTemplate. The template
 defines the Prometheus query and thresholds; the Rollout creates AnalysisRuns
 during promotion and uses their result to continue, pause, or fail the rollout.
+
+## Q29: How do you verify rollout status?
+
+I start with `kubectl argo rollouts get rollout cpemon-api -n cpemon` because it
+shows the rollout phase, step, ReplicaSets, pods, traffic weight, pauses, and
+AnalysisRuns in one workflow view. Then I use plain `kubectl get` and
+`kubectl describe` for details.
+
+## Q30: How do you know where a canary is stuck?
+
+I check the phase, current step index, pause conditions, ReplicaSet readiness,
+service endpoints, and AnalysisRuns. If pods are not ready, I inspect pods and
+ReplicaSets. If analysis failed, I inspect the AnalysisRun and Prometheus query
+result. If the rollout is paused, I treat it as an operator decision point.
+
+## Q31: What is the difference between Paused, Degraded, and Aborted?
+
+Paused is an intentional wait point. Degraded means the controller sees a
+failure such as unhealthy pods or failed analysis. Aborted means rollout
+progression was stopped and the operator should investigate before retrying or
+rolling back.
