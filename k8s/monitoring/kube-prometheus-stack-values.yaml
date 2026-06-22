@@ -1,42 +1,42 @@
-# kube-prometheus-stack 自定义配置（MVP-CPEmon 专用）
+# kube-prometheus-stack values for the CPEmon dev observability stack.
+#
+# Ownership model:
+# - Argo CD Application: k8s/gitops/dev/applications/monitoring-dev.yaml
+# - Helm chart: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
+# - Release name: kps
+# - Namespace: monitoring
+#
+# This file intentionally keeps the platform layer small. Application-specific
+# ServiceMonitors, PrometheusRules, and dashboards live in repo-owned manifests
+# or the CPEmon Helm chart so they can evolve with the application.
 
-# -------------------------------
-# Grafana：管理员账号 + 通过 ingress-nginx 访问 + sidecar 自动导入 dashboard
-# -------------------------------
 grafana:
   adminUser: admin
-  adminPassword: admin123        # demo 环境随便写一个，别对外暴露就行
+  adminPassword: admin123
 
   service:
-    type: ClusterIP              # 集群内访问，外部通过 ingress-nginx 进来
+    type: ClusterIP
 
   ingress:
     enabled: true
-    ingressClassName: nginx      # 对应我们安装 ingress-nginx 时的 ingressClass 名
+    ingressClassName: nginx
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     hosts:
-      - grafana.local            # Windows /etc/hosts 指到 10.0.0.200
+      - grafana.local
     path: /
     pathType: Prefix
 
-  # 让 Grafana 的 sidecar 自动加载带 label 的 ConfigMap 作为 dashboard
   sidecar:
     dashboards:
       enabled: true
-      label: grafana_dashboard   # ConfigMap 上的 label key
-      labelValue: "1"            # ConfigMap 上的 label value
+      label: grafana_dashboard
+      labelValue: "1"
 
-# -------------------------------
-# Alertmanager：先开着，用默认配置；后面可以用 ConfigMap 覆盖
-# -------------------------------
 alertmanager:
   enabled: true
-  config: {}                     # 先用 chart 自带的默认配置
+  config: {}
 
-# -------------------------------
-# 这些组件主要是监控 control-plane，用默认即可
-# -------------------------------
 kubeControllerManager:
   enabled: true
 
@@ -46,17 +46,9 @@ kubeScheduler:
 kubeProxy:
   enabled: true
 
-# -------------------------------
-# etcd 监控先关掉，避免 demo 环境里很多 etcd 告警噪音
-# -------------------------------
 kubeEtcd:
   enabled: false
 
-# -------------------------------
-# Prometheus 核心配置
-# 让我们可以自由创建 ServiceMonitor / PodMonitor / PrometheusRule，
-# 而不是只用 Helm 默认的 selector。
-# -------------------------------
 prometheus:
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
