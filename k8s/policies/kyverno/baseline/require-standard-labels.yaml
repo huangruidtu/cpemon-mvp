@@ -1,0 +1,37 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: cpemon-require-standard-labels
+  labels:
+    app.kubernetes.io/name: cpemon-require-standard-labels
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: governance
+    cpemon.io/policy-category: labels
+  annotations:
+    policies.kyverno.io/title: Require Standard Application Labels
+    policies.kyverno.io/category: CPEmon Platform Baseline
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/subject: Pod
+    cpemon.io/jira: CCPU-203
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-standard-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - cpemon
+      validate:
+        message: "CPEmon Pods must include standard app.kubernetes.io labels for ownership, discovery, and operations."
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/instance: "?*"
+              app.kubernetes.io/managed-by: "?*"
+              app.kubernetes.io/part-of: "?*"
+              app.kubernetes.io/component: "?*"

@@ -23,6 +23,8 @@ first, then review and sync policy behavior as a separate GitOps step.
 | --- | --- |
 | `baseline/require-container-resources.yaml` | Require CPU and memory requests and limits for CPEmon Pods. |
 | `baseline/disallow-latest-image-tag.yaml` | Reject CPEmon Pods that use the mutable `:latest` image tag. |
+| `baseline/require-standard-labels.yaml` | Require standard `app.kubernetes.io/*` labels on CPEmon Pods. |
+| `baseline/require-non-root-containers.yaml` | Require non-root container settings for CPEmon Pods. |
 
 ## Validation
 

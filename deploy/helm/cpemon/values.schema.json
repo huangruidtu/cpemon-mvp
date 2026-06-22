@@ -176,6 +176,7 @@
           }
         },
         "resources": { "type": "object" },
+        "securityContext": { "type": "object" },
         "env": { "type": "array" },
         "envFrom": { "type": "array" }
       }

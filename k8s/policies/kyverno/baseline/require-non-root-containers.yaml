@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: cpemon-require-non-root-containers
+  labels:
+    app.kubernetes.io/name: cpemon-require-non-root-containers
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: governance
+    cpemon.io/policy-category: security-context
+  annotations:
+    policies.kyverno.io/title: Require Non-Root Containers
+    policies.kyverno.io/category: CPEmon Platform Baseline
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    cpemon.io/jira: CCPU-203
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-non-root-container-settings
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - cpemon
+      validate:
+        message: "CPEmon containers must run as non-root and must not allow privilege escalation."
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.securityContext.runAsNonRoot || false }}"
+                    operator: Equals
+                    value: false
+                  - key: "{{ element.securityContext.allowPrivilegeEscalation || true }}"
+                    operator: Equals
+                    value: true

@@ -65,6 +65,10 @@ spec:
         - name: {{ $workload.name | quote }}
           image: {{ include "cpemon.image" (dict "root" $root "workload" $workload) | quote }}
           imagePullPolicy: {{ include "cpemon.imagePullPolicy" (dict "root" $root "workload" $workload) }}
+{{- with $root.Values.defaults.securityContext }}
+          securityContext:
+{{ toYaml . | nindent 12 }}
+{{- end }}
 {{- if or $root.Values.defaults.env $workload.env $workload.secretEnv }}
           env:
 {{- if $root.Values.defaults.env }}

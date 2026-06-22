@@ -201,6 +201,53 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-image-tag-policy.ps1
 ```
 
+## CCPU-203: Labels and Non-Root Policies
+
+CCPU-203 adds two more Kyverno baseline policies:
+
+```text
+ClusterPolicy/cpemon-require-standard-labels
+ClusterPolicy/cpemon-require-non-root-containers
+```
+
+The label policy requires CPEmon Pods to carry the operational labels used by
+Helm, Argo CD, Prometheus, kubectl selectors, and cost investigation:
+
+```text
+app.kubernetes.io/name
+app.kubernetes.io/instance
+app.kubernetes.io/managed-by
+app.kubernetes.io/part-of
+app.kubernetes.io/component
+```
+
+The non-root policy requires each CPEmon container to declare:
+
+```text
+securityContext.runAsNonRoot: true
+securityContext.allowPrivilegeEscalation: false
+```
+
+The Helm chart was updated at the same time so CPEmon workloads satisfy the
+policy by default:
+
+```text
+deploy/helm/cpemon/templates/workloads.yaml
+deploy/helm/cpemon/values.yaml
+deploy/helm/cpemon/values.schema.json
+```
+
+This matters for interviews because the task is not only "write a policy." The
+better engineering story is: add a guardrail, make the application comply, and
+document how to validate or roll back the guardrail.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-labels-nonroot-policies.ps1
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

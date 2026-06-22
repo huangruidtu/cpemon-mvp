@@ -140,3 +140,30 @@ Digest-only images are stronger, but they add workflow friction and require CI
 promotion discipline. For this learning platform, banning `latest` removes the
 highest-risk mutable tag first. Digest-only or image-signature policies can be
 a future production hardening step.
+
+## Q20: What did CCPU-203 add?
+
+It added two Kyverno policies: one requires standard `app.kubernetes.io/*`
+labels on CPEmon Pods, and one requires containers to run as non-root with
+privilege escalation disabled. It also updated the CPEmon Helm chart so the
+rendered application workloads satisfy the non-root policy by default.
+
+## Q21: Why are labels a platform governance issue?
+
+Labels are the shared index for Kubernetes operations. Argo CD, kubectl,
+Prometheus, cost tools, and incident runbooks all rely on stable labels to find
+and group resources. Requiring labels prevents unowned or hard-to-debug
+workloads from drifting into the platform.
+
+## Q22: Why update the Helm chart in the same task?
+
+A policy that blocks the current application is a broken rollout plan. The
+right sequence is to add the guardrail and make the application comply in the
+same change. That proves the rule is realistic, not just theoretical.
+
+## Q23: Is this full Kubernetes security hardening?
+
+No. It is a baseline. Non-root and no privilege escalation are valuable first
+controls, but full hardening would also include seccomp, read-only root
+filesystems, image signing, admission exceptions, runtime monitoring, and
+periodic policy review.
