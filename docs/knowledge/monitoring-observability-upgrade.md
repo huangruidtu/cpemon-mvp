@@ -118,6 +118,22 @@ committed offset show whether the writer is keeping up and whether it is safe to
 advance Kafka offsets. The writer should commit offsets only after the event has
 been processed durably. Metrics make that visible.
 
+## CCPU-109 Learning Notes: API HTTP Metrics
+
+`cpemon-api` uses RED metrics:
+
+* Rate: `cpemon_api_http_requests_total`
+* Errors: the same counter filtered by `code=~"4..|5.."`
+* Duration: `cpemon_api_http_request_duration_seconds`
+
+The route label uses the Gin route template, for example `/api/cpe/:sn`, instead
+of the concrete request path. That means `/api/cpe/CPE-001` and
+`/api/cpe/CPE-002` share one time series instead of creating one series per
+device.
+
+The older `cpemon_api_requests_total{code}` metric remains for compatibility,
+but the route-aware RED metrics are the better dashboard source.
+
 ## Validation
 
 ```powershell
@@ -126,6 +142,7 @@ make cpemon-servicemonitor-check
 make acs-ingest-ingestion-metrics-check
 make kafka-metrics-boundary-check
 make cpemon-writer-observability-story12-check
+make cpemon-api-http-metrics-check
 make monitoring-template
 ```
 

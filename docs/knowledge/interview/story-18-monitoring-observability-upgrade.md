@@ -93,3 +93,15 @@ Dead-letter metrics separate poison-message failures from transient operational
 failures. Without them, a bad payload and a temporary database outage can look
 the same. With bounded labels like `topic`, `result`, and `kind`, the team can
 alert on increasing dead-letter rates without creating high-cardinality metrics.
+
+## Q12: What are RED metrics?
+
+RED metrics are Rate, Errors, and Duration. For `cpemon-api`, rate and errors
+come from `cpemon_api_http_requests_total{method,route,code}`, and duration
+comes from `cpemon_api_http_request_duration_seconds{method,route,code}`.
+
+## Q13: Why use a route template label?
+
+The route template label keeps metrics low-cardinality. `/api/cpe/:sn` is safe;
+`/api/cpe/CPE-001` as a label value is not, because every device would create a
+new time series.

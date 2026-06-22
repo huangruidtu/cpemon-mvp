@@ -201,6 +201,27 @@ For at-least-once processing, the key debugging relationship is consumed offset
 versus committed offset. If consumed advances but committed stalls, the writer is
 fetching messages but failing before durable completion.
 
+## API HTTP Metrics
+
+`cpemon-api` exposes RED metrics for the HTTP API:
+
+| Metric | Meaning |
+| --- | --- |
+| `cpemon_api_requests_total{code}` | Backward-compatible request count by status code. |
+| `cpemon_api_http_requests_total{method,route,code}` | Request rate by method, Gin route template, and status code. |
+| `cpemon_api_http_request_duration_seconds{method,route,code}` | Request latency by method, route template, and status code. |
+
+The route label uses Gin route templates such as `/api/cpe/:sn`, not the real
+device serial number. This keeps the metric low-cardinality.
+
+Useful PromQL:
+
+```promql
+sum(rate(cpemon_api_http_requests_total[5m])) by (route, code)
+sum(rate(cpemon_api_http_requests_total{code=~"5.."}[5m])) by (route)
+histogram_quantile(0.95, sum(rate(cpemon_api_http_request_duration_seconds_bucket[5m])) by (le, route))
+```
+
 ## Interview Framing
 
 The clean answer is:

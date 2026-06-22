@@ -31,6 +31,23 @@ var (
 		[]string{"code"}, // HTTP status code as label: "200", "400", ...
 	)
 
+	apiHTTPRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cpemon_api_http_requests_total",
+			Help: "Total number of cpemon-api HTTP requests labeled by method, route template, and status code.",
+		},
+		[]string{"method", "route", "code"},
+	)
+
+	apiHTTPRequestDurationSeconds = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "cpemon_api_http_request_duration_seconds",
+			Help:    "cpemon-api HTTP request duration in seconds labeled by method, route template, and status code.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"method", "route", "code"},
+	)
+
 	// per-CPE metrics (labeled by SN)
 	cpeCPU = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -357,6 +374,33 @@ func startMetricsServer() {
 	}()
 }
 
+func cpemonAPICollectors() []prometheus.Collector {
+	return []prometheus.Collector{
+		apiRequestsTotal,
+		apiHTTPRequestsTotal,
+		apiHTTPRequestDurationSeconds,
+		cpeCPU,
+		cpeMem,
+		cpeHeartbeatTotal,
+	}
+}
+
+func prometheusHTTPMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+
+		route := c.FullPath()
+		if route == "" {
+			route = "unmatched"
+		}
+		code := strconv.Itoa(c.Writer.Status())
+
+		apiHTTPRequestsTotal.WithLabelValues(c.Request.Method, route, code).Inc()
+		apiHTTPRequestDurationSeconds.WithLabelValues(c.Request.Method, route, code).Observe(time.Since(start).Seconds())
+	}
+}
+
 func main() {
 	// 1. Load configuration (DB_DSN, HTTP_ADDR, etc.)
 	cfg := appconfig.Load()
@@ -367,13 +411,14 @@ func main() {
 	}
 
 	// 3. Register Prometheus metrics.
-	prometheus.MustRegister(apiRequestsTotal, cpeCPU, cpeMem, cpeHeartbeatTotal)
+	prometheus.MustRegister(cpemonAPICollectors()...)
 
 	// 启动 9100 metrics server
 	startMetricsServer()
 
 	// 4. Create Gin router.
 	r := gin.Default()
+	r.Use(prometheusHTTPMiddleware())
 
 	// ---- Admin Basic Auth 设置 ----
 	adminUser := os.Getenv("ADMIN_USER")
@@ -424,7 +469,6 @@ func main() {
 		log.Fatalf("failed to start cpemon-api: %v", err)
 	}
 }
-
 
 // handleListCPE returns a paginated list of current CPE statuses.
 //
@@ -753,4 +797,3 @@ LIMIT 20
 		return
 	}
 }
-

@@ -163,6 +163,9 @@ cpemon-writer-consumer-unit-tests-check:
 cpemon-writer-kafka-to-db-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-writer-kafka-to-db-validation.ps1
 
+cpemon-api-http-metrics-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-http-metrics.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 
