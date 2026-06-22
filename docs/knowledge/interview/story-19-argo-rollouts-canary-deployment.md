@@ -369,3 +369,17 @@ Average latency can hide tail pain. A small but important group of users may be
 experiencing slow responses while the mean still looks fine. p95 is a better
 release gate because it catches slow successful requests before the canary gets
 more traffic.
+
+## Q54: What is the relationship between Rollout, AnalysisTemplate, and AnalysisRun?
+
+The Rollout is the promotion workflow. The AnalysisTemplate is the reusable
+metric test definition. The AnalysisRun is the runtime execution created from
+that template during a specific rollout attempt. That separation lets the same
+metric contract be reused while each release gets its own result history.
+
+## Q55: Why place analysis after pause windows?
+
+The pause gives the canary real traffic and gives Prometheus time to scrape
+fresh samples. Then analysis evaluates meaningful data before the next traffic
+increase. Without that pause, the query could run before the canary has enough
+runtime evidence.

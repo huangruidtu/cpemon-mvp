@@ -6,6 +6,7 @@ $valuesPath = Join-Path $chartPath "values.yaml"
 $chartReadmePath = Join-Path $chartPath "README.md"
 $knowledgePath = Join-Path $root "docs/knowledge/argo-rollouts-canary-deployment.md"
 $interviewPath = Join-Path $root "docs/knowledge/interview/story-19-argo-rollouts-canary-deployment.md"
+$runbookPath = Join-Path $root "ops/runbooks/cpemon-api-analysis-wiring.md"
 $devValuesPath = Join-Path $chartPath "values-dev.yaml"
 
 function Assert-File {
@@ -30,6 +31,7 @@ Assert-File $valuesPath
 Assert-File $chartReadmePath
 Assert-File $knowledgePath
 Assert-File $interviewPath
+Assert-File $runbookPath
 
 foreach ($needle in @("analysis:", "templateName: cpemon-api-http-5xx-rate", "templateName: cpemon-api-p95-latency")) {
     Assert-Contains $valuesPath $needle
@@ -37,8 +39,14 @@ foreach ($needle in @("analysis:", "templateName: cpemon-api-http-5xx-rate", "te
     Assert-Contains $knowledgePath $needle
 }
 Assert-Contains $knowledgePath "CCPU-191: Connect AnalysisTemplates to Rollout"
+Assert-Contains $knowledgePath "CCPU-123: Connect AnalysisTemplates to Rollout"
 Assert-Contains $interviewPath "Q26: Where did you attach the analysis gates?"
 Assert-Contains $interviewPath "Q28: What is an AnalysisRun?"
+Assert-Contains $interviewPath "Q54: What is the relationship between Rollout, AnalysisTemplate, and AnalysisRun?"
+Assert-Contains $interviewPath "Q55: Why place analysis after pause windows?"
+Assert-Contains $runbookPath "CPEmon API Rollout Analysis Wiring Runbook"
+Assert-Contains $runbookPath "Rollout is the workflow"
+Assert-Contains $runbookPath "each template is referenced twice"
 
 $rendered = & helm template cpemon $chartPath -n cpemon -f $devValuesPath 2>&1
 if ($LASTEXITCODE -ne 0) {

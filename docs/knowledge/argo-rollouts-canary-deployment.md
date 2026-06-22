@@ -423,6 +423,12 @@ traffic.
 
 The Rollout now runs both quality gates after the 20% and 50% pause windows:
 
+The focused runbook is:
+
+```text
+ops/runbooks/cpemon-api-analysis-wiring.md
+```
+
 ```yaml
 - analysis:
     templates:
@@ -462,6 +468,32 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-analysis-wiring.ps1
 ```
+
+## CCPU-123: Connect AnalysisTemplates to Rollout
+
+`CCPU-123` closes the wiring between metric definitions and rollout behavior.
+The important distinction is:
+
+```text
+AnalysisTemplate: reusable metric contract
+AnalysisRun: runtime execution for one rollout attempt
+Rollout step: the point where the controller creates the AnalysisRun
+```
+
+The chart wires both checks after each pause:
+
+```text
+20% traffic -> pause 60s -> run 5xx and p95 analysis
+50% traffic -> pause 120s -> run 5xx and p95 analysis
+```
+
+This order gives Prometheus time to scrape canary traffic before Argo Rollouts
+uses the metric result to decide whether promotion can continue.
+
+In an interview, the key is to avoid saying "I added Prometheus." The stronger
+answer is: "I connected Prometheus-backed AnalysisTemplates to the Rollout
+workflow so each promotion step creates AnalysisRuns and uses runtime evidence
+before increasing traffic."
 
 ## CCPU-118: Verify Rollout Status with kubectl argo rollouts
 
