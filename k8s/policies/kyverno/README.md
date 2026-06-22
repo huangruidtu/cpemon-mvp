@@ -22,6 +22,7 @@ first, then review and sync policy behavior as a separate GitOps step.
 | Policy | Purpose |
 | --- | --- |
 | `baseline/require-container-resources.yaml` | Require CPU and memory requests and limits for CPEmon Pods. |
+| `baseline/disallow-latest-image-tag.yaml` | Reject CPEmon Pods that use the mutable `:latest` image tag. |
 
 ## Validation
 

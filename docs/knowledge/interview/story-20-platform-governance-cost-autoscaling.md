@@ -120,3 +120,23 @@ The controller and policies fail differently. If the controller chart has a
 problem, rollback is a platform add-on rollback. If a policy is too strict,
 rollback is a policy package rollback. Separate Applications make sync order,
 review, and rollback easier to explain and operate.
+
+## Q17: What did CCPU-202 add?
+
+It added `ClusterPolicy/cpemon-disallow-latest-image-tag`, which rejects Pods
+in the `cpemon` namespace when any container image uses the mutable `:latest`
+tag. It also added the runbook, verifier, knowledge notes, and interview
+material for explaining image tag governance.
+
+## Q18: Why is `latest` dangerous in GitOps?
+
+GitOps assumes Git describes the desired state. If an image tag is mutable, the
+same Git commit can deploy different image contents at different times. That
+makes rollback, audit, and incident analysis much weaker.
+
+## Q19: Why not require digests immediately?
+
+Digest-only images are stronger, but they add workflow friction and require CI
+promotion discipline. For this learning platform, banning `latest` removes the
+highest-risk mutable tag first. Digest-only or image-signature policies can be
+a future production hardening step.

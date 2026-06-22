@@ -159,6 +159,48 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-resource-policy.ps1
 ```
 
+## CCPU-202: Image Tag Policy
+
+The second Kyverno policy is:
+
+```text
+k8s/policies/kyverno/baseline/disallow-latest-image-tag.yaml
+```
+
+It creates:
+
+```text
+ClusterPolicy/cpemon-disallow-latest-image-tag
+```
+
+The policy rejects Pods in the `cpemon` namespace when a container image ends
+with:
+
+```text
+:latest
+```
+
+This is a release safety rule. In GitOps, a Git commit should describe a
+repeatable desired state. A mutable image tag breaks that guarantee because the
+registry can move the tag after the Git commit has been reviewed.
+
+Why it matters:
+
+* rollback should point to a known image
+* canary analysis should test a known image
+* incident review should identify exactly what ran
+* audit trails should not depend on registry tag history
+
+The Step 1 policy bans `latest`. A stricter future production policy could
+require digests or signed images. That is intentionally deferred so the first
+policy remains teachable and low-friction.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-image-tag-policy.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

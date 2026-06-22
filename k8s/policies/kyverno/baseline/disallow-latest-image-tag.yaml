@@ -1,0 +1,37 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: cpemon-disallow-latest-image-tag
+  labels:
+    app.kubernetes.io/name: cpemon-disallow-latest-image-tag
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: governance
+    cpemon.io/policy-category: image
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Image Tag
+    policies.kyverno.io/category: CPEmon Platform Baseline
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    cpemon.io/jira: CCPU-202
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: disallow-latest-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - cpemon
+      validate:
+        message: "CPEmon containers must not use the mutable ':latest' image tag. Use an explicit immutable release tag or digest."
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ regex_match('^.*:latest$', element.image) }}"
+                    operator: Equals
+                    value: true
