@@ -38,10 +38,31 @@ In an interview, say:
 > shared Prometheus/Grafana control plane while still letting each service own
 > the metrics, dashboards, and alerts that describe its behavior.
 
+## CCPU-106 Learning Notes: ServiceMonitor
+
+`ServiceMonitor` is the Prometheus Operator contract between an application and
+the shared Prometheus stack.
+
+For CPEmon, the Helm chart renders one ServiceMonitor that discovers the three
+application Services:
+
+* `cpemon-api`
+* `acs-ingest`
+* `cpemon-writer`
+
+The scrape contract is intentionally stable: port name `metrics`, path
+`/metrics`, namespace `cpemon`, and Prometheus release label `kps`.
+
+The important interview point is that Prometheus does not scrape pods just
+because they exist. The operator watches ServiceMonitor resources, resolves
+their selectors into Services, resolves Service ports into endpoints, and then
+generates Prometheus scrape configuration.
+
 ## Validation
 
 ```powershell
 make monitoring-gitops-check
+make cpemon-servicemonitor-check
 make monitoring-template
 ```
 

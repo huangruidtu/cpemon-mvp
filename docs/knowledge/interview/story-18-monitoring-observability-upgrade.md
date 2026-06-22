@@ -34,3 +34,19 @@ sets `serviceMonitorSelectorNilUsesHelmValues`,
 First render the chart and run repository checks. Then inspect the Argo CD
 Application, Prometheus pods, Grafana service, ServiceMonitors, PrometheusRules,
 and Prometheus targets in the live cluster.
+
+## Q5: What is the Prometheus Operator contract for application scraping?
+
+The contract is `ServiceMonitor`. The application exposes a Service with a named
+metrics port, and the ServiceMonitor selects that Service and defines the scrape
+path, interval, timeout, and labels expected by the Prometheus instance.
+
+For CPEmon, the key values are `release: kps`, namespace `monitoring`, workload
+namespace `cpemon`, port `metrics`, path `/metrics`, and selectors for
+`cpemon-api`, `acs-ingest`, and `cpemon-writer`.
+
+## Q6: What breaks ServiceMonitor scraping most often?
+
+The common failures are missing CRDs, wrong namespace, missing `release: kps`,
+selector labels that do not match the Service, a Service port not named
+`metrics`, or an application that does not actually serve `/metrics`.

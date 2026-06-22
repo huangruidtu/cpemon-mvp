@@ -231,7 +231,8 @@ in `appConfig` so producer and consumer agree on the event contracts.
 
 ## Optional Platform Features
 
-`CCPU-55` adds optional platform integration templates. They are disabled by default in dev rendering and can be enabled through values:
+`CCPU-55` adds optional platform integration templates. They are disabled in the
+base values file and can be enabled through environment values:
 
 ```yaml
 ingress:
@@ -254,6 +255,24 @@ The optional templates are:
 | `templates/networkpolicy.yaml` | Adds a baseline default-deny egress posture plus explicit DNS/core egress allows. |
 
 The conservative default is important: these resources depend on platform capabilities such as an ingress controller, Prometheus Operator CRDs, and NetworkPolicy enforcement.
+
+For the dev observability story, `values-dev.yaml` enables `serviceMonitor`
+because `monitoring-dev` installs kube-prometheus-stack first. The rendered
+ServiceMonitor uses:
+
+| Field | Value |
+| --- | --- |
+| Namespace | `monitoring` |
+| Prometheus release label | `release: kps` |
+| Scrape port | `metrics` |
+| Scrape path | `/metrics` |
+| Selected services | `cpemon-api`, `acs-ingest`, `cpemon-writer` |
+
+Validate it with:
+
+```powershell
+make cpemon-servicemonitor-check
+```
 
 ## Migration Decision
 

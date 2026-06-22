@@ -74,6 +74,30 @@ Check these in order:
 5. The selected Service exposes a port named `metrics`.
 6. The workload serves `/metrics` on port `9100`.
 
+## CPEmon Helm ServiceMonitor
+
+The CPEmon Helm chart renders one ServiceMonitor named `cpemon-services` when
+`serviceMonitor.enabled=true`.
+
+The dev values enable it because the `monitoring-dev` Application installs
+kube-prometheus-stack and its CRDs first.
+
+```powershell
+make cpemon-servicemonitor-check
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
+
+Expected contract:
+
+| Contract | Expected value |
+| --- | --- |
+| ServiceMonitor namespace | `monitoring` |
+| Prometheus release selector | `release: kps` |
+| Workload namespace selector | `cpemon` |
+| Service selector | `app in (cpemon-api, acs-ingest, cpemon-writer)` |
+| Endpoint port | `metrics` |
+| Endpoint path | `/metrics` |
+
 ## Interview Framing
 
 The clean answer is:
