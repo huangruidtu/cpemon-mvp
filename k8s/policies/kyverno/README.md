@@ -30,7 +30,21 @@ first, then review and sync policy behavior as a separate GitOps step.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-resource-policy.ps1
+powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-image-tag-policy.ps1
+powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-labels-nonroot-policies.ps1
+powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-policy-fixtures.ps1
 ```
+
+## Fixtures
+
+Valid and invalid examples live under:
+
+```text
+k8s/policies/kyverno/fixtures
+```
+
+They show the expected policy boundary for missing resources, `latest` images,
+missing labels, and root/privilege-escalating containers.
 
 Live validation, after Kyverno is installed:
 

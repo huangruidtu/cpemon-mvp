@@ -248,6 +248,49 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-labels-nonroot-p
 helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
 ```
 
+## CCPU-204: Policy Validation Fixtures
+
+CCPU-204 adds valid and invalid policy fixtures under:
+
+```text
+k8s/policies/kyverno/fixtures
+```
+
+The valid fixture has:
+
+* explicit image tag
+* required labels
+* CPU and memory requests and limits
+* non-root security context
+
+The invalid fixtures intentionally violate one policy each:
+
+```text
+missing-resources.yaml
+latest-image.yaml
+missing-labels.yaml
+root-container.yaml
+```
+
+The live validation story is:
+
+```powershell
+kubectl get cpol
+kubectl get policyreport -A
+kubectl apply -f k8s/policies/kyverno/fixtures/valid/cpemon-valid-pod.yaml
+kubectl apply -f k8s/policies/kyverno/fixtures/invalid/latest-image.yaml
+```
+
+The valid fixture should be accepted. Invalid fixtures should be rejected by
+the Kyverno admission webhook. Policy reports then show the policy evaluation
+history in the cluster.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-policy-fixtures.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

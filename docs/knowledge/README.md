@@ -33,6 +33,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kyverno Baseline Resource Policy Runbook](../../ops/runbooks/kyverno-resource-policy.md)
 - [Kyverno Image Tag Policy Runbook](../../ops/runbooks/kyverno-image-tag-policy.md)
 - [Kyverno Labels and Non-Root Policies Runbook](../../ops/runbooks/kyverno-labels-nonroot-policies.md)
+- [Kyverno Policy Fixtures Runbook](../../ops/runbooks/kyverno-policy-fixtures.md)
 - [Platform Governance Boundary Runbook](../../ops/runbooks/platform-governance-boundary.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
 - [CPEmon API Prometheus Analysis Inputs](../../ops/runbooks/cpemon-api-prometheus-analysis-inputs.md)

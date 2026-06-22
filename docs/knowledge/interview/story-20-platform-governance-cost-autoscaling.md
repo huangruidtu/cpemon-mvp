@@ -167,3 +167,23 @@ No. It is a baseline. Non-root and no privilege escalation are valuable first
 controls, but full hardening would also include seccomp, read-only root
 filesystems, image signing, admission exceptions, runtime monitoring, and
 periodic policy review.
+
+## Q24: What did CCPU-204 add?
+
+It added Kyverno validation fixtures: one valid Pod and invalid Pods for
+missing resources, `latest` images, missing labels, and root/privilege
+escalation. It also added a runbook and verifier so the policy behavior can be
+explained and tested.
+
+## Q25: Why are fixtures important for policy work?
+
+Policies are easy to overclaim. Fixtures show the actual boundary: what should
+pass and what should fail. That makes the policy easier to review, demo, and
+debug during an interview or incident.
+
+## Q26: What live commands prove Kyverno policy behavior?
+
+Use `kubectl get cpol` to confirm `ClusterPolicy` resources exist. Use
+`kubectl get policyreport -A` to inspect policy evaluation results. Then apply
+the valid fixture and invalid fixtures to demonstrate allowed and denied
+admission paths.
