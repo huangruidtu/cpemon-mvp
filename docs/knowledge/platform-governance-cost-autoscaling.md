@@ -109,6 +109,56 @@ helm template kyverno kyverno/kyverno `
   --values k8s/addons/kyverno/values.yaml
 ```
 
+## CCPU-201: Baseline Resource Policy
+
+The first Kyverno policy is:
+
+```text
+k8s/policies/kyverno/baseline/require-container-resources.yaml
+```
+
+It creates:
+
+```text
+ClusterPolicy/cpemon-require-container-resources
+```
+
+The policy requires every container in Pods created in the `cpemon` namespace
+to define:
+
+```text
+resources.requests.cpu
+resources.requests.memory
+resources.limits.cpu
+resources.limits.memory
+```
+
+The policy is set to `Enforce`, not only audit, because missing requests and
+limits break the platform contract:
+
+* Kubernetes scheduling cannot reserve expected capacity.
+* HPA CPU utilization math depends on CPU requests.
+* OpenCost allocation is less useful when resource intent is missing.
+* memory limits reduce the blast radius of a runaway process.
+
+The policy package is deployed by:
+
+```text
+k8s/gitops/dev/applications/kyverno-policies-dev.yaml
+```
+
+This separate Application lets the platform sync order stay explicit:
+
+```text
+kyverno-dev -> kyverno-policies-dev -> cpemon-dev
+```
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-resource-policy.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

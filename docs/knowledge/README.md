@@ -30,6 +30,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo Rollouts Canary Deployment](argo-rollouts-canary-deployment.md)
 - [Platform Governance, Cost Visibility, and Basic Autoscaling](platform-governance-cost-autoscaling.md)
 - [Argo CD Kyverno Installation Runbook](../../ops/runbooks/argocd-kyverno-installation.md)
+- [Kyverno Baseline Resource Policy Runbook](../../ops/runbooks/kyverno-resource-policy.md)
 - [Platform Governance Boundary Runbook](../../ops/runbooks/platform-governance-boundary.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
 - [CPEmon API Prometheus Analysis Inputs](../../ops/runbooks/cpemon-api-prometheus-analysis-inputs.md)

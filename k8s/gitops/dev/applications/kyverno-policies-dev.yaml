@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-policies-dev
+  namespace: argocd
+  annotations:
+    cpemon.io/sync-policy: manual
+    cpemon.io/sync-prune: "disabled"
+    cpemon.io/sync-self-heal: "disabled"
+  labels:
+    app.kubernetes.io/name: kyverno-policies
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/environment: dev
+    cpemon.io/layer: governance
+    cpemon.io/managed-by: argocd
+spec:
+  project: cpemon
+  source:
+    repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+    targetRevision: HEAD
+    path: k8s/policies/kyverno
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

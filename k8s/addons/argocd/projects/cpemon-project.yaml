@@ -49,6 +49,8 @@ spec:
       kind: ValidatingWebhookConfiguration
     - group: apiregistration.k8s.io
       kind: APIService
+    - group: kyverno.io
+      kind: ClusterPolicy
   namespaceResourceWhitelist:
     - group: "*"
       kind: "*"

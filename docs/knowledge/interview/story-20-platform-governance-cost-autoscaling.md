@@ -89,3 +89,34 @@ dangerous. The platform owns Kyverno once; applications satisfy the policies.
 Check the Application health, Kyverno pods in the `kyverno` namespace, Kyverno
 CRDs, and admission webhook configurations. Only after the controller is healthy
 should the team sync `ClusterPolicy` resources.
+
+## Q13: What did CCPU-201 add?
+
+It added the first CPEmon Kyverno `ClusterPolicy`:
+`cpemon-require-container-resources`. The policy requires CPU and memory
+requests and limits for containers in Pods created in the `cpemon` namespace.
+It also added `kyverno-policies-dev`, a separate Argo CD Application for the
+policy package.
+
+## Q14: Why are requests and limits a governance concern?
+
+They affect more than raw resource use. CPU requests drive scheduler placement
+and HPA utilization calculations. Memory limits reduce blast radius. Resource
+intent also makes OpenCost data easier to interpret. A platform that allows
+workloads without requests and limits cannot make reliable scheduling, scaling,
+or cost decisions.
+
+## Q15: Why use `Enforce` for this policy?
+
+This policy is narrow and high-value: it targets CPEmon Pods and checks fields
+the application should already provide. Enforcing it prevents bad workload
+manifests from becoming cluster state. Broader or more disruptive policies can
+start in audit mode later, but this baseline is safe to make a hard contract.
+
+## Q16: Why create `kyverno-policies-dev` instead of putting policies in the
+same Application as Kyverno?
+
+The controller and policies fail differently. If the controller chart has a
+problem, rollback is a platform add-on rollback. If a policy is too strict,
+rollback is a policy package rollback. Separate Applications make sync order,
+review, and rollback easier to explain and operate.

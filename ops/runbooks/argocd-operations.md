@@ -26,6 +26,7 @@ cluster.
 | `external-secrets-dev` | External Secrets Operator | External Secrets chart plus CPEmon values | `external-secrets` |
 | `policy-security-dev` | NetworkPolicy baseline | `k8s/netpol/baseline` | `cpemon` |
 | `kyverno-dev` | Kubernetes policy engine | Kyverno chart plus CPEmon values | `kyverno` |
+| `kyverno-policies-dev` | Kyverno policy package | `k8s/policies/kyverno` | `kyverno` |
 
 ## Standard Inspection
 
@@ -52,8 +53,9 @@ For a clean dev environment, use this order:
 2. `kafka-dev`
 3. `monitoring-dev`
 4. `kyverno-dev`
-5. `policy-security-dev`
-6. `cpemon-dev`
+5. `kyverno-policies-dev`
+6. `policy-security-dev`
+7. `cpemon-dev`
 
 Reason:
 
@@ -61,6 +63,7 @@ Reason:
 * Kafka is a platform dependency for producer/consumer workloads.
 * Monitoring installs CRDs before CPEmon metrics objects depend on them.
 * Kyverno installs the policy engine before Kyverno policies are applied.
+* Kyverno policies should be reviewed before CPEmon workloads are synced.
 * Policy/security should be reviewed before or alongside workload rollout.
 * CPEmon workloads are last because they depend on platform services.
 

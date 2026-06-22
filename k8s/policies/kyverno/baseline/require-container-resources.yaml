@@ -1,0 +1,46 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: cpemon-require-container-resources
+  labels:
+    app.kubernetes.io/name: cpemon-require-container-resources
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: governance
+    cpemon.io/policy-category: resources
+  annotations:
+    policies.kyverno.io/title: Require Container Requests and Limits
+    policies.kyverno.io/category: CPEmon Platform Baseline
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    cpemon.io/jira: CCPU-201
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-cpu-memory-requests-limits
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - cpemon
+      validate:
+        message: "CPEmon containers must define CPU and memory requests and limits so scheduling, cost visibility, and HPA behavior are predictable."
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.resources.requests.cpu || '' }}"
+                    operator: Equals
+                    value: ""
+                  - key: "{{ element.resources.requests.memory || '' }}"
+                    operator: Equals
+                    value: ""
+                  - key: "{{ element.resources.limits.cpu || '' }}"
+                    operator: Equals
+                    value: ""
+                  - key: "{{ element.resources.limits.memory || '' }}"
+                    operator: Equals
+                    value: ""

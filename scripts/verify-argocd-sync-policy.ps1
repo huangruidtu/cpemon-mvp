@@ -12,6 +12,7 @@ $applications = @(
     "monitoring-dev.yaml",
     "external-secrets-dev.yaml",
     "kyverno-dev.yaml",
+    "kyverno-policies-dev.yaml",
     "policy-security-dev.yaml"
 )
 

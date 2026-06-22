@@ -14,6 +14,7 @@ Planned Applications:
 | `policy-security-dev` | `cpemon` | CPEmon baseline NetworkPolicy candidate from `k8s/netpol/baseline` |
 | `argo-rollouts-dev` | `argo-rollouts` | Argo Rollouts chart `2.41.0` with `k8s/addons/argo-rollouts/values.yaml` |
 | `kyverno-dev` | `kyverno` | Kyverno chart `3.8.1` with `k8s/addons/kyverno/values.yaml` |
+| `kyverno-policies-dev` | `kyverno` | CPEmon Kyverno policies from `k8s/policies/kyverno` |
 
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
@@ -142,3 +143,20 @@ project:        cpemon
 Kyverno is platform governance infrastructure. This Application installs the
 controllers and CRDs. The concrete CPEmon policies are added separately so the
 control plane and policy package can be reviewed independently.
+
+## `kyverno-policies-dev`
+
+`kyverno-policies-dev.yaml` deploys the CPEmon Kyverno policy package:
+
+```text
+repoURL:        https://github.com/huangruidtu/cpemon-mvp.git
+targetRevision: HEAD
+path:           k8s/policies/kyverno
+directory:      recurse true
+destination:    https://kubernetes.default.svc / kyverno
+project:        cpemon
+```
+
+The first policy requires CPU and memory requests and limits for Pods in the
+`cpemon` namespace. It is intentionally deployed after `kyverno-dev` so the
+controller and CRDs exist before `ClusterPolicy` resources are synced.
