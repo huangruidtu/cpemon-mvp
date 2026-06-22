@@ -28,6 +28,19 @@ Terraform AWS/EKS foundation -> Kubernetes platform add-ons -> CPEmon Helm chart
 
 Each enabled workload now renders a Kubernetes Deployment and Service from the shared values model.
 
+`CCPU-115` adds the first Argo Rollouts migration boundary. `cpemon-api` can
+render as an Argo Rollouts `Rollout` when its workload-level switch is enabled:
+
+```yaml
+workloads:
+  cpemonApi:
+    rollout:
+      enabled: true
+```
+
+This switch is intentionally scoped to `cpemonApi`. `acs-ingest` and
+`cpemon-writer` continue to render as Deployments.
+
 ## Render Commands
 
 When Helm is installed:
@@ -179,6 +192,40 @@ The template keeps these concerns reusable through `_helpers.tpl`:
 The rendered workloads keep the old `app` label for compatibility with existing ServiceMonitor and PDB selectors, while also adding Kubernetes recommended `app.kubernetes.io/*` labels for clearer ownership.
 
 Secret-backed values are rendered with `valueFrom.secretKeyRef`; the chart does not render raw database passwords or HMAC secrets.
+
+## cpemon-api Rollout Mode
+
+When `workloads.cpemonApi.rollout.enabled=true`, the workload template renders:
+
+```text
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata.name: cpemon-api
+```
+
+The Rollout keeps the same pod template, labels, selector, image, env,
+Secret references, ports, probes, resources, affinity, tolerations, and
+Service selector used by the previous Deployment path.
+
+The initial canary strategy renders an empty `steps` list:
+
+```yaml
+strategy:
+  canary:
+    steps: []
+```
+
+That is deliberate for `CCPU-115`. Later Argo Rollouts subtasks add stable and
+canary Services, weighted canary steps, Prometheus AnalysisTemplates, and
+promotion/abort demos. This keeps the migration reviewable: first replace only
+the workload controller kind, then add progressive delivery behavior.
+
+Validate the first Rollout boundary with:
+
+```powershell
+make cpemon-api-rollout-check
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```
 
 ## ConfigMap and Secret References
 

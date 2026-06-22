@@ -1,9 +1,10 @@
 {{- $root := . -}}
 {{- range $name, $workload := .Values.workloads }}
 {{- if $workload.enabled }}
+{{- $useRollout := and (eq $name "cpemonApi") (default false $workload.rollout.enabled) }}
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: {{ ternary "argoproj.io/v1alpha1" "apps/v1" $useRollout }}
+kind: {{ ternary "Rollout" "Deployment" $useRollout }}
 metadata:
   name: {{ $workload.name | quote }}
   namespace: {{ include "cpemon.namespace" $root | quote }}
@@ -14,6 +15,16 @@ spec:
   selector:
     matchLabels:
 {{ include "cpemon.selectorLabels" (dict "root" $root "workload" $workload) | nindent 6 }}
+{{- if $useRollout }}
+  strategy:
+    canary:
+{{- with $workload.rollout.canary.steps }}
+      steps:
+{{ toYaml . | nindent 8 }}
+{{- else }}
+      steps: []
+{{- end }}
+{{- end }}
   template:
     metadata:
       labels:

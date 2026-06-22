@@ -43,6 +43,8 @@ mysql:
 workloads:
   cpemonApi:
     replicaCount: 2
+    rollout:
+      enabled: true
   acsIngest:
     replicaCount: 2
   cpemonWriter:

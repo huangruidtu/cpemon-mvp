@@ -117,3 +117,46 @@ Interview point:
 The plugin is useful because canary releases are operational workflows, not
 just YAML. During a demo or incident, operators need fast status, promotion,
 abort, and retry commands without hand-writing JSONPath queries.
+
+## CCPU-115: Replace cpemon-api Deployment with Rollout
+
+The first application migration step is deliberately narrow: only `cpemon-api`
+gets a Rollout rendering path.
+
+```yaml
+workloads:
+  cpemonApi:
+    rollout:
+      enabled: true
+```
+
+When enabled, the chart renders:
+
+```text
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata.name: cpemon-api
+```
+
+The other application workloads still render as Deployments:
+
+```text
+acs-ingest     -> Deployment
+cpemon-writer  -> Deployment
+```
+
+This is the safest migration shape because it keeps the blast radius to one
+user-facing API workload while preserving the same pod template, probes, ports,
+environment variables, Secret references, labels, and ServiceMonitor
+compatibility.
+
+The initial canary strategy has `steps: []`. That means this subtask proves the
+controller-kind migration first. Later subtasks add stable/canary Services,
+traffic weights, and Prometheus analysis.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-rollout.ps1
+helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
+```

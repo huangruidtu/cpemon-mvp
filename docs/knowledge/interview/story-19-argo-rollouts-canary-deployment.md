@@ -76,3 +76,25 @@ but the current shell did not have that directory in `PATH`. `kubectl` only
 discovers plugins when the executable follows the `kubectl-...` naming
 convention and is visible on `PATH`. After prepending the directory, `kubectl
 argo rollouts version` reported `v1.9.0+838d4e7`.
+
+## Q11: Why migrate only cpemon-api to Rollout first?
+
+`cpemon-api` is the right first candidate because it is the user-facing API
+where canary behavior is easy to explain through HTTP success rate and latency.
+Keeping `acs-ingest` and `cpemon-writer` as Deployments reduces blast radius and
+avoids mixing progressive delivery with producer/consumer semantics too early.
+
+## Q12: What did the Rollout migration preserve?
+
+It preserved the same pod template contract: labels, selector, image,
+environment variables, Secret references, ports, probes, resources, affinity,
+tolerations, Service selector, and ServiceMonitor compatibility. Only the
+workload controller kind changes when `workloads.cpemonApi.rollout.enabled` is
+true.
+
+## Q13: Why use empty canary steps at first?
+
+Empty steps make the first change about the controller-kind migration, not
+about traffic shifting. That is easier to validate and review. Later subtasks
+can add stable/canary Services, weights, pauses, and Prometheus analysis after
+the Rollout resource itself is rendering correctly.

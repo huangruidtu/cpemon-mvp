@@ -191,6 +191,11 @@ workloads:
     name: cpemon-api
     component: api
     replicaCount: 2
+    rollout:
+      enabled: false
+      strategy: canary
+      canary:
+        steps: []
     image:
       repository: cpemon-api
       tag: ""

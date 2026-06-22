@@ -265,6 +265,19 @@
             }
           }
         },
+        "rollout": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "strategy": { "type": "string", "enum": ["canary"] },
+            "canary": {
+              "type": "object",
+              "properties": {
+                "steps": { "type": "array" }
+              }
+            }
+          }
+        },
         "env": {
           "type": "array",
           "items": { "$ref": "#/definitions/envVar" }
