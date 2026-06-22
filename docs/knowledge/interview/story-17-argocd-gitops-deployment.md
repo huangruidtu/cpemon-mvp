@@ -408,3 +408,57 @@ rebuilding or overwriting old image tags.
 CI produces artifacts. Git records what should run. Argo CD reconciles the
 cluster to that reviewed desired state and detects drift when live state no
 longer matches Git.
+
+## Q66: What did CCPU-180 add?
+
+It added the final long-lived Argo CD learning material: an operations runbook,
+an ADR for choosing Argo CD GitOps, knowledge index links, and final interview
+questions for troubleshooting and rollback.
+
+## Q67: What is your Argo CD ADR decision in one sentence?
+
+Use Argo CD as the CPEmon GitOps deployment controller so Git is the deployment
+source of truth and Argo CD handles diff, sync, health, and drift detection.
+
+## Q68: Why not let GitHub Actions deploy directly to Kubernetes?
+
+Direct deploy from CI is simpler, but it mixes build and deployment
+responsibilities and requires CI to hold broad cluster credentials. Argo CD
+keeps the deployment decision in Git and lets the cluster-side controller
+reconcile reviewed desired state.
+
+## Q69: How do you debug `OutOfSync`?
+
+Run `argocd app diff <app>` and compare Git desired state with live resources.
+If Git is correct, sync. If the live hotfix is correct, turn it into a Git
+change. If Git is wrong, revert or fix Git before syncing.
+
+## Q70: How do you debug `Degraded`?
+
+Inspect the Kubernetes resources, not just Argo CD. For CPEmon that means Pod
+events, image pulls, readiness probes, required Secrets, Kafka bootstrap,
+MySQL connectivity, and NetworkPolicy effects.
+
+## Q71: What does a missing CRD failure mean?
+
+It usually means a dependent resource was applied before its operator installed
+the CRD. Sync monitoring before ServiceMonitor or PrometheusRule resources, and
+sync External Secrets Operator before ExternalSecret resources.
+
+## Q72: What does a bad image tag look like?
+
+It usually appears as `ImagePullBackOff` or `ErrImagePull`. CI must publish a
+real immutable tag, Git must record that tag in values, and Argo CD then syncs
+the reviewed desired state.
+
+## Q73: What does an AppProject permission failure teach?
+
+It teaches that AppProjects are deployment guardrails. The fix is not to allow
+everything; add the narrow source repo, destination namespace, or cluster
+resource kind that the Application actually needs.
+
+## Q74: What is your rollback story?
+
+Rollback is Git-first. Revert the bad promotion commit, then sync the
+Application and wait for sync and health. That keeps the rollback reviewable
+and auditable.

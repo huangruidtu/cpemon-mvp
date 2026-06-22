@@ -35,6 +35,8 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Prune and Self-Heal Guardrails](../../ops/runbooks/argocd-prune-self-heal-guardrails.md)
 - [Argo CD GitOps Deployment Validation Runbook](../../ops/runbooks/argocd-gitops-deployment-validation.md)
 - [Argo CD Drift Detection Validation Runbook](../../ops/runbooks/argocd-drift-detection-validation.md)
+- [Argo CD CI/CD Separation Runbook](../../ops/runbooks/argocd-ci-cd-separation.md)
+- [Argo CD Operations Runbook](../../ops/runbooks/argocd-operations.md)
 
 ## Architecture Decisions
 
@@ -43,6 +45,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Platform Architecture and Migration Boundary](../../ADR/cloud-platform-upgrade-kafka-platform-architecture.md)
 - [Kafka Deployment Option for Step 1](../../ADR/cloud-platform-upgrade-kafka-deployment-step1.md)
 - [cpemon-writer Kafka Consumer Migration](../../ADR/cpemon-writer-kafka-consumer-migration.md)
+- [Argo CD GitOps Deployment Decision](../../ADR/cloud-platform-upgrade-argocd-gitops-deployment.md)
 
 ## Runbooks
 

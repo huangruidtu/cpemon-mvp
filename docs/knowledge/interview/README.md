@@ -86,3 +86,6 @@ narrative:
 - how `argocd` namespace installation is verified
 - why the learning install can use upstream stable manifests
 - why production should pin versions and harden SSO/RBAC/TLS
+- why manual sync, prune disabled, and self-heal disabled are deliberate guardrails
+- how drift detection works and why rollback should be Git-first
+- how to debug OutOfSync, Degraded, missing CRDs, bad image tags, wrong paths, and AppProject permission failures

@@ -659,3 +659,55 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-ci-cd-separation.ps1
 ```
+
+## CCPU-180: Document Argo CD Runbook, ADR, and Interview Notes
+
+Final Story 11 learning artifacts:
+
+```text
+ops/runbooks/argocd-operations.md
+ADR/cloud-platform-upgrade-argocd-gitops-deployment.md
+docs/knowledge/interview/story-17-argocd-gitops-deployment.md
+```
+
+The operations runbook is the day-2 guide. It covers:
+
+* Application inventory
+* sync order
+* manual sync commands
+* OutOfSync troubleshooting
+* Degraded troubleshooting
+* missing CRDs
+* wrong source paths
+* bad image tags
+* AppProject permission failures
+* Git-first rollback
+
+The ADR records the durable decision:
+
+```text
+Use Argo CD as the CPEmon GitOps deployment controller.
+```
+
+Alternatives considered:
+
+* GitHub Actions applying directly to Kubernetes
+* Flux CD
+* Helmfile or manual Helm
+
+The accepted tradeoff is that Argo CD adds another controller, but gives the
+project reviewable desired state, diff, drift detection, sync status, and an
+interview-ready CI/CD boundary.
+
+Interview framing:
+
+> I used Terraform for infrastructure, Helm for Kubernetes packaging, GitHub
+> Actions for CI, and Argo CD for GitOps CD. I kept sync manual and left prune
+> and self-heal disabled until resource ownership, stateful add-ons, CRDs,
+> secrets, NetworkPolicy, and rollback behavior are proven.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-runbook-adr-interview.ps1
+```
