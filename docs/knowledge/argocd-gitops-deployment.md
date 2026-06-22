@@ -561,3 +561,49 @@ What it does not prove:
 CI image build, live secret sync, Kafka readiness, NetworkPolicy enforcement,
 or external ingress behavior
 ```
+
+## CCPU-179: Validate Manual Drift Detection and Self-Heal
+
+The drift validation runbook is:
+
+```text
+ops/runbooks/argocd-drift-detection-validation.md
+```
+
+Because self-heal is disabled, the current validation path is manual:
+
+```text
+manual live change -> Argo CD OutOfSync -> operator reviews diff -> manual sync
+```
+
+Safe drift example:
+
+```powershell
+kubectl -n cpemon annotate deployment cpemon-api `
+  cpemon.io/manual-drift-test="$(Get-Date -Format o)" `
+  --overwrite
+```
+
+Observe:
+
+```powershell
+argocd app get cpemon-dev
+argocd app diff cpemon-dev
+```
+
+Reconcile:
+
+```powershell
+argocd app sync cpemon-dev
+argocd app wait cpemon-dev --sync --health --timeout 300
+```
+
+Expected status transition:
+
+```text
+Synced -> OutOfSync -> Synced
+```
+
+This proves drift detection and manual reconciliation. It does not prove
+automated self-heal because self-heal is intentionally disabled in the current
+guardrail.

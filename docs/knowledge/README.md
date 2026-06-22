@@ -34,6 +34,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Sync Policy Runbook](../../ops/runbooks/argocd-sync-policy.md)
 - [Argo CD Prune and Self-Heal Guardrails](../../ops/runbooks/argocd-prune-self-heal-guardrails.md)
 - [Argo CD GitOps Deployment Validation Runbook](../../ops/runbooks/argocd-gitops-deployment-validation.md)
+- [Argo CD Drift Detection Validation Runbook](../../ops/runbooks/argocd-drift-detection-validation.md)
 
 ## Architecture Decisions
 

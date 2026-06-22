@@ -350,3 +350,31 @@ status, health status, conditions, and managed resources.
 
 Git records desired deployment state, Argo CD compares that desired state with
 the cluster, and sync reconciles the cluster toward Git.
+
+## Q56: What did CCPU-179 add?
+
+It added a drift detection validation runbook and documentation check. The
+runbook uses a safe annotation drift on `deployment/cpemon-api`, observes
+`OutOfSync`, then reconciles manually with `argocd app sync cpemon-dev`.
+
+## Q57: Why use annotation drift instead of changing app behavior?
+
+An annotation drift is visible to Argo CD but usually does not affect runtime
+capacity or traffic. It is safer than changing replicas or container settings
+for a first drift test.
+
+## Q58: What status transition do you expect?
+
+The expected transition is `Synced -> OutOfSync -> Synced` after manual sync.
+
+## Q59: Does this prove self-heal?
+
+No. Self-heal is disabled. This proves drift detection and manual
+reconciliation. Automated self-heal would need a separate controlled test after
+the guardrails are approved.
+
+## Q60: Why is drift detection the GitOps value proposition?
+
+It makes the cluster auditable against Git. Operators can see when live state
+differs from reviewed desired state and choose whether to reconcile or update
+Git.
