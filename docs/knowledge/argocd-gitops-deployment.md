@@ -514,3 +514,50 @@ Interview framing:
 > I did not enable prune and self-heal blindly. I kept them disabled while the
 > project is still proving resource ownership, CRD ordering, stateful behavior,
 > NetworkPolicy enforcement, and rollback procedures.
+
+## CCPU-102: Test GitOps Deployment from Git
+
+The validation runbook is:
+
+```text
+ops/runbooks/argocd-gitops-deployment-validation.md
+```
+
+The repository-level validation script is:
+
+```text
+scripts/verify-argocd-gitops-deployment-validation.ps1
+```
+
+This subtask validates the CPEmon GitOps deployment contract:
+
+* `cpemon-dev` Application exists
+* source repo is `https://github.com/huangruidtu/cpemon-mvp.git`
+* revision is `HEAD`
+* Helm chart path is `deploy/helm/cpemon`
+* values file is `values-dev.yaml`
+* destination namespace is `cpemon`
+* local Helm render succeeds
+
+Live Argo CD validation requires a reachable cluster API and Argo CD CRDs:
+
+```powershell
+kubectl get application cpemon-dev -n argocd
+kubectl describe application cpemon-dev -n argocd
+argocd app get cpemon-dev
+argocd app diff cpemon-dev
+argocd app sync cpemon-dev
+```
+
+What this proves:
+
+```text
+Git desired state -> Argo CD Application contract -> Helm render path
+```
+
+What it does not prove:
+
+```text
+CI image build, live secret sync, Kafka readiness, NetworkPolicy enforcement,
+or external ingress behavior
+```

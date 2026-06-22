@@ -323,3 +323,30 @@ documented.
 
 The validation script checks all dev Application manifests for prune/self-heal
 disabled annotations and fails if it finds `prune: true` or `selfHeal: true`.
+
+## Q51: What did CCPU-102 add?
+
+It added a GitOps deployment validation runbook and script for `cpemon-dev`.
+The script verifies the Application source repo, revision, chart path, values
+file, destination namespace, manual sync policy, and local Helm rendering.
+
+## Q52: What does this validation prove?
+
+It proves the repository contains a reviewable Argo CD Application contract and
+that the CPEmon Helm chart can render with the referenced dev values file.
+
+## Q53: What does it not prove?
+
+It does not prove live Argo CD sync, image availability, ESO secret sync, Kafka
+readiness, NetworkPolicy enforcement, or ingress behavior. Those need a live
+cluster and their own checks.
+
+## Q54: Why is `argocd app get` useful?
+
+It shows how Argo CD sees the Application: project, source, destination, sync
+status, health status, conditions, and managed resources.
+
+## Q55: How do you explain GitOps deployment in one sentence?
+
+Git records desired deployment state, Argo CD compares that desired state with
+the cluster, and sync reconciles the cluster toward Git.
