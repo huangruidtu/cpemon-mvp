@@ -78,3 +78,18 @@ counts, dead-letter counts, and database write outcomes.
 
 In an incident, I use both. Broker metrics tell me whether Kafka is healthy.
 Application metrics tell me whether CPEmon is using Kafka correctly.
+
+## Q10: How do writer metrics support at-least-once processing?
+
+At-least-once means the consumer should not commit an offset until processing is
+durably complete. The writer exposes consumed offset, committed offset, message
+age, reader lag, processing outcome counters, retry counters, dead-letter
+counters, and processing latency. If consumed offset moves but committed offset
+stalls, the writer is fetching messages but failing before completion.
+
+## Q11: Why does dead-letter observability matter?
+
+Dead-letter metrics separate poison-message failures from transient operational
+failures. Without them, a bad payload and a temporary database outage can look
+the same. With bounded labels like `topic`, `result`, and `kind`, the team can
+alert on increasing dead-letter rates without creating high-cardinality metrics.

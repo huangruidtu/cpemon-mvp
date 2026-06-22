@@ -100,6 +100,24 @@ with `release: kps` in the `monitoring` namespace. That lets the shared
 kube-prometheus-stack discover Kafka broker metrics while CPEmon services keep
 their own producer and consumer metrics.
 
+## CCPU-108 Learning Notes: Writer Consumer Metrics
+
+Writer Consumer Metrics explain the second half of the Kafka path: after
+`acs-ingest` produces normalized events, `cpemon-writer` must consume, process,
+write to the database, commit offsets, retry transient failures, and dead-letter
+poison messages.
+
+The metrics are split into:
+
+* consumer progress: consumed offset, committed offset, message age, reader lag
+* processing outcomes: success, retry, error, dead-letter
+* retry/dead-letter detail: bounded `kind` labels such as `poison_message`
+
+This is the at-least-once processing story. Consumer lag, consumed offset, and
+committed offset show whether the writer is keeping up and whether it is safe to
+advance Kafka offsets. The writer should commit offsets only after the event has
+been processed durably. Metrics make that visible.
+
 ## Validation
 
 ```powershell
@@ -107,6 +125,7 @@ make monitoring-gitops-check
 make cpemon-servicemonitor-check
 make acs-ingest-ingestion-metrics-check
 make kafka-metrics-boundary-check
+make cpemon-writer-observability-story12-check
 make monitoring-template
 ```
 

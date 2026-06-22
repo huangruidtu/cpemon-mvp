@@ -166,6 +166,41 @@ kafka_server_brokertopicmetrics_messagesin_total
 kafka_server_replicamanager_underreplicatedpartitions
 ```
 
+## Writer Consumer Metrics
+
+`cpemon-writer` exposes two categories of Kafka consumer metrics.
+
+Offset and lag metrics:
+
+| Metric | Meaning |
+| --- | --- |
+| `cpemon_writer_kafka_consumer_last_consumed_offset{group,topic,partition}` | Last offset fetched from Kafka. |
+| `cpemon_writer_kafka_consumer_last_committed_offset{group,topic,partition}` | Last offset committed after successful processing. |
+| `cpemon_writer_kafka_consumer_message_age_seconds{group,topic,partition}` | Age of the last consumed message. |
+| `cpemon_writer_kafka_consumer_reader_lag_messages{group,topic,partition}` | kafka-go reader lag when available. |
+
+Processing metrics:
+
+| Metric | Meaning |
+| --- | --- |
+| `cpemon_writer_kafka_processing_events_total{topic,result,kind}` | Success, retry, error, and dead-letter outcomes. |
+| `cpemon_writer_kafka_processing_retries_total{topic,kind}` | Retry volume by bounded failure kind. |
+| `cpemon_writer_kafka_deadletters_total{topic,result,kind}` | Dead-letter publish outcomes. |
+| `cpemon_writer_kafka_processing_duration_seconds{topic,result,kind}` | Processing latency by outcome. |
+
+Useful PromQL:
+
+```promql
+sum(rate(cpemon_writer_kafka_processing_events_total[5m])) by (topic, result, kind)
+sum(rate(cpemon_writer_kafka_processing_retries_total[5m])) by (topic, kind)
+sum(rate(cpemon_writer_kafka_deadletters_total[5m])) by (topic, result, kind)
+max(cpemon_writer_kafka_consumer_message_age_seconds) by (group, topic, partition)
+```
+
+For at-least-once processing, the key debugging relationship is consumed offset
+versus committed offset. If consumed advances but committed stalls, the writer is
+fetching messages but failing before durable completion.
+
 ## Interview Framing
 
 The clean answer is:
