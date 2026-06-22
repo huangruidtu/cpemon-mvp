@@ -77,3 +77,27 @@ to the CPEmon source repository.
 I would split projects by environment, restrict cluster-scoped resources,
 review allowed repositories, add Argo CD RBAC, and avoid giving a single
 learning project broad access to every namespace.
+
+## Q12: Why define a GitOps layout before writing Applications?
+
+Because every Application needs a clear source path, destination, and ownership
+boundary. Defining the layout first prevents each Application from inventing a
+different convention.
+
+## Q13: What is the boundary between bootstrap and applications?
+
+Bootstrap resources prepare Argo CD itself, such as the namespace and
+AppProject. Application manifests are the desired-state objects Argo CD
+reconciles after the control plane exists.
+
+## Q14: Why not start with app-of-apps?
+
+The project has one learning environment and a small number of Applications.
+Plain Application manifests are easier to inspect and explain. App-of-apps is a
+good future option when there are many Applications or multiple environments.
+
+## Q15: What did CCPU-175 add?
+
+It added the GitOps directory layout, dev Application directory, layout runbook,
+validation script, and interview explanation for why repository paths are part
+of deployment architecture.

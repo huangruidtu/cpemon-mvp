@@ -108,3 +108,39 @@ Production hardening:
 The learning project is intentionally broad. A production platform should split
 projects by environment or team, restrict cluster-scoped resources, and pair
 the project with Argo CD RBAC.
+
+## CCPU-175: Define GitOps Repository Layout
+
+The repository now separates bootstrap resources from Application manifests.
+
+Bootstrap resources:
+
+```text
+k8s/addons/argocd/
+```
+
+These install or prepare Argo CD itself, such as the namespace and AppProject.
+
+Application manifests:
+
+```text
+k8s/gitops/dev/applications/
+```
+
+These are the Argo CD `Application` objects that tell Argo CD what to
+reconcile.
+
+The story starts with plain Application manifests instead of app-of-apps.
+
+Why:
+
+* one learning environment is easier to reason about directly
+* individual Applications are easier to inspect and debug
+* app-of-apps can be added later when multi-environment promotion or many apps
+  make a root Application useful
+
+Interview framing:
+
+> GitOps layout is architecture. It tells the team which files bootstrap Argo
+> CD, which files Argo CD reconciles, and how Helm chart paths map to deployed
+> applications.
