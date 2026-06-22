@@ -8,6 +8,7 @@ $schemaPath = Join-Path $chartPath "values.schema.json"
 $chartReadmePath = Join-Path $chartPath "README.md"
 $knowledgePath = Join-Path $root "docs/knowledge/argo-rollouts-canary-deployment.md"
 $interviewPath = Join-Path $root "docs/knowledge/interview/story-19-argo-rollouts-canary-deployment.md"
+$runbookPath = Join-Path $root "ops/runbooks/cpemon-api-p95-latency-analysis.md"
 $devValuesPath = Join-Path $chartPath "values-dev.yaml"
 
 function Assert-File {
@@ -34,6 +35,7 @@ Assert-File $schemaPath
 Assert-File $chartReadmePath
 Assert-File $knowledgePath
 Assert-File $interviewPath
+Assert-File $runbookPath
 
 foreach ($needle in @(
     "cpemon-api-p95-latency",
@@ -49,7 +51,14 @@ Assert-Contains $templatePath "cpemon.io/analysis-signal: p95-latency"
 Assert-Contains $schemaPath '"p95Latency"'
 Assert-Contains $chartReadmePath "AnalysisTemplate/cpemon-api-p95-latency"
 Assert-Contains $knowledgePath "CCPU-190: Add Prometheus AnalysisTemplate for p95 Latency"
+Assert-Contains $knowledgePath "CCPU-122: Create AnalysisTemplate for p95 Latency"
 Assert-Contains $interviewPath "Q23: Why add p95 latency analysis in addition to 5xx analysis?"
+Assert-Contains $interviewPath "Q52: What exactly does the p95 latency AnalysisTemplate measure?"
+Assert-Contains $interviewPath "Q53: Why is p95 better than average latency for canary gating?"
+Assert-Contains $runbookPath "CPEmon API p95 Latency AnalysisTemplate Runbook"
+Assert-Contains $runbookPath "histogram_quantile"
+Assert-Contains $runbookPath "sum by (le)"
+Assert-Contains $runbookPath "result[0] < 0.5"
 
 $rendered = & helm template cpemon $chartPath -n cpemon -f $devValuesPath 2>&1
 if ($LASTEXITCODE -ne 0) {

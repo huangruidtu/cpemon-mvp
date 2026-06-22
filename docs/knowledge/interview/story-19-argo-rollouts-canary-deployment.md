@@ -356,3 +356,16 @@ heavy traffic are interpreted as a percentage instead of a raw count.
 traffic in the query window. It keeps the AnalysisRun deterministic during
 low-traffic canary checks while still letting real 5xx traffic push the ratio
 toward failure.
+
+## Q52: What exactly does the p95 latency AnalysisTemplate measure?
+
+It estimates the request duration below which 95% of `cpemon-api` requests
+completed during the Prometheus rate window. In this chart the value is in
+seconds, and the dev gate requires it to stay below 0.5 seconds.
+
+## Q53: Why is p95 better than average latency for canary gating?
+
+Average latency can hide tail pain. A small but important group of users may be
+experiencing slow responses while the mean still looks fine. p95 is a better
+release gate because it catches slow successful requests before the canary gets
+more traffic.

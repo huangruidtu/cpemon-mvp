@@ -339,6 +339,12 @@ errors, and promotion stops when the signal crosses the configured threshold.
 
 The second automated canary signal is p95 latency.
 
+The focused runbook is:
+
+```text
+ops/runbooks/cpemon-api-p95-latency-analysis.md
+```
+
 Template:
 
 ```text
@@ -384,6 +390,34 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-p95-analysis.ps1
 ```
+
+## CCPU-122: Create AnalysisTemplate for p95 Latency
+
+`CCPU-122` closes the latency gate as an interview-ready implementation task.
+The resource already renders from Helm, and the runbook records the operational
+contract:
+
+```text
+metric: cpemon_api_http_request_duration_seconds_bucket
+query: histogram_quantile(0.95, sum by (le) rate(...[2m]))
+threshold: result[0] < 0.5
+resource: AnalysisTemplate/cpemon-api-p95-latency
+```
+
+The key design choices are:
+
+* Use p95 instead of average latency because a canary can hurt a meaningful
+  tail of users while the mean still looks acceptable.
+* Use Prometheus histogram buckets because quantiles should be calculated from
+  bucketed duration observations.
+* Preserve the `le` label with `sum by (le)` because `histogram_quantile`
+  needs bucket boundaries.
+* Pair p95 with 5xx rate so rollout safety covers both failed requests and slow
+  successful requests.
+
+In an interview, describe this as the user-experience gate: Argo Rollouts asks
+Prometheus whether the canary is too slow before allowing it to receive more
+traffic.
 
 ## CCPU-191: Connect AnalysisTemplates to Rollout
 
