@@ -420,3 +420,24 @@ Because the cluster should converge from Git. If I only patch the cluster, Argo
 CD may later reapply the bad desired state. Reverting Git creates an auditable
 recovery change and lets Argo CD and Argo Rollouts bring the workload back to a
 known-good version consistently.
+
+## Q61: How do you troubleshoot a failed AnalysisRun?
+
+I separate manifest, metric, and runtime questions. First I confirm the Rollout
+created the AnalysisRun and references the expected template. Then I inspect the
+Prometheus query result and threshold. Finally I compare canary and stable
+evidence before deciding abort, retry, fix forward, or Git rollback.
+
+## Q62: What causes missing Prometheus data during analysis?
+
+Common causes are no `/metrics` exposure, ServiceMonitor selector mismatch,
+Prometheus scrape delay, too little canary traffic, or metric label changes. I
+would verify the Service, ServiceMonitor, Prometheus target, and raw metric
+queries before trusting the AnalysisRun result.
+
+## Q63: How do you explain false positives and false negatives in canary gates?
+
+A false positive blocks a good canary, often because of low traffic, stale
+metrics, or a threshold that is too strict. A false negative lets a bad canary
+pass, often because the query misses the failure mode. That is why I pair 5xx
+and p95 with logs, endpoints, traces, and operator judgment.

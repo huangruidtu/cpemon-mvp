@@ -9,6 +9,7 @@ $interviewPath = Join-Path $root "docs/knowledge/interview/story-19-argo-rollout
 $interviewIndexPath = Join-Path $root "docs/knowledge/interview/README.md"
 $healthyDemoPath = Join-Path $root "ops/demos/argo-rollouts/cpemon-api-healthy-canary.md"
 $failedDemoPath = Join-Path $root "ops/demos/argo-rollouts/cpemon-api-failed-canary.md"
+$analysisTroubleshootingPath = Join-Path $root "ops/runbooks/cpemon-api-analysisrun-troubleshooting.md"
 
 function Assert-File {
     param([string] $Path)
@@ -36,7 +37,8 @@ foreach ($path in @(
     $interviewPath,
     $interviewIndexPath,
     $healthyDemoPath,
-    $failedDemoPath
+    $failedDemoPath,
+    $analysisTroubleshootingPath
 )) {
     Assert-File $path
 }
@@ -66,14 +68,29 @@ foreach ($needle in @(
 
 Assert-Contains $knowledgePath "CCPU-196: Rollback, ADR, Runbook, and Interview Notes"
 Assert-Contains $knowledgePath "CCPU-126: Document Rollback Behavior"
+Assert-Contains $knowledgePath "CCPU-198: AnalysisRun Troubleshooting and Interview Notes"
 Assert-Contains $knowledgeIndexPath "Argo Rollouts Canary Deployment Decision"
 Assert-Contains $knowledgeIndexPath "Argo Rollouts CPEmon API Runbook"
+Assert-Contains $knowledgeIndexPath "CPEmon API AnalysisRun Troubleshooting"
 Assert-Contains $interviewIndexPath "Story 19: Argo Rollouts Canary Deployment"
 Assert-Contains $interviewPath "Q45: What is the difference between abort and rollback?"
 Assert-Contains $interviewPath "Q47: What is the final Story 19 interview summary?"
 Assert-Contains $interviewPath "Q59: How would you explain CPEmon rollback behavior?"
 Assert-Contains $interviewPath "Q60: Why is Git-first rollback important in a GitOps platform?"
+Assert-Contains $interviewPath "Q61: How do you troubleshoot a failed AnalysisRun?"
+Assert-Contains $interviewPath "Q62: What causes missing Prometheus data during analysis?"
+Assert-Contains $interviewPath "Q63: How do you explain false positives and false negatives in canary gates?"
 Assert-Contains $healthyDemoPath "scripts/demo-cpemon-api-successful-rollout.ps1"
 Assert-Contains $failedDemoPath "scripts/demo-cpemon-api-failed-rollout.ps1"
+
+foreach ($needle in @(
+    "CPEmon API AnalysisRun Troubleshooting",
+    "Missing Prometheus Data",
+    "False Positives and False Negatives",
+    "unsafe user impact -> abort",
+    "manifest, metric, and runtime"
+)) {
+    Assert-Contains $analysisTroubleshootingPath $needle
+}
 
 Write-Host "Argo Rollouts final docs validation passed."

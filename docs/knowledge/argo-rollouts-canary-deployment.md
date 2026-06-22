@@ -816,6 +816,26 @@ The interview point is that abort and rollback solve different problems. Abort
 protects users immediately. Git rollback corrects the desired state so the
 cluster converges to the version the team actually wants.
 
+## CCPU-198: AnalysisRun Troubleshooting and Interview Notes
+
+The final troubleshooting runbook is:
+
+```text
+ops/runbooks/cpemon-api-analysisrun-troubleshooting.md
+```
+
+It closes the Prometheus analysis story by separating three debugging questions:
+
+```text
+manifest: did Helm render the Rollout and AnalysisTemplates?
+metric: did Prometheus return fresh numeric data?
+runtime: did the canary actually behave safely?
+```
+
+This is the interview-ready summary: AnalysisRuns are not magic. They are
+runtime executions of metric contracts, and the operator still needs to inspect
+status, query results, stable/canary endpoints, logs, and rollback options.
+
 ## CCPU-197: Prometheus Metrics and Query Inputs
 
 The Prometheus input runbook is:

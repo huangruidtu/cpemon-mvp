@@ -33,6 +33,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [CPEmon API HTTP 5xx AnalysisTemplate](../../ops/runbooks/cpemon-api-http5xx-analysis.md)
 - [CPEmon API p95 Latency AnalysisTemplate](../../ops/runbooks/cpemon-api-p95-latency-analysis.md)
 - [CPEmon API Rollout Analysis Wiring](../../ops/runbooks/cpemon-api-analysis-wiring.md)
+- [CPEmon API AnalysisRun Troubleshooting](../../ops/runbooks/cpemon-api-analysisrun-troubleshooting.md)
 - [Argo Rollouts Healthy Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-healthy-canary.md)
 - [Argo Rollouts Failed Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-failed-canary.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
@@ -87,6 +88,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [CPEmon API HTTP 5xx AnalysisTemplate](../../ops/runbooks/cpemon-api-http5xx-analysis.md)
 - [CPEmon API p95 Latency AnalysisTemplate](../../ops/runbooks/cpemon-api-p95-latency-analysis.md)
 - [CPEmon API Rollout Analysis Wiring](../../ops/runbooks/cpemon-api-analysis-wiring.md)
+- [CPEmon API AnalysisRun Troubleshooting](../../ops/runbooks/cpemon-api-analysisrun-troubleshooting.md)
 
 ## Interview Prep
 
