@@ -435,3 +435,49 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-rollout-status-runbook.ps1
 ```
+
+## CCPU-119: Test Manual Promote and Abort
+
+Manual rollout control uses the plugin:
+
+```powershell
+kubectl argo rollouts promote cpemon-api -n cpemon
+kubectl argo rollouts abort cpemon-api -n cpemon
+```
+
+Use promote when the canary evidence is good:
+
+```text
+pods ready
+AnalysisRuns passed
+5xx below threshold
+p95 below threshold
+service endpoints make sense
+logs and traces do not show a new failure pattern
+```
+
+Use abort when the canary is unsafe:
+
+```text
+AnalysisRun failed
+canary pods are not ready
+5xx or p95 regression appears
+canary Service has no endpoints
+operator cannot explain the current state
+```
+
+The full promotion command exists:
+
+```powershell
+kubectl argo rollouts promote cpemon-api -n cpemon --full
+```
+
+For interviews, explain that `--full` is a demo shortcut, not the default
+production habit. The safer production habit is step-by-step promotion after
+each pause and analysis result.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-promote-abort-runbook.ps1
+```

@@ -132,6 +132,103 @@ Live cluster validation requires a reachable Kubernetes API server, Argo
 Rollouts CRDs, the controller, Prometheus, and the CPEmon chart synced or
 installed.
 
+## CCPU-119: Manual Promote and Abort
+
+Manual promotion is an operator decision to continue after inspecting rollout
+status and evidence.
+
+Inspect before promotion:
+
+```powershell
+kubectl argo rollouts get rollout cpemon-api -n cpemon
+kubectl get analysisrun -n cpemon
+kubectl get endpoints cpemon-api-stable cpemon-api-canary -n cpemon
+```
+
+Promote to the next step:
+
+```powershell
+kubectl argo rollouts promote cpemon-api -n cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+```
+
+Promote through all remaining pauses only for a controlled demo:
+
+```powershell
+kubectl argo rollouts promote cpemon-api -n cpemon --full
+```
+
+Use `--full` carefully. It skips the remaining manual pause decision points.
+For production-style operation, prefer step-by-step promotion after reviewing
+metrics, logs, traces, endpoints, and AnalysisRuns.
+
+Abort the canary:
+
+```powershell
+kubectl argo rollouts abort cpemon-api -n cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon --watch
+```
+
+After abort:
+
+```powershell
+kubectl get rs,pods,svc,endpoints,analysisrun -n cpemon -l app=cpemon-api
+kubectl describe rollout cpemon-api -n cpemon
+```
+
+## Promote Decision
+
+Promote when:
+
+```text
+Pods are ready.
+AnalysisRuns passed.
+5xx ratio is below the threshold.
+p95 latency is below the threshold.
+Stable and canary endpoints are understandable.
+No new error pattern appears in logs or traces.
+```
+
+Do not promote when:
+
+```text
+AnalysisRuns failed or are inconclusive.
+Pods are crash-looping or not ready.
+The canary Service has no endpoints.
+5xx or p95 analysis is failing.
+The operator cannot explain the current rollout state.
+```
+
+## Abort Decision
+
+Abort when:
+
+```text
+The canary is causing user-visible failures.
+The canary fails 5xx or p95 analysis.
+The new ReplicaSet cannot become ready.
+The operator needs to stop exposure before investigating.
+```
+
+Abort is not the same as deleting the Rollout. Abort stops progression and
+keeps the stable path available while the canary is investigated.
+
+## Expected Demo Behavior
+
+Manual promote:
+
+```text
+20% pause -> promote -> analysis -> 50% pause -> promote -> analysis -> 100%
+```
+
+Manual abort:
+
+```text
+canary exposure -> abort -> rollout stops progressing -> stable path remains
+```
+
+The most important demo habit is to show status before and after each command.
+
 ## Interview Framing
 
 A strong answer is:

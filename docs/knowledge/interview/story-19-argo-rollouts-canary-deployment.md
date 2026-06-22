@@ -222,3 +222,23 @@ Paused is an intentional wait point. Degraded means the controller sees a
 failure such as unhealthy pods or failed analysis. Aborted means rollout
 progression was stopped and the operator should investigate before retrying or
 rolling back.
+
+## Q32: When would you manually promote?
+
+I promote when the rollout is at a pause, pods are ready, AnalysisRuns passed,
+5xx and p95 are within thresholds, endpoints look correct, and logs/traces do
+not show a new issue. Promotion should be evidence-based, not just "the command
+is available."
+
+## Q33: When would you abort?
+
+I abort when the canary creates user-visible failures, fails analysis, cannot
+become ready, has broken endpoints, or reaches a state I cannot confidently
+explain. Aborting stops exposure so the stable path can continue while the
+canary is investigated.
+
+## Q34: Why is `promote --full` risky?
+
+`promote --full` skips remaining pause decision points. It is useful in a demo
+when I intentionally want to finish the rollout, but production-style operation
+should normally promote one step at a time after checking evidence.
