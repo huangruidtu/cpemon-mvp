@@ -200,3 +200,30 @@ Cost is an operational signal, like availability or latency. Once the platform
 has namespaces for CPEmon, Kafka, monitoring, Argo CD, Kyverno, and OpenCost,
 operators need visibility into where spend is coming from. This story starts
 with visibility before chargeback or optimization.
+
+## Q29: What did CCPU-206 add?
+
+It configured OpenCost to use the existing kube-prometheus-stack Prometheus
+service:
+`http://kps-kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`.
+The configuration lives in `k8s/addons/opencost/values.yaml`.
+
+## Q30: Why does OpenCost need Prometheus?
+
+OpenCost needs usage metrics before it can calculate cost allocation. Prometheus
+stores the CPU, memory, pod, namespace, and workload time-series data. OpenCost
+queries those metrics and turns them into cost views.
+
+## Q31: Why reuse kube-prometheus-stack instead of deploying another
+Prometheus?
+
+One platform Prometheus is easier to operate and explain. If OpenCost used a
+separate Prometheus, the team would have duplicate metrics storage and unclear
+ownership. Reusing kube-prometheus-stack keeps monitoring and cost visibility
+on the same source of truth.
+
+## Q32: What is the required sync order?
+
+Sync `monitoring-dev` first, then `opencost-dev`. OpenCost depends on the
+Prometheus API, so cost visibility should come after the monitoring stack is
+healthy.

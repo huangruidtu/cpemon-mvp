@@ -319,6 +319,64 @@ helm template opencost opencost/opencost `
   --values k8s/addons/opencost/values.yaml
 ```
 
+## CCPU-206: OpenCost Prometheus Integration
+
+OpenCost is configured to query the existing kube-prometheus-stack Prometheus
+service:
+
+```text
+http://kps-kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+```
+
+The source of truth is:
+
+```text
+k8s/addons/opencost/values.yaml
+```
+
+Relevant values:
+
+```yaml
+opencost:
+  prometheus:
+    internal:
+      enabled: true
+      serviceName: kps-kube-prometheus-stack-prometheus
+      namespaceName: monitoring
+      port: 9090
+    external:
+      enabled: false
+```
+
+The design choice is to reuse the platform Prometheus instead of creating a
+second metrics store. Prometheus owns time-series usage data. OpenCost turns
+that data into namespace and workload cost visibility.
+
+Sync order matters:
+
+```text
+monitoring-dev -> opencost-dev
+```
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-opencost-prometheus-integration.ps1
+helm template opencost opencost/opencost `
+  --version 2.5.23 `
+  --namespace opencost `
+  --values k8s/addons/opencost/values.yaml
+```
+
+Live validation:
+
+```powershell
+kubectl get svc -n monitoring kps-kube-prometheus-stack-prometheus
+kubectl get pods,svc,deploy -n opencost
+kubectl port-forward -n opencost svc/opencost 9003:9003
+Invoke-RestMethod "http://localhost:9003/allocation/compute?window=1h&aggregate=namespace"
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.
