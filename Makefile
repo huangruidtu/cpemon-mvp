@@ -11,6 +11,11 @@ KAFKA_RELEASE ?= kafka
 KAFKA_NAMESPACE ?= kafka
 KAFKA_VALUES ?= k8s/addons/kafka/values.yaml
 KAFKA_RENDER_OUT ?= build/helm/kafka-rendered.yaml
+KPS_CHART ?= oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
+KPS_CHART_VERSION ?= 86.3.2
+KPS_RELEASE ?= kps
+KPS_NAMESPACE ?= monitoring
+KPS_VALUES ?= k8s/monitoring/kube-prometheus-stack-values.yaml
 HELM ?= helm
 HELM_CPEMON_CHART ?= deploy/helm/cpemon
 HELM_CPEMON_RELEASE ?= cpemon
@@ -18,7 +23,7 @@ HELM_CPEMON_NAMESPACE ?= cpemon
 HELM_CPEMON_VALUES ?= deploy/helm/cpemon/values-dev.yaml
 HELM_CPEMON_RENDER_OUT ?= build/helm/cpemon-rendered.yaml
 
-.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check kafka-namespace-check kafka-topics-check kafka-topic-naming-check kafka-config-check kafka-architecture-docs-check kafka-produce-consume-runbook-check kafka-validation-observability-check kafka-learning-notes-check acs-ingest-heartbeat-schema-check acs-ingest-wan-status-schema-check acs-ingest-event-publisher-check acs-ingest-kafka-config-check acs-ingest-kafka-producer-check acs-ingest-publish-wiring-check acs-ingest-producer-retry-check acs-ingest-producer-observability-check acs-ingest-unit-tests-check acs-ingest-kafka-producer-validation-check acs-ingest-kafka-producer-docs-check acs-ingest-kafka-producer-learning-notes-check cpemon-writer-kafka-consumer-config-check cpemon-writer-kafka-consumer-group-check cpemon-writer-heartbeat-subscription-check cpemon-writer-wan-status-subscription-check cpemon-writer-heartbeat-write-model-check cpemon-writer-wan-status-write-model-check cpemon-writer-event-processor-check cpemon-writer-offset-commit-check cpemon-writer-retry-deadletter-check cpemon-writer-consumer-lag-check cpemon-writer-processing-observability-check cpemon-writer-consumer-unit-tests-check cpemon-writer-kafka-to-db-validation-check cpemon-api-kafka-status-validation-check cpemon-writer-kafka-consumer-operations-check cpemon-writer-kafka-consumer-learning-notes-check argocd-installation-check argocd-project-check argocd-gitops-layout-check argocd-cpemon-application-check argocd-kafka-application-check kafka-chart-show kafka-template kafka kafka-check kafka-validate storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check kafka-helm-workflow-check
+.PHONY: platform-preflight platform-manifest-plan platform-checks ns ns-check helm-repos metrics-server metrics-server-check aws-lbc aws-lbc-check kafka-namespace-check kafka-topics-check kafka-topic-naming-check kafka-config-check kafka-architecture-docs-check kafka-produce-consume-runbook-check kafka-validation-observability-check kafka-learning-notes-check acs-ingest-heartbeat-schema-check acs-ingest-wan-status-schema-check acs-ingest-event-publisher-check acs-ingest-kafka-config-check acs-ingest-kafka-producer-check acs-ingest-publish-wiring-check acs-ingest-producer-retry-check acs-ingest-producer-observability-check acs-ingest-unit-tests-check acs-ingest-kafka-producer-validation-check acs-ingest-kafka-producer-docs-check acs-ingest-kafka-producer-learning-notes-check cpemon-writer-kafka-consumer-config-check cpemon-writer-kafka-consumer-group-check cpemon-writer-heartbeat-subscription-check cpemon-writer-wan-status-subscription-check cpemon-writer-heartbeat-write-model-check cpemon-writer-wan-status-write-model-check cpemon-writer-event-processor-check cpemon-writer-offset-commit-check cpemon-writer-retry-deadletter-check cpemon-writer-consumer-lag-check cpemon-writer-processing-observability-check cpemon-writer-consumer-unit-tests-check cpemon-writer-kafka-to-db-validation-check cpemon-api-kafka-status-validation-check cpemon-writer-kafka-consumer-operations-check cpemon-writer-kafka-consumer-learning-notes-check argocd-installation-check argocd-project-check argocd-gitops-layout-check argocd-cpemon-application-check argocd-kafka-application-check argocd-monitoring-application-check monitoring-template kafka-chart-show kafka-template kafka kafka-check kafka-validate storage-check storage-gp3-plan storage-gp3-apply echo echo-check echo-port-forward echo-ingress echo-ingress-check netpol-check netpol-baseline-plan calico ingress pdb smoke helm-check helm-cpemon-lint helm-cpemon-template helm-cpemon-validate cpemon-api-db-check cpemon-writer-db-check cpemon-eso-render-check kafka-helm-workflow-check
 
 platform-preflight:
 	kubectl version --client=true
@@ -167,6 +172,9 @@ argocd-cpemon-application-check:
 argocd-kafka-application-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-kafka-application.ps1
 
+argocd-monitoring-application-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-monitoring-application.ps1
+
 helm-repos:
 	helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 	helm repo add eks https://aws.github.io/eks-charts
@@ -237,6 +245,12 @@ kafka-check:
 	kubectl rollout status statefulset/$(KAFKA_RELEASE)-controller -n $(KAFKA_NAMESPACE) --timeout=10m
 
 kafka-validate: kafka-template
+
+monitoring-template: helm-check
+	"$(HELM)" template $(KPS_RELEASE) $(KPS_CHART) \
+	  --namespace $(KPS_NAMESPACE) \
+	  --version $(KPS_CHART_VERSION) \
+	  --values $(KPS_VALUES)
 
 storage-check:
 	kubectl get storageclass

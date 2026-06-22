@@ -18,6 +18,7 @@ k8s/gitops/
       README.md
       cpemon-dev.yaml
       kafka-dev.yaml
+      monitoring-dev.yaml
 ```
 
 Bootstrap resources stay under `k8s/addons/argocd` because they install and
@@ -78,6 +79,10 @@ k8s/gitops/dev/applications/cpemon-dev.yaml
 `kafka-dev` reconciles the Bitnami Kafka Helm chart version `32.4.3` with the
 repository values file `k8s/addons/kafka/values.yaml` into the `kafka`
 namespace.
+
+`monitoring-dev` reconciles kube-prometheus-stack chart version `86.3.2` with
+the repository values file `k8s/monitoring/kube-prometheus-stack-values.yaml`
+into the `monitoring` namespace.
 
 ## Interview Framing
 

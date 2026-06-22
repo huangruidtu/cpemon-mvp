@@ -9,7 +9,7 @@ Planned Applications:
 | --- | --- | --- |
 | `cpemon-dev` | `cpemon` | `deploy/helm/cpemon` with `values-dev.yaml` |
 | `kafka-dev` | `kafka` | Bitnami Kafka chart `32.4.3` with `k8s/addons/kafka/values.yaml` |
-| `monitoring-dev` | `monitoring` | Monitoring add-on boundary |
+| `monitoring-dev` | `monitoring` | kube-prometheus-stack chart `86.3.2` with `k8s/monitoring/kube-prometheus-stack-values.yaml` |
 | `external-secrets-dev` | `security` or controller namespace | External Secrets boundary |
 | `policy-security-dev` | `security` | Policy/security add-on boundary |
 
@@ -49,3 +49,22 @@ project:        cpemon
 
 The Application uses Argo CD multiple sources because the chart is external
 and the values file is versioned in the CPEmon repository.
+
+## `monitoring-dev`
+
+`monitoring-dev.yaml` deploys the monitoring platform stack:
+
+```text
+chart repo:     ghcr.io/prometheus-community/charts
+chart:          kube-prometheus-stack
+chart version:  86.3.2
+release:        kps
+values repo:    https://github.com/huangruidtu/cpemon-mvp.git
+values file:    k8s/monitoring/kube-prometheus-stack-values.yaml
+destination:    https://kubernetes.default.svc / monitoring
+project:        cpemon
+```
+
+The Application owns the monitoring control plane. CPEmon-specific
+ServiceMonitor, PrometheusRule, and Grafana dashboard resources depend on the
+CRDs and selectors created by this stack.

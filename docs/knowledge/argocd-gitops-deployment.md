@@ -244,3 +244,58 @@ kubectl get application kafka-dev -n argocd
 kubectl describe application kafka-dev -n argocd
 argocd app get kafka-dev
 ```
+
+## CCPU-100: Create Application for Monitoring Stack
+
+The monitoring Application is:
+
+```text
+k8s/gitops/dev/applications/monitoring-dev.yaml
+```
+
+It tells Argo CD:
+
+* use the `cpemon` AppProject
+* render kube-prometheus-stack from `ghcr.io/prometheus-community/charts`
+* pin the chart version to `86.3.2`
+* use release name `kps`
+* pull values from `k8s/monitoring/kube-prometheus-stack-values.yaml`
+* deploy into the `monitoring` namespace
+
+The AppProject now allows the Prometheus Community chart repository because
+Argo CD must be allowed to read every source referenced by the Application.
+
+Monitoring is treated as a platform add-on. It installs shared observability
+control-plane components and CRDs such as `ServiceMonitor` and
+`PrometheusRule`. CPEmon workloads can expose metrics and optional monitoring
+resources, but they should not own the monitoring stack itself.
+
+CRD ordering:
+
+```text
+monitoring-dev syncs kube-prometheus-stack
+        |
+        v
+Prometheus Operator CRDs exist
+        |
+        v
+CPEmon ServiceMonitor, PrometheusRule, and dashboards can be applied
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-monitoring-application.ps1
+helm template kps oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack `
+  --namespace monitoring `
+  --version 86.3.2 `
+  --values k8s/monitoring/kube-prometheus-stack-values.yaml
+```
+
+Live Argo CD inspection:
+
+```powershell
+kubectl get application monitoring-dev -n argocd
+kubectl describe application monitoring-dev -n argocd
+argocd app get monitoring-dev
+```

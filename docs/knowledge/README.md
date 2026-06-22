@@ -28,6 +28,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD GitOps Deployment](argocd-gitops-deployment.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
 - [Argo CD Kafka Application Runbook](../../ops/runbooks/argocd-kafka-application.md)
+- [Argo CD Monitoring Application Runbook](../../ops/runbooks/argocd-monitoring-application.md)
 
 ## Architecture Decisions
 

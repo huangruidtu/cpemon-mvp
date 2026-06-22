@@ -167,3 +167,34 @@ Inspect the `kafka-controller` StatefulSet, Pod events, PVC binding, node
 capacity, StorageClass behavior, and bootstrap Service. For Kafka, `Synced`
 only proves Argo CD applied desired manifests; `Healthy` depends on stateful
 runtime readiness.
+
+## Q26: What did CCPU-100 add?
+
+It added `monitoring-dev`, an Argo CD Application for kube-prometheus-stack.
+It pins chart version `86.3.2`, uses release name `kps`, reads CPEmon values
+from Git, and deploys the monitoring stack into the `monitoring` namespace.
+
+## Q27: Why is monitoring a platform add-on?
+
+Monitoring is shared infrastructure. It owns Prometheus, Grafana, Alertmanager,
+Prometheus Operator CRDs, scrape discovery, and alert evaluation. Application
+teams expose metrics, but the platform owns the observability control plane.
+
+## Q28: Why do ServiceMonitor and PrometheusRule need ordering?
+
+They are not built-in Kubernetes resources. They are CRDs installed by the
+Prometheus Operator/kube-prometheus-stack. If CPEmon-specific ServiceMonitors
+or PrometheusRules are applied before those CRDs exist, Kubernetes rejects the
+objects.
+
+## Q29: What does `Synced` versus `Healthy` mean for monitoring?
+
+`Synced` means Argo CD applied the desired chart output. `Healthy` means the
+operator, Prometheus, Grafana, Alertmanager, webhooks, and required storage are
+actually ready.
+
+## Q30: What would you check if monitoring is degraded?
+
+Check the Prometheus Operator Deployment, Prometheus StatefulSet, Grafana
+Deployment, Alertmanager, admission webhook jobs, CRDs, PVCs, and events in the
+`monitoring` namespace.

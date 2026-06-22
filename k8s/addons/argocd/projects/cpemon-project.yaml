@@ -13,6 +13,7 @@ spec:
   sourceRepos:
     - https://github.com/huangruidtu/cpemon-mvp.git
     - registry-1.docker.io/bitnamicharts
+    - ghcr.io/prometheus-community/charts
   destinations:
     - namespace: cpemon
       server: https://kubernetes.default.svc
