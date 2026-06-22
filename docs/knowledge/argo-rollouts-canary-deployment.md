@@ -646,3 +646,34 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-argo-rollouts-final-docs.ps1
 ```
+
+## CCPU-197: Prometheus Metrics and Query Inputs
+
+The Prometheus input runbook is:
+
+```text
+ops/runbooks/cpemon-api-prometheus-analysis-inputs.md
+```
+
+The analysis gates depend on these metrics:
+
+```text
+cpemon_api_http_requests_total
+cpemon_api_http_request_duration_seconds_bucket
+```
+
+The important learning point is that an AnalysisTemplate has two contracts:
+
+```text
+manifest contract: Helm renders the expected query
+runtime contract: Prometheus has fresh samples with safe labels
+```
+
+Offline checks prove the manifest contract. Live checks against a dev
+Prometheus instance prove the runtime contract.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-prometheus-analysis-inputs.ps1
+```

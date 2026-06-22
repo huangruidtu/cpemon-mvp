@@ -327,3 +327,18 @@ through limited traffic exposure, pause gates, Prometheus analysis, manual
 promotion, abort, and Git-first rollback. The project includes Helm templates,
 runbooks, healthy and failed demo scripts, an ADR, and interview notes, so I can
 explain both implementation and operations.
+
+## Q48: What do you validate before trusting Prometheus AnalysisTemplates?
+
+I validate the metric contract first: `cpemon-api` must expose
+`cpemon_api_http_requests_total` and
+`cpemon_api_http_request_duration_seconds_bucket`, labels must be bounded, and
+the PromQL must return numeric values in a dev Prometheus instance. Offline Helm
+checks prove the manifests; live Prometheus checks prove the runtime signal.
+
+## Q49: Why is metric cardinality part of canary safety?
+
+High-cardinality labels can make queries expensive, noisy, or unreliable. For
+canary gates I keep labels to method, route template, status code, and histogram
+bucket. I avoid request IDs, device serial numbers, customer IDs, and raw URL
+parameters.

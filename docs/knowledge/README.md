@@ -29,6 +29,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Monitoring and Observability Upgrade](monitoring-observability-upgrade.md)
 - [Argo Rollouts Canary Deployment](argo-rollouts-canary-deployment.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
+- [CPEmon API Prometheus Analysis Inputs](../../ops/runbooks/cpemon-api-prometheus-analysis-inputs.md)
 - [Argo Rollouts Healthy Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-healthy-canary.md)
 - [Argo Rollouts Failed Canary Demo](../../ops/demos/argo-rollouts/cpemon-api-failed-canary.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
