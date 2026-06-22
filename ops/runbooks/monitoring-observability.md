@@ -222,6 +222,26 @@ sum(rate(cpemon_api_http_requests_total{code=~"5.."}[5m])) by (route)
 histogram_quantile(0.95, sum(rate(cpemon_api_http_request_duration_seconds_bucket[5m])) by (le, route))
 ```
 
+## Pipeline dashboard
+
+Grafana loads the pipeline dashboard from
+`k8s/monitoring/grafana-dashboard-cpemon-pipeline.yaml` through the
+kube-prometheus-stack dashboard sidecar.
+
+The dashboard tells the event-flow story in order:
+
+1. ACS webhook request and error rate.
+2. ACS ingestion outcomes.
+3. Kafka broker scrape health.
+4. Writer processing and dead-letter outcomes.
+5. API request rate, errors, and p95 latency.
+
+Validate the dashboard artifact:
+
+```powershell
+make grafana-pipeline-dashboard-check
+```
+
 ## Interview Framing
 
 The clean answer is:

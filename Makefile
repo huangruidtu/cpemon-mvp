@@ -166,6 +166,9 @@ cpemon-writer-kafka-to-db-validation-check:
 cpemon-api-http-metrics-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-http-metrics.ps1
 
+grafana-pipeline-dashboard-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-grafana-pipeline-dashboard.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 

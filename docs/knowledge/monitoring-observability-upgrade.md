@@ -134,6 +134,20 @@ device.
 The older `cpemon_api_requests_total{code}` metric remains for compatibility,
 but the route-aware RED metrics are the better dashboard source.
 
+## CCPU-110 Learning Notes: Grafana Pipeline Dashboard
+
+The Grafana pipeline dashboard is the visual story of the migration. It should
+show the path from ACS webhook intake to Kafka, writer processing, dead-letter
+handling, and API health.
+
+The important design principle is that each panel maps to a pipeline question:
+
+* Is traffic entering `acs-ingest`?
+* Are events being accepted, rejected, or failing downstream?
+* Is Kafka scrapeable and healthy from Prometheus?
+* Is `cpemon-writer` processing, retrying, or dead-lettering events?
+* Is `cpemon-api` healthy by RED metrics?
+
 ## Validation
 
 ```powershell
@@ -143,6 +157,7 @@ make acs-ingest-ingestion-metrics-check
 make kafka-metrics-boundary-check
 make cpemon-writer-observability-story12-check
 make cpemon-api-http-metrics-check
+make grafana-pipeline-dashboard-check
 make monitoring-template
 ```
 

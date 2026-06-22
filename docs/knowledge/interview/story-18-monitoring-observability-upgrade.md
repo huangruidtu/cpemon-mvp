@@ -105,3 +105,11 @@ comes from `cpemon_api_http_request_duration_seconds{method,route,code}`.
 The route template label keeps metrics low-cardinality. `/api/cpe/:sn` is safe;
 `/api/cpe/CPE-001` as a label value is not, because every device would create a
 new time series.
+
+## Q14: How does the dashboard tell the event-flow story?
+
+The dashboard tells the event-flow story by following the request path: ACS
+webhooks arrive, ingestion accepts or rejects events, Kafka exposes broker
+health, the writer consumes/processes/retries/dead-letters events, and the API
+serves read traffic with RED metrics. That order makes troubleshooting faster
+because each panel corresponds to one pipeline boundary.

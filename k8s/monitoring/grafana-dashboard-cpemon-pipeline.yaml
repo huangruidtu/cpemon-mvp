@@ -105,9 +105,14 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(rate(cpemon_api_requests_total[5m])) by (code)",
-              "legendFormat": "code={{code}}",
+              "expr": "sum(rate(cpemon_api_http_requests_total[5m])) by (route, code)",
+              "legendFormat": "{{route}} code={{code}}",
               "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(cpemon_api_http_request_duration_seconds_bucket[5m])) by (le, route))",
+              "legendFormat": "p95 {{route}}",
+              "refId": "B"
             }
           ],
           "gridPos": {
@@ -141,18 +146,18 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(increase(cpemon_writer_events_processed_total[5m]))",
-              "legendFormat": "processed",
+              "expr": "sum(rate(cpemon_writer_kafka_processing_events_total[5m])) by (result, kind)",
+              "legendFormat": "{{result}} {{kind}}",
               "refId": "A"
             },
             {
-              "expr": "sum(increase(cpemon_writer_events_failed_total[5m]))",
-              "legendFormat": "failed",
+              "expr": "sum(rate(cpemon_writer_kafka_deadletters_total[5m])) by (result, kind)",
+              "legendFormat": "deadletter {{result}} {{kind}}",
               "refId": "B"
             },
             {
-              "expr": "sum(increase(cpemon_writer_events_dead_total[5m]))",
-              "legendFormat": "dead",
+              "expr": "sum(rate(acs_ingest_events_total[5m])) by (result)",
+              "legendFormat": "ingest {{result}}",
               "refId": "C"
             }
           ],
@@ -180,7 +185,7 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Service Up (acs-ingest / cpemon-writer / cpemon-api)",
+          "title": "Service and Kafka Up",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -190,6 +195,11 @@ data:
               "expr": "sum by (service) (up{namespace=\"cpemon\", service=~\"acs-ingest|cpemon-writer|cpemon-api\"})",
               "legendFormat": "{{service}}",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (job) (up{namespace=\"kafka\"})",
+              "legendFormat": "kafka {{job}}",
+              "refId": "B"
             }
           ],
           "gridPos": {
