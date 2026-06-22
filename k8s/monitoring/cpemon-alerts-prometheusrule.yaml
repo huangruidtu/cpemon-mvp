@@ -4,58 +4,73 @@ metadata:
   name: cpemon-alerts
   namespace: monitoring
   labels:
-    # 这行很重要：要和 kube-prometheus-stack 的 release 一致
-    # 你之前的 Prometheus Pod 是 prometheus-kps-kube-prometheus-stack-prometheus-0
-    # 所以这里用 release: kps，Prometheus 才会捡到这条规则
     release: kps
 spec:
   groups:
     - name: cpemon.rules
       rules:
-        # 1) CPEmonServiceDown: 关键服务不可用 Pod
         - alert: CPEmonServiceDown
-          expr: kube_deployment_status_replicas_available{
-                  namespace="cpemon",
-                  deployment=~"acs-ingest|cpemon-writer"
-                } < 1
-          for: 1m
-          labels:
-            severity: critical
-            service: cpemon
-          annotations:
-            summary: "CPEmon deployment {{ $labels.namespace }}/{{ $labels.deployment }} has no available replicas"
-            description: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has 0 available pods for more than 1 minute."
-
-        # 2) CPEmonHighErrorRate：cpemon 相关 ingress 5xx 错误率过高
-        - alert: CPEmonHighErrorRate
-          expr: |
-            (
-              sum(rate(nginx_ingress_controller_requests{
-                exported_namespace="cpemon",
-                status=~"5.."
-              }[5m]))
-              /
-              sum(rate(nginx_ingress_controller_requests{
-                exported_namespace="cpemon"
-              }[5m]))
-            ) * 100 > 5
-          for: 10m
-          labels:
-            severity: warning
-            service: cpemon
-          annotations:
-            summary: "High HTTP 5xx error rate for CPEmon"
-            description: "More than 5% of HTTP requests to CPEmon ingresses are failing with 5xx over the last 10 minutes."
-
-        # 3) MySQLDown：cpemon 命名空间里的 mysql deployment 没有可用 Pod
-        - alert: MySQLDown
-          expr: kube_deployment_status_replicas_available{namespace="cpemon", deployment="mysql"} < 1
+          expr: up{namespace="cpemon", service=~"acs-ingest|cpemon-writer|cpemon-api"} == 0
           for: 2m
           labels:
             severity: critical
             service: cpemon
-            component: mysql
           annotations:
-            summary: "MySQL deployment is down in namespace {{ $labels.namespace }}"
-            description: "MySQL deployment {{ $labels.namespace }}/{{ $labels.deployment }} has no available pods for more than 2 minutes."
+            summary: "CPEmon service {{ $labels.service }} is not scrapeable"
+            description: "Prometheus has not been able to scrape {{ $labels.service }} in namespace {{ $labels.namespace }} for more than 2 minutes."
+            runbook_url: "ops/runbooks/monitoring-observability.md"
 
+        - alert: CPEmonAPIHigh5xxRate
+          expr: sum(rate(cpemon_api_http_requests_total{code=~"5.."}[5m])) by (route) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            service: cpemon-api
+          annotations:
+            summary: "High cpemon-api 5xx rate on {{ $labels.route }}"
+            description: "cpemon-api route {{ $labels.route }} is returning more than 0.05 5xx responses per second for 10 minutes."
+            runbook_url: "ops/runbooks/monitoring-observability.md"
+
+        - alert: CPEmonAPIHighLatency
+          expr: histogram_quantile(0.95, sum(rate(cpemon_api_http_request_duration_seconds_bucket[5m])) by (le, route)) > 1
+          for: 10m
+          labels:
+            severity: warning
+            service: cpemon-api
+          annotations:
+            summary: "High cpemon-api p95 latency on {{ $labels.route }}"
+            description: "cpemon-api route {{ $labels.route }} has p95 latency above 1 second for 10 minutes."
+            runbook_url: "ops/runbooks/monitoring-observability.md"
+
+        - alert: CPEmonIngestErrors
+          expr: sum(rate(acs_webhook_errors_total[5m])) by (reason) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            service: acs-ingest
+          annotations:
+            summary: "ACS ingest errors are increasing for reason {{ $labels.reason }}"
+            description: "acs-ingest is reporting more than 0.05 webhook errors per second for reason {{ $labels.reason }}."
+            runbook_url: "ops/runbooks/monitoring-observability.md"
+
+        - alert: CPEmonWriterDeadLetters
+          expr: sum(rate(cpemon_writer_kafka_deadletters_total{result="success"}[5m])) by (topic, kind) > 0
+          for: 5m
+          labels:
+            severity: warning
+            service: cpemon-writer
+          annotations:
+            summary: "cpemon-writer is publishing dead-letter events"
+            description: "Dead-letter events are being published for topic {{ $labels.topic }} and kind {{ $labels.kind }}."
+            runbook_url: "ops/runbooks/monitoring-observability.md"
+
+        - alert: CPEmonKafkaMetricsDown
+          expr: up{namespace="kafka"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            service: kafka
+          annotations:
+            summary: "Kafka metrics target is down"
+            description: "Prometheus cannot scrape a Kafka metrics target in namespace kafka."
+            runbook_url: "ops/runbooks/monitoring-observability.md"

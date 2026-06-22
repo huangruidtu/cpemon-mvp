@@ -162,6 +162,23 @@ The dashboard is separate from the pipeline dashboard because the API can have a
 user-facing incident even when the ingestion pipeline is healthy. Separating the
 views makes the operating model easier to explain in an interview.
 
+## CCPU-111 Learning Notes: Alert Baseline
+
+Alerts differ from dashboards. A dashboard can contain many useful signals; an
+alert should be actionable and tied to an operator response.
+
+The baseline alerts cover:
+
+* service scrape failure
+* API 5xx rate
+* API p95 latency
+* ACS ingest errors
+* writer dead-letter activity
+* Kafka metrics scrape failure
+
+The expressions use implemented metrics from this story rather than future or
+external-only metrics. This keeps the alert baseline honest and testable.
+
 ## Validation
 
 ```powershell
@@ -173,6 +190,7 @@ make cpemon-writer-observability-story12-check
 make cpemon-api-http-metrics-check
 make grafana-pipeline-dashboard-check
 make grafana-api-health-dashboard-check
+make prometheus-alert-baseline-check
 make monitoring-template
 ```
 

@@ -263,6 +263,31 @@ Validate the dashboard artifact:
 make grafana-api-health-dashboard-check
 ```
 
+## Alert baseline
+
+The first PrometheusRule baseline lives at
+`k8s/monitoring/cpemon-alerts-prometheusrule.yaml`.
+
+| Alert | First checks |
+| --- | --- |
+| `CPEmonServiceDown` | ServiceMonitor selector, Service port name, pod readiness, `/metrics`. |
+| `CPEmonAPIHigh5xxRate` | API logs, DB/Kafka dependencies, recent deploys, route-specific failures. |
+| `CPEmonAPIHighLatency` | DB latency, slow routes, pod CPU/memory, downstream calls. |
+| `CPEmonIngestErrors` | Error reason label, webhook payload quality, DB enqueue, Kafka publish. |
+| `CPEmonWriterDeadLetters` | Dead-letter topic, poison-message payloads, retry/dead-letter runbook. |
+| `CPEmonKafkaMetricsDown` | Kafka JMX exporter, Kafka ServiceMonitor, Prometheus targets. |
+
+Validate alert artifacts:
+
+```powershell
+make prometheus-alert-baseline-check
+kubectl get prometheusrule cpemon-alerts -n monitoring
+```
+
+Dashboards help operators see trends. Alerts should be fewer and action-oriented:
+they must indicate a user-impacting or pipeline-impacting condition with a
+clear first-check path.
+
 ## Interview Framing
 
 The clean answer is:

@@ -172,6 +172,9 @@ grafana-pipeline-dashboard-check:
 grafana-api-health-dashboard-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-grafana-api-health-dashboard.ps1
 
+prometheus-alert-baseline-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-prometheus-alert-baseline.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 

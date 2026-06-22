@@ -121,3 +121,11 @@ dashboard: are user-facing API routes fast, successful, and scrapeable? The
 pipeline dashboard explains event flow, while the API reliability dashboard
 focuses on RED metrics for `cpemon-api`: request rate, 5xx errors, p95 latency,
 and service up status.
+
+## Q16: How do alerts differ from dashboards?
+
+Dashboards are for exploration and diagnosis; alerts are for action. I kept the
+baseline alerts focused on conditions that should trigger an operator response:
+service scrape failure, API 5xx rate, API latency, ingest errors, writer
+dead-letter activity, and Kafka metrics scrape failure. Each alert has bounded
+labels and a runbook pointer.
