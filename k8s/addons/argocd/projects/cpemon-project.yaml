@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: cpemon
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: cpemon
+    cpemon.io/layer: delivery
+    cpemon.io/managed-by: argocd
+spec:
+  description: CPEmon learning GitOps project for application and platform add-on deployment.
+  sourceRepos:
+    - https://github.com/huangruidtu/cpemon-mvp.git
+  destinations:
+    - namespace: cpemon
+      server: https://kubernetes.default.svc
+    - namespace: kafka
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    - namespace: security
+      server: https://kubernetes.default.svc
+    - namespace: platform
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  orphanedResources:
+    warn: true
+

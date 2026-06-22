@@ -11,6 +11,12 @@ debug than manual `kubectl apply` sessions.
 This subtask does not yet create CPEmon Applications. It establishes the Argo
 CD control plane and the minimum access path for later GitOps subtasks.
 
+Follow-on project boundary:
+
+```text
+ops/runbooks/argocd-project.md
+```
+
 ## Installation Boundary
 
 For the learning environment, use the upstream Argo CD stable manifest:
@@ -136,4 +142,3 @@ I introduced Argo CD after Terraform and Helm because Terraform owns cloud
 infrastructure, Helm packages Kubernetes workloads, and Argo CD reconciles the
 cluster from Git. That ordering keeps responsibilities clear: CI builds images,
 Git records desired state, and Argo CD performs continuous delivery.
-

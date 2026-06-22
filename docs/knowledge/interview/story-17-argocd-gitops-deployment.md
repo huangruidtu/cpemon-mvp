@@ -54,3 +54,26 @@ The value is not just deployment automation. The value is a reviewable desired
 state, drift detection, reconciliation, easier rollback, and a clean separation
 between image build and cluster deployment.
 
+## Q8: What is an AppProject?
+
+An AppProject is an Argo CD guardrail. It defines which repositories an
+Application can read from and which cluster destinations it can deploy to.
+
+## Q9: Why not let every Application deploy anywhere?
+
+That would make the GitOps controller too powerful by default. A project
+boundary limits blast radius and makes ownership clearer. In CPEmon, the
+learning project allows the repo to deploy only to the namespaces used by the
+application and platform add-ons.
+
+## Q10: What did CCPU-97 add?
+
+It added the `cpemon` AppProject manifest, a project runbook, repository and
+namespace boundary documentation, and validation that the project remains tied
+to the CPEmon source repository.
+
+## Q11: How would you harden the AppProject for production?
+
+I would split projects by environment, restrict cluster-scoped resources,
+review allowed repositories, add Argo CD RBAC, and avoid giving a single
+learning project broad access to every namespace.

@@ -58,3 +58,20 @@ The `argocd` CLI is helpful but not required for the repository-level checks.
 Later tasks that need CLI login should stop and install the CLI if it is not on
 `PATH`.
 
+## Project Boundary
+
+After Argo CD is installed, apply the CPEmon project:
+
+```powershell
+kubectl apply -f k8s/addons/argocd/projects/cpemon-project.yaml
+```
+
+Verify:
+
+```powershell
+kubectl get appproject cpemon -n argocd
+kubectl describe appproject cpemon -n argocd
+```
+
+The project allows this repository to deploy to the learning environment
+namespaces used by CPEmon and platform add-ons.

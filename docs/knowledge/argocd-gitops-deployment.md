@@ -72,3 +72,39 @@ Do not say "Argo CD builds and deploys my app." A stronger answer is:
 > state. Argo CD owns CD: it watches Git, compares desired state with live
 > cluster state, and reconciles drift.
 
+## CCPU-97: Create Argo CD Project
+
+The `cpemon` AppProject defines the first GitOps guardrail.
+
+Manifest:
+
+```text
+k8s/addons/argocd/projects/cpemon-project.yaml
+```
+
+It allows Argo CD Applications in the `cpemon` project to read from the source
+repository:
+
+```text
+https://github.com/huangruidtu/cpemon-mvp.git
+```
+
+It allows deployment to the learning target namespaces:
+
+* `cpemon`
+* `kafka`
+* `monitoring`
+* `security`
+* `platform`
+
+Why this matters:
+
+An AppProject is a security and ownership boundary. It prevents the story from
+accidentally teaching "Argo CD can deploy anything anywhere." Instead, the
+project records which repository and target namespaces are allowed.
+
+Production hardening:
+
+The learning project is intentionally broad. A production platform should split
+projects by environment or team, restrict cluster-scoped resources, and pair
+the project with Argo CD RBAC.

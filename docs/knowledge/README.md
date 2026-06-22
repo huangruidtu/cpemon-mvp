@@ -56,6 +56,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Topics Runbook](../../ops/runbooks/kafka-topics.md)
 - [Kafka Validation and Observability Runbook](../../ops/runbooks/kafka-validation-observability.md)
 - [Argo CD Installation Runbook](../../ops/runbooks/argocd-installation.md)
+- [Argo CD Project Runbook](../../ops/runbooks/argocd-project.md)
 
 ## Interview Prep
 
