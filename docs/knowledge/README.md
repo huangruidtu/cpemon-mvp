@@ -40,6 +40,8 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [OpenCost Access and Cost Investigation Runbook](../../ops/runbooks/opencost-cost-investigation.md)
 - [cpemon-api HPA Runbook](../../ops/runbooks/cpemon-api-hpa.md)
 - [cpemon-api HPA Validation and Load-Test Runbook](../../ops/runbooks/cpemon-api-hpa-validation-load-test.md)
+- [KEDA Step 2 Decision Runbook](../../ops/runbooks/keda-step2-decision.md)
+- [HPA First, KEDA Step 2 ADR](../../ADR/cloud-platform-upgrade-hpa-first-keda-step2.md)
 - [Platform Governance Boundary Runbook](../../ops/runbooks/platform-governance-boundary.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
 - [CPEmon API Prometheus Analysis Inputs](../../ops/runbooks/cpemon-api-prometheus-analysis-inputs.md)

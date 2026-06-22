@@ -315,3 +315,30 @@ containers do not have CPU requests.
 Set `workloads.cpemonApi.autoscaling.enabled=false` for the environment and
 sync the Helm release again. The workload then returns to the fixed
 `replicaCount` behavior.
+
+## Q47: What did CCPU-211 add?
+
+It added an ADR and runbook explaining the HPA-first, KEDA-later decision. HPA
+is used for the first `cpemon-api` CPU autoscaling path, while KEDA is deferred
+to a Step 2 event-driven scaling story.
+
+## Q48: Why not install KEDA immediately?
+
+KEDA adds another controller and CRD surface. The current scaling signal is CPU,
+which HPA already handles well. Installing KEDA before there is a Kafka lag,
+queue depth, or external metric requirement would increase operational surface
+without solving the current problem.
+
+## Q49: What is the best future KEDA candidate in CPEmon?
+
+`cpemon-writer` scaling from Kafka consumer lag. That workload consumes Kafka
+events, so lag can express backlog more directly than CPU. Before using KEDA,
+the team needs stable Kafka metrics, lag thresholds, dashboards, and rollback
+instructions.
+
+## Q50: How would you explain HPA vs KEDA in an interview?
+
+HPA scales Kubernetes workloads from native resource or metrics signals. KEDA
+extends autoscaling to event sources such as Kafka, queues, schedules, and
+external metrics. I used HPA first because the API needed CPU-based scaling and
+saved KEDA for the point where event backlog becomes the primary signal.

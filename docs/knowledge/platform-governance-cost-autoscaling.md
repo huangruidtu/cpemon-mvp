@@ -519,6 +519,30 @@ Local validation:
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-hpa-validation.ps1
 ```
 
+## CCPU-211: KEDA Step 2 Decision
+
+This task records the autoscaling boundary:
+
+```text
+Step 1: HPA for cpemon-api CPU scaling
+Step 2: KEDA for event-driven scaling when Kafka lag or queue depth becomes the
+        primary scaling signal
+```
+
+The ADR is `ADR/cloud-platform-upgrade-hpa-first-keda-step2.md`. The practical
+decision runbook is `ops/runbooks/keda-step2-decision.md`.
+
+The interview reason is simple: HPA is the right first autoscaling mechanism
+for CPU-based API scaling. KEDA is powerful, but it introduces a new controller
+and belongs with event-source scaling, especially Kafka consumer lag for
+`cpemon-writer`.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-keda-step2-decision.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.
