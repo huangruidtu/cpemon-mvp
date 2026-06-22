@@ -350,3 +350,47 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-p95-analysis.ps1
 ```
+
+## CCPU-191: Connect AnalysisTemplates to Rollout
+
+The Rollout now runs both quality gates after the 20% and 50% pause windows:
+
+```yaml
+- analysis:
+    templates:
+      - templateName: cpemon-api-http-5xx-rate
+      - templateName: cpemon-api-p95-latency
+```
+
+The full canary flow is:
+
+```text
+20% traffic
+  -> pause 60s
+  -> run 5xx and p95 analysis
+  -> 50% traffic
+  -> pause 120s
+  -> run 5xx and p95 analysis again
+  -> 100% traffic
+```
+
+Why after pauses:
+
+* The pause gives Prometheus enough time to scrape and aggregate data.
+* The analysis gate evaluates the canary before the next traffic increase.
+* Running the same checks again at 50% catches failures that only appear under
+  more meaningful load.
+
+Live inspection commands:
+
+```powershell
+kubectl get analysisrun -n cpemon
+kubectl describe analysisrun -n cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-analysis-wiring.ps1
+```

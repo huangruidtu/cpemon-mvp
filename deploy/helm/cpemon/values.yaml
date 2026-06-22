@@ -206,9 +206,17 @@ workloads:
           - setWeight: 20
           - pause:
               duration: 60s
+          - analysis:
+              templates:
+                - templateName: cpemon-api-http-5xx-rate
+                - templateName: cpemon-api-p95-latency
           - setWeight: 50
           - pause:
               duration: 120s
+          - analysis:
+              templates:
+                - templateName: cpemon-api-http-5xx-rate
+                - templateName: cpemon-api-p95-latency
           - setWeight: 100
     image:
       repository: cpemon-api

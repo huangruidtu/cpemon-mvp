@@ -218,19 +218,25 @@ strategy:
       - setWeight: 20
       - pause:
           duration: 60s
+      - analysis:
+          templates:
+            - templateName: cpemon-api-http-5xx-rate
+            - templateName: cpemon-api-p95-latency
       - setWeight: 50
       - pause:
           duration: 120s
+      - analysis:
+          templates:
+            - templateName: cpemon-api-http-5xx-rate
+            - templateName: cpemon-api-p95-latency
       - setWeight: 100
 ```
 
 The first exposure is 20% so the new ReplicaSet receives real traffic while
-most users stay on the stable path. The second exposure is 50% after a short
-operator review window. The final step promotes to full traffic.
-
-The pauses are deliberately time-bound manual inspection windows. Prometheus
-AnalysisTemplates are added in later subtasks, so this step does not yet claim
-automatic health gating.
+most users stay on the stable path. The first pause gives Prometheus a short
+measurement window, and the analysis step checks both HTTP 5xx rate and p95
+latency before the rollout reaches 50%. The second pause repeats the same
+quality gate at higher traffic before full promotion.
 
 When rollout mode is enabled, the chart also renders:
 
@@ -253,6 +259,8 @@ make cpemon-api-rollout-check
 make cpemon-api-rollout-services-check
 make cpemon-api-canary-steps-check
 make cpemon-api-http5xx-analysis-check
+make cpemon-api-p95-analysis-check
+make cpemon-api-analysis-wiring-check
 helm template cpemon deploy/helm/cpemon -n cpemon -f deploy/helm/cpemon/values-dev.yaml
 ```
 
@@ -320,6 +328,25 @@ successCondition: result[0] < 0.5
 That means the canary should only continue when p95 latency is under 500ms.
 The 5xx template catches failures; the p95 template catches slow canaries that
 are technically successful but operationally unhealthy.
+
+`CCPU-191` wires both templates into the `cpemon-api` Rollout canary steps. The
+analysis gates run after the 20% and 50% pause windows:
+
+```yaml
+- analysis:
+    templates:
+      - templateName: cpemon-api-http-5xx-rate
+      - templateName: cpemon-api-p95-latency
+```
+
+In a live cluster, each analysis step creates an `AnalysisRun`. Operators can
+inspect them with:
+
+```powershell
+kubectl get analysisrun -n cpemon
+kubectl describe analysisrun -n cpemon
+kubectl argo rollouts get rollout cpemon-api -n cpemon
+```
 
 ## ConfigMap and Secret References
 

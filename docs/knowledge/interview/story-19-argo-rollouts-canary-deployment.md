@@ -182,3 +182,22 @@ query must keep the `le` bucket label, so it uses `sum by (le)`.
 It means the p95 latency returned by the Prometheus query must be below 0.5
 seconds. For this dev learning environment, that is a clear threshold that is
 easy to explain and tune later.
+
+## Q26: Where did you attach the analysis gates?
+
+I attached both the 5xx-rate and p95-latency AnalysisTemplates after the 20%
+pause and again after the 50% pause. That means the rollout checks health
+before increasing exposure and checks again under higher traffic before full
+promotion.
+
+## Q27: Why run both 5xx and p95 checks together?
+
+They cover different failure modes. 5xx catches failed requests. p95 catches
+slow successful requests. A canary should pass both reliability and latency
+signals before getting more traffic.
+
+## Q28: What is an AnalysisRun?
+
+An AnalysisRun is the runtime execution of an AnalysisTemplate. The template
+defines the Prometheus query and thresholds; the Rollout creates AnalysisRuns
+during promotion and uses their result to continue, pause, or fail the rollout.
