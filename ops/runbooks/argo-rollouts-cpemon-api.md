@@ -240,6 +240,19 @@ ops/demos/argo-rollouts/cpemon-api-healthy-canary.md
 Use it when the canary image is known-good and the goal is to show a successful
 progressive delivery path.
 
+`CCPU-124` uses this scenario as the successful canary acceptance path. The most
+important operator habit is the promotion evidence checklist: before promoting
+from 20% to 50% or from 50% to 100%, verify Rollout phase, ReplicaSet readiness,
+stable/canary endpoints, successful AnalysisRuns, 5xx threshold, p95 threshold,
+and logs/traces.
+
+The interview phrasing is:
+
+```text
+I did not promote because the command was available. I promoted because the
+canary evidence was healthy at each gate.
+```
+
 Expected healthy path:
 
 ```text

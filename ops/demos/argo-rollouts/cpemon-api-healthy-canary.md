@@ -129,6 +129,25 @@ Canary traffic is no longer partially split.
 The most recent AnalysisRuns are Successful.
 ```
 
+## Promotion Evidence Checklist
+
+At each manual promotion point, use this checklist before running `promote`:
+
+```text
+Rollout phase is Paused or Progressing at the expected step.
+New ReplicaSet pods are Ready.
+Stable and canary Services have endpoints that match the rollout state.
+Recent AnalysisRuns are Successful.
+HTTP 5xx ratio is below the configured threshold.
+p95 latency is below the configured threshold.
+Logs and traces do not show a new canary-only failure pattern.
+The operator can explain why the next traffic increase is safe.
+```
+
+This checklist is the core of `CCPU-124`: a successful canary is not successful
+because the final status says `Healthy`; it is successful because every
+promotion decision was backed by observable evidence.
+
 ## Scripted Demo
 
 The safe local script is:

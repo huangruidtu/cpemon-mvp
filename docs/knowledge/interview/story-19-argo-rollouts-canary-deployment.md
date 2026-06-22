@@ -383,3 +383,10 @@ The pause gives the canary real traffic and gives Prometheus time to scrape
 fresh samples. Then analysis evaluates meaningful data before the next traffic
 increase. Without that pause, the query could run before the canary has enough
 runtime evidence.
+
+## Q56: What makes a successful canary demo convincing?
+
+It is convincing when I show the evidence behind each promotion: rollout phase,
+ReplicaSet readiness, stable/canary endpoints, successful AnalysisRuns, 5xx and
+p95 thresholds, and clean logs or traces. The point is not that the final status
+became Healthy; the point is that every traffic increase was justified.

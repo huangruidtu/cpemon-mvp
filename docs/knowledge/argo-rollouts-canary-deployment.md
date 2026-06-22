@@ -616,6 +616,28 @@ Even when the canary is expected to pass, the operator checks:
 In an interview, this is the difference between "I deployed something" and "I
 can operate a progressive delivery workflow safely."
 
+## CCPU-124: Create Successful Canary Demo
+
+`CCPU-124` turns the healthy path into a promotion-evidence story:
+
+```text
+20% traffic -> pause -> analysis succeeds -> promote
+50% traffic -> pause -> analysis succeeds -> promote
+100% traffic -> Healthy
+```
+
+The key demo point is that the operator checks evidence before each promotion:
+
+* Rollout phase and current step.
+* New ReplicaSet readiness.
+* Stable and canary endpoint state.
+* Successful AnalysisRuns.
+* 5xx and p95 thresholds.
+* Logs and traces for canary-only failures.
+
+That makes the demo more than a happy path. It proves the release process has a
+repeatable evidence model.
+
 Validation:
 
 ```powershell
