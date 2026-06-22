@@ -281,6 +281,29 @@ Prometheus scrape targets, Grafana panels, alert rules, structured logs, and
 Tempo trace lookup with a real trace_id.
 ```
 
+## Story 12 Final Interview Narrative
+
+Story 12 turns CPEmon observability into a platform-grade operating model:
+metrics, logs, traces, dashboards, and alerts each have a clear job.
+
+The concise interview answer is:
+
+> I separated platform monitoring from application telemetry. Argo CD manages
+> the shared monitoring stack, while CPEmon exposes low-cardinality metrics,
+> ServiceMonitors, dashboards, alerts, structured logs with `trace_id`, and an
+> OpenTelemetry path into Tempo. I validated the work in layers: repository
+> checks, Helm/render checks, and live-cluster checks for Prometheus, Grafana,
+> Alertmanager, logs, and traces.
+
+The strongest proof points are:
+
+* ServiceMonitor templates connect CPEmon services to Prometheus.
+* ACS ingest, writer, API, and Kafka boundaries expose different signal types.
+* Grafana has one dashboard for event pipeline health and one for API health.
+* PrometheusRule alerts are action-oriented and link back to the runbook.
+* `trace_id` connects logs and Tempo traces.
+* The ADR records why Tempo was chosen and where repository validation stops.
+
 ## Validation
 
 ```powershell
@@ -298,6 +321,7 @@ make minimal-tracing-check
 make trace-id-structured-logs-check
 make trace-export-boundary-check
 make observability-e2e-check
+make monitoring-observability-final-docs-check
 make monitoring-template
 ```
 

@@ -197,3 +197,26 @@ the matching trace lookup in Tempo. Then I would explain the troubleshooting
 path: alert or dashboard symptom, route or service boundary, request log,
 `trace_id`, trace backend, and finally the specific failing dependency or code
 path.
+
+## Q24: What is the final Story 12 interview summary?
+
+I upgraded CPEmon observability from isolated health checks into a layered
+platform model. Argo CD manages the shared monitoring stack. CPEmon exposes
+ServiceMonitors, low-cardinality metrics, Grafana dashboards, PrometheusRule
+alerts, structured logs with `trace_id`, and an OpenTelemetry Collector path to
+Tempo.
+
+The key design principle is that metrics, logs, traces, dashboards, and alerts
+are different tools. Metrics tell me rates, errors, durations, lag, retries,
+and dead letters. Logs tell me what happened for one concrete request or event.
+Traces show the request path. Dashboards support exploration. Alerts page only
+for actionable conditions.
+
+## Q25: What mistakes did you deliberately avoid?
+
+I avoided putting device serial numbers or raw payload values into Prometheus
+labels, because that would create high cardinality. I avoided claiming live
+cluster proof when the local kubeconfig could not reach a cluster. I avoided
+making every app install its own monitoring stack. I also avoided treating a
+dashboard as an alert; dashboards help diagnosis, while alerts need ownership,
+thresholds, and a runbook.

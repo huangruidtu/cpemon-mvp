@@ -411,6 +411,19 @@ Then prove the operator workflow:
 5. Search that `trace_id` in Tempo.
 6. Confirm alerts have runbook links and bounded labels.
 
+## Common failure checks
+
+Use this section when Prometheus or Grafana looks empty after a deployment.
+
+| Symptom | Likely cause | First check |
+| --- | --- | --- |
+| Target missing from Prometheus | ServiceMonitor label mismatch | Compare ServiceMonitor labels with Prometheus `serviceMonitorSelector`. |
+| Target exists but scrape fails | wrong metrics path | Confirm the endpoint uses `/metrics` and the app serves that path. |
+| ServiceMonitor endpoint cannot bind | missing port name | Confirm the Kubernetes Service has a named metrics port matching the ServiceMonitor endpoint. |
+| Service has no endpoints | selector mismatch | Compare Service selector labels with pod labels. |
+| Metrics endpoint returns 404 or connection refused | bad image metrics endpoint | Confirm the deployed image includes the metrics server and the container exposes the metrics port. |
+| Logs have `trace_id` but Tempo has no trace | tracing gaps | Check app OTLP config, Collector receivers, Collector exporters, and Tempo service health. |
+
 ## Interview Framing
 
 The clean answer is:

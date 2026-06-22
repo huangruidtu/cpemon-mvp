@@ -26,6 +26,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [acs-ingest Kafka Producer Refactor](acs-ingest-kafka-producer-refactor.md)
 - [cpemon-writer Kafka Consumer Refactor](cpemon-writer-kafka-consumer-refactor.md)
 - [Argo CD GitOps Deployment](argocd-gitops-deployment.md)
+- [Monitoring and Observability Upgrade](monitoring-observability-upgrade.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
 - [Argo CD Kafka Application Runbook](../../ops/runbooks/argocd-kafka-application.md)
 - [Argo CD Monitoring Application Runbook](../../ops/runbooks/argocd-monitoring-application.md)
@@ -46,6 +47,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Deployment Option for Step 1](../../ADR/cloud-platform-upgrade-kafka-deployment-step1.md)
 - [cpemon-writer Kafka Consumer Migration](../../ADR/cpemon-writer-kafka-consumer-migration.md)
 - [Argo CD GitOps Deployment Decision](../../ADR/cloud-platform-upgrade-argocd-gitops-deployment.md)
+- [Monitoring and Observability Upgrade Decision](../../ADR/cloud-platform-upgrade-monitoring-observability.md)
 
 ## Runbooks
 
@@ -70,6 +72,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Installation Runbook](../../ops/runbooks/argocd-installation.md)
 - [Argo CD Project Runbook](../../ops/runbooks/argocd-project.md)
 - [Argo CD GitOps Layout Runbook](../../ops/runbooks/argocd-gitops-layout.md)
+- [Monitoring Observability Runbook](../../ops/runbooks/monitoring-observability.md)
 
 ## Interview Prep
 
@@ -77,3 +80,4 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [cpemon-writer Kafka Consumer Interview Q&A](interview/story-16-cpemon-writer-kafka-consumer-refactor.md)
 - [cpemon-writer Kafka Consumer Learning Notes](interview/cpemon-writer-kafka-consumer-learning-notes.md)
 - [Argo CD GitOps Deployment Interview Q&A](interview/story-17-argocd-gitops-deployment.md)
+- [Monitoring and Observability Upgrade Interview Q&A](interview/story-18-monitoring-observability-upgrade.md)

@@ -190,6 +190,9 @@ trace-export-boundary-check:
 observability-e2e-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-observability-end-to-end.ps1
 
+monitoring-observability-final-docs-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-monitoring-observability-final-docs.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 
