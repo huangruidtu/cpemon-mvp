@@ -368,3 +368,64 @@ kubectl get application external-secrets-dev -n argocd
 kubectl describe application external-secrets-dev -n argocd
 argocd app get external-secrets-dev
 ```
+
+## CCPU-177: Create Application Boundary for Policy and Security Add-ons
+
+The policy/security Application is:
+
+```text
+k8s/gitops/dev/applications/policy-security-dev.yaml
+```
+
+It tells Argo CD:
+
+* use the `cpemon` AppProject
+* read policy manifests from `k8s/netpol/baseline`
+* deploy the staged NetworkPolicy baseline into the `cpemon` namespace
+* keep sync manual until NetworkPolicy enforcement and labels are validated
+
+Included now:
+
+```text
+k8s/netpol/baseline/cpemon-egress-baseline-candidate.yaml
+```
+
+Deferred:
+
+* Kyverno controller
+* Kyverno policy resources
+* OPA Gatekeeper
+* broad default-deny across platform namespaces
+
+Reason:
+
+NetworkPolicy baseline manifests already exist and have a documented dry-run
+and troubleshooting boundary. Kyverno is still only a roadmap item in this
+repository; it does not yet have chart values, a policy package, a runbook, or
+a validation script.
+
+Important boundary:
+
+`Synced` means Argo CD applied the NetworkPolicy objects. It does not prove
+network enforcement. Enforcement depends on the EKS CNI or another
+policy-capable networking layer.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-policy-security-application.ps1
+kubectl apply --dry-run=client --validate=false `
+  -f k8s/netpol/baseline/cpemon-egress-baseline-candidate.yaml
+```
+
+The repository script is the offline validation boundary. The kubectl dry-run
+is useful when kubeconfig points to a reachable API server; even client dry-run
+can perform API discovery.
+
+Live Argo CD inspection:
+
+```powershell
+kubectl get application policy-security-dev -n argocd
+kubectl describe application policy-security-dev -n argocd
+argocd app get policy-security-dev
+```

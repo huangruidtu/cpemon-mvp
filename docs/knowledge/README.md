@@ -30,6 +30,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Kafka Application Runbook](../../ops/runbooks/argocd-kafka-application.md)
 - [Argo CD Monitoring Application Runbook](../../ops/runbooks/argocd-monitoring-application.md)
 - [Argo CD External Secrets Application Runbook](../../ops/runbooks/argocd-external-secrets-application.md)
+- [Argo CD Policy and Security Application Runbook](../../ops/runbooks/argocd-policy-security-application.md)
 
 ## Architecture Decisions
 

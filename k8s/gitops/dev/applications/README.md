@@ -11,7 +11,7 @@ Planned Applications:
 | `kafka-dev` | `kafka` | Bitnami Kafka chart `32.4.3` with `k8s/addons/kafka/values.yaml` |
 | `monitoring-dev` | `monitoring` | kube-prometheus-stack chart `86.3.2` with `k8s/monitoring/kube-prometheus-stack-values.yaml` |
 | `external-secrets-dev` | `external-secrets` | External Secrets Operator chart `2.6.0` with `k8s/addons/external-secrets/values.yaml` |
-| `policy-security-dev` | `security` | Policy/security add-on boundary |
+| `policy-security-dev` | `cpemon` | CPEmon baseline NetworkPolicy candidate from `k8s/netpol/baseline` |
 
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
@@ -86,3 +86,19 @@ project:        cpemon
 
 This Application installs the controller and CRDs. Real secret values stay in
 AWS Secrets Manager, not Git.
+
+## `policy-security-dev`
+
+`policy-security-dev.yaml` deploys the staged CPEmon NetworkPolicy baseline:
+
+```text
+repoURL:        https://github.com/huangruidtu/cpemon-mvp.git
+targetRevision: HEAD
+path:           k8s/netpol/baseline
+destination:    https://kubernetes.default.svc / cpemon
+project:        cpemon
+```
+
+Kyverno remains deferred. The current repository has NetworkPolicy candidate
+manifests and validation docs, but it does not yet have a pinned Kyverno chart,
+values file, policy package, or live validation plan.

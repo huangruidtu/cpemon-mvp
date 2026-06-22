@@ -20,6 +20,7 @@ k8s/gitops/
       kafka-dev.yaml
       monitoring-dev.yaml
       external-secrets-dev.yaml
+      policy-security-dev.yaml
 ```
 
 Bootstrap resources stay under `k8s/addons/argocd` because they install and
@@ -89,6 +90,10 @@ into the `monitoring` namespace.
 `2.6.0` with the repository values file
 `k8s/addons/external-secrets/values.yaml` into the `external-secrets`
 namespace.
+
+`policy-security-dev` reconciles the staged CPEmon NetworkPolicy baseline from
+`k8s/netpol/baseline` into the `cpemon` namespace. Kyverno is deferred until a
+controller, values file, policy package, and validation boundary exist.
 
 ## Interview Framing
 

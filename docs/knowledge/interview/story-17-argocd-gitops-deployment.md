@@ -231,3 +231,36 @@ Sync ESO first so CRDs and the controller exist. Then sync CPEmon chart
 resources that render SecretStore and ExternalSecret objects. Finally verify
 that Kubernetes Secrets are created and workloads consume them through
 `secretKeyRef`.
+
+## Q36: What did CCPU-177 add?
+
+It added `policy-security-dev`, an Argo CD Application for the staged CPEmon
+NetworkPolicy baseline. It points to `k8s/netpol/baseline` and targets the
+`cpemon` namespace.
+
+## Q37: Why defer Kyverno?
+
+Kyverno is a real future policy-controller option, but this repository does
+not yet have a pinned Kyverno chart, values file, policy package, controller
+runbook, or validation script. Adding it now would create more moving parts
+than proof.
+
+## Q38: How are platform guardrails different from app manifests?
+
+App manifests deploy workload behavior. Guardrails constrain workload behavior,
+such as network traffic, admission rules, image policy, or required labels.
+They need gradual rollout, validation, and rollback guidance because a mistake
+can break otherwise healthy applications.
+
+## Q39: Does Argo CD `Synced` prove NetworkPolicy enforcement?
+
+No. `Synced` means the NetworkPolicy objects were applied. Enforcement depends
+on the CNI or policy engine. The real proof is connectivity testing: allowed
+flows work and denied flows fail.
+
+## Q40: Why start with CPEmon NetworkPolicy instead of broad default-deny?
+
+The CPEmon app namespace has known dependencies such as DNS, MySQL, and
+monitoring. Starting there makes the policy reviewable. Broad default-deny
+across platform namespaces can break controllers before their traffic patterns
+are mapped.

@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: policy-security-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: policy-security
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/environment: dev
+    cpemon.io/layer: security
+    cpemon.io/managed-by: argocd
+spec:
+  project: cpemon
+  source:
+    repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+    targetRevision: HEAD
+    path: k8s/netpol/baseline
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cpemon
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
