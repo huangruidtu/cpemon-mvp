@@ -14,6 +14,7 @@ spec:
     - https://github.com/huangruidtu/cpemon-mvp.git
     - registry-1.docker.io/bitnamicharts
     - ghcr.io/prometheus-community/charts
+    - https://charts.external-secrets.io
   destinations:
     - namespace: cpemon
       server: https://kubernetes.default.svc
@@ -23,6 +24,8 @@ spec:
       server: https://kubernetes.default.svc
     - namespace: security
       server: https://kubernetes.default.svc
+    - namespace: external-secrets
+      server: https://kubernetes.default.svc
     - namespace: platform
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
@@ -30,6 +33,16 @@ spec:
       kind: Namespace
     - group: apiextensions.k8s.io
       kind: CustomResourceDefinition
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: apiregistration.k8s.io
+      kind: APIService
   namespaceResourceWhitelist:
     - group: "*"
       kind: "*"

@@ -13,8 +13,8 @@ For CPEmon, the learning project is:
 ```text
 AppProject: cpemon
 Namespace:  argocd
-Repo:       https://github.com/huangruidtu/cpemon-mvp.git
-Targets:    cpemon, kafka, monitoring, security, platform
+Repos:      CPEmon Git repo plus approved platform chart repositories
+Targets:    cpemon, kafka, monitoring, external-secrets, security, platform
 ```
 
 ## Manifest
@@ -54,12 +54,30 @@ Allowed namespaces:
 * `cpemon`
 * `kafka`
 * `monitoring`
+* `external-secrets`
 * `security`
 * `platform`
 
-Allowed source repository:
+Allowed source repositories:
 
 * `https://github.com/huangruidtu/cpemon-mvp.git`
+* `registry-1.docker.io/bitnamicharts`
+* `ghcr.io/prometheus-community/charts`
+* `https://charts.external-secrets.io`
+
+Allowed cluster-scoped resources are intentionally limited to the resource
+types needed by platform add-on charts:
+
+* `Namespace`
+* `CustomResourceDefinition`
+* `ClusterRole`
+* `ClusterRoleBinding`
+* `MutatingWebhookConfiguration`
+* `ValidatingWebhookConfiguration`
+* `APIService`
+
+This keeps the learning project practical for operator-style add-ons without
+making it fully cluster-admin by default.
 
 ## Production Hardening
 
@@ -70,6 +88,7 @@ For production, tighten this boundary:
 * restrict cluster-scoped resources aggressively
 * use repository credentials and signed commits where appropriate
 * configure Argo CD RBAC so not every user can sync every project
+* consider a separate platform-admin project for CRDs, operators, and webhooks
 
 ## Troubleshooting
 
@@ -89,7 +108,7 @@ Argo CD CRDs are not installed yet. Complete the Argo CD installation first.
 ## Interview Explanation
 
 An `AppProject` is not just a folder label. It is a security and ownership
-boundary. It lets me say: this set of Applications can deploy only from this
-repository into these namespaces. That makes the GitOps model safer and easier
-to explain than giving every Application unrestricted cluster access.
-
+boundary. It lets me say: this set of Applications can deploy only from these
+repositories into these namespaces, and only these cluster-scoped resource
+types are allowed. That makes the GitOps model safer and easier to explain than
+giving every Application unrestricted cluster access.

@@ -299,3 +299,72 @@ kubectl get application monitoring-dev -n argocd
 kubectl describe application monitoring-dev -n argocd
 argocd app get monitoring-dev
 ```
+
+## CCPU-176: Create Application Boundary for External Secrets
+
+The External Secrets Application is:
+
+```text
+k8s/gitops/dev/applications/external-secrets-dev.yaml
+```
+
+It tells Argo CD:
+
+* use the `cpemon` AppProject
+* render the `external-secrets` Helm chart from
+  `https://charts.external-secrets.io`
+* pin the chart version to `2.6.0`
+* use release name `external-secrets`
+* pull values from `k8s/addons/external-secrets/values.yaml`
+* deploy into the `external-secrets` namespace
+
+The values file enables CRD installation and keeps service account annotations
+empty because the real IRSA role ARN is environment-specific.
+
+GitOps secret boundary:
+
+```text
+Git:    controller config, SecretStore/ExternalSecret contracts, names, keys
+AWS:    real secret values in Secrets Manager, encrypted with KMS
+IRSA:   scoped AWS access for the ESO service account
+ESO:    reconciles Kubernetes Secrets
+Pods:   consume Kubernetes Secrets through secretKeyRef
+```
+
+The AppProject also now allows the cluster-scoped resources required by
+operator charts, including ClusterRoles, ClusterRoleBindings, CRDs, webhook
+configurations, and APIService objects. Without this, Argo CD could render an
+operator chart but reject its cluster-scoped resources during sync.
+
+Sync ordering:
+
+```text
+external-secrets-dev
+        |
+        v
+ESO CRDs and controller ready
+        |
+        v
+cpemon-dev with externalSecrets.enabled=true
+        |
+        v
+Kubernetes Secrets reconciled from AWS Secrets Manager
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-external-secrets-application.ps1
+helm template external-secrets external-secrets/external-secrets `
+  --namespace external-secrets `
+  --version 2.6.0 `
+  --values k8s/addons/external-secrets/values.yaml
+```
+
+Live Argo CD inspection:
+
+```powershell
+kubectl get application external-secrets-dev -n argocd
+kubectl describe application external-secrets-dev -n argocd
+argocd app get external-secrets-dev
+```

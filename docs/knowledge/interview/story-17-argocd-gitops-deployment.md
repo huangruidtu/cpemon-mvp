@@ -198,3 +198,36 @@ actually ready.
 Check the Prometheus Operator Deployment, Prometheus StatefulSet, Grafana
 Deployment, Alertmanager, admission webhook jobs, CRDs, PVCs, and events in the
 `monitoring` namespace.
+
+## Q31: What did CCPU-176 add?
+
+It added `external-secrets-dev`, an Argo CD Application for External Secrets
+Operator. It pins chart version `2.6.0`, uses release name `external-secrets`,
+reads controller values from Git, and deploys into the `external-secrets`
+namespace.
+
+## Q32: Why does GitOps not mean committing secrets?
+
+GitOps means Git owns desired state. For secrets, the desired state is the
+contract: SecretStore, ExternalSecret, target Secret names, keys, and workload
+references. The secret values themselves stay in AWS Secrets Manager and are
+protected by KMS.
+
+## Q33: Why does ESO need IRSA?
+
+ESO needs AWS API permissions to read approved Secrets Manager values. IRSA
+lets the `external-secrets/external-secrets` service account assume a scoped
+IAM role without storing AWS access keys in Kubernetes.
+
+## Q34: Why update the AppProject cluster resource allowlist?
+
+Operator charts create cluster-scoped resources such as CRDs, ClusterRoles,
+ClusterRoleBindings, and webhook configurations. If the AppProject does not
+allow them, Argo CD can render the chart but reject the sync.
+
+## Q35: What is the sync order for ESO and CPEmon secrets?
+
+Sync ESO first so CRDs and the controller exist. Then sync CPEmon chart
+resources that render SecretStore and ExternalSecret objects. Finally verify
+that Kubernetes Secrets are created and workloads consume them through
+`secretKeyRef`.

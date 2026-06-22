@@ -19,6 +19,7 @@ k8s/gitops/
       cpemon-dev.yaml
       kafka-dev.yaml
       monitoring-dev.yaml
+      external-secrets-dev.yaml
 ```
 
 Bootstrap resources stay under `k8s/addons/argocd` because they install and
@@ -83,6 +84,11 @@ namespace.
 `monitoring-dev` reconciles kube-prometheus-stack chart version `86.3.2` with
 the repository values file `k8s/monitoring/kube-prometheus-stack-values.yaml`
 into the `monitoring` namespace.
+
+`external-secrets-dev` reconciles External Secrets Operator chart version
+`2.6.0` with the repository values file
+`k8s/addons/external-secrets/values.yaml` into the `external-secrets`
+namespace.
 
 ## Interview Framing
 

@@ -18,11 +18,21 @@ foreach ($snippet in @(
   "name: cpemon",
   "namespace: argocd",
   "https://github.com/huangruidtu/cpemon-mvp.git",
+  "registry-1.docker.io/bitnamicharts",
+  "ghcr.io/prometheus-community/charts",
+  "https://charts.external-secrets.io",
   "namespace: cpemon",
   "namespace: kafka",
   "namespace: monitoring",
+  "namespace: external-secrets",
   "namespace: security",
   "namespace: platform",
+  "kind: CustomResourceDefinition",
+  "kind: ClusterRole",
+  "kind: ClusterRoleBinding",
+  "kind: MutatingWebhookConfiguration",
+  "kind: ValidatingWebhookConfiguration",
+  "kind: APIService",
   "orphanedResources",
   "warn: true"
 )) {
@@ -40,6 +50,8 @@ foreach ($snippet in @(
   "Production Hardening",
   "repository not permitted",
   "destination not permitted",
+  "ClusterRole",
+  "ValidatingWebhookConfiguration",
   "Interview Explanation"
 )) {
   if ($runbookText -notmatch [regex]::Escape($snippet)) {
@@ -55,6 +67,7 @@ foreach ($snippet in @(
   "cpemon",
   "kafka",
   "monitoring",
+  "external-secrets",
   "production"
 )) {
   if ($knowledgeText -notmatch [regex]::Escape($snippet)) {

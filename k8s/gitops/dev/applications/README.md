@@ -10,7 +10,7 @@ Planned Applications:
 | `cpemon-dev` | `cpemon` | `deploy/helm/cpemon` with `values-dev.yaml` |
 | `kafka-dev` | `kafka` | Bitnami Kafka chart `32.4.3` with `k8s/addons/kafka/values.yaml` |
 | `monitoring-dev` | `monitoring` | kube-prometheus-stack chart `86.3.2` with `k8s/monitoring/kube-prometheus-stack-values.yaml` |
-| `external-secrets-dev` | `security` or controller namespace | External Secrets boundary |
+| `external-secrets-dev` | `external-secrets` | External Secrets Operator chart `2.6.0` with `k8s/addons/external-secrets/values.yaml` |
 | `policy-security-dev` | `security` | Policy/security add-on boundary |
 
 This story starts with plain Application manifests. A root app-of-apps
@@ -68,3 +68,21 @@ project:        cpemon
 The Application owns the monitoring control plane. CPEmon-specific
 ServiceMonitor, PrometheusRule, and Grafana dashboard resources depend on the
 CRDs and selectors created by this stack.
+
+## `external-secrets-dev`
+
+`external-secrets-dev.yaml` deploys the External Secrets Operator controller:
+
+```text
+chart repo:     https://charts.external-secrets.io
+chart:          external-secrets
+chart version:  2.6.0
+release:        external-secrets
+values repo:    https://github.com/huangruidtu/cpemon-mvp.git
+values file:    k8s/addons/external-secrets/values.yaml
+destination:    https://kubernetes.default.svc / external-secrets
+project:        cpemon
+```
+
+This Application installs the controller and CRDs. Real secret values stay in
+AWS Secrets Manager, not Git.
