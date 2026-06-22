@@ -227,3 +227,22 @@ on the same source of truth.
 Sync `monitoring-dev` first, then `opencost-dev`. OpenCost depends on the
 Prometheus API, so cost visibility should come after the monitoring stack is
 healthy.
+
+## Q33: What did CCPU-207 add?
+
+It documented namespace-level cost visibility with OpenCost. The runbook covers
+`cpemon`, `kafka`, `monitoring`, `argocd`, `kyverno`, and `opencost`, and shows
+how to query OpenCost allocation data by namespace.
+
+## Q34: Why start with namespace-level cost?
+
+Namespaces match the ownership boundaries in this platform. They let an
+operator separate application cost from Kafka, monitoring, GitOps, governance,
+and cost-visibility overhead. It is the clearest first FinOps view.
+
+## Q35: Why say visibility is not chargeback?
+
+Chargeback needs pricing accuracy, ownership labels, business rules, review
+cadence, and finance alignment. This story only proves that the platform can
+surface cost signals. It avoids pretending the organization is already doing
+production cost allocation.

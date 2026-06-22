@@ -377,6 +377,44 @@ kubectl port-forward -n opencost svc/opencost 9003:9003
 Invoke-RestMethod "http://localhost:9003/allocation/compute?window=1h&aggregate=namespace"
 ```
 
+## CCPU-207: Namespace-Level Cost Visibility
+
+The first useful OpenCost view is namespace-level allocation:
+
+```powershell
+Invoke-RestMethod "http://localhost:9003/allocation/compute?window=1h&aggregate=namespace"
+```
+
+The namespaces to inspect first are:
+
+```text
+cpemon
+kafka
+monitoring
+argocd
+kyverno
+opencost
+```
+
+This matches the platform ownership model:
+
+* `cpemon` is the application layer.
+* `kafka` is the streaming platform.
+* `monitoring` is observability.
+* `argocd` is deployment control plane.
+* `kyverno` is governance.
+* `opencost` is cost visibility overhead.
+
+The goal is to see where cost comes from before discussing optimization,
+budgeting, or chargeback. That distinction matters: visibility is a technical
+capability; chargeback is an organizational and financial process.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-opencost-namespace-cost-visibility.ps1
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.
