@@ -172,3 +172,28 @@ Prometheus stores aggregated time series such as request counts, error rates,
 and latency histograms. Tempo stores traces, which represent individual request
 paths and span timings. In an incident, Prometheus tells me that latency is
 high; Tempo helps me inspect one slow request and see where the time went.
+
+## Q22: How do you prove observability end to end?
+
+End-to-end validation has three layers: Repository proof, Render proof, and
+Live cluster proof.
+
+I prove it in layers. Repository proof checks that manifests, dashboards,
+alerts, scripts, and docs exist and are internally consistent. Render proof
+checks Helm lint or template output. Live cluster proof checks that Prometheus
+targets are up, dashboards show data, alerts exist, logs contain `trace_id`,
+and Tempo can find a trace by that same ID.
+
+That distinction matters because a repo check is not the same as a live
+Prometheus scrape. In this project I added `make observability-e2e-check` for
+the repository proof, and the runbook lists the live `kubectl`, Grafana,
+Prometheus, and Tempo checks needed once the cluster is reachable.
+
+## Q23: What would you show in an interview demo?
+
+I would show the pipeline dashboard, API health dashboard, Prometheus targets,
+PrometheusRule baseline, one structured API request log with `trace_id`, and
+the matching trace lookup in Tempo. Then I would explain the troubleshooting
+path: alert or dashboard symptom, route or service boundary, request log,
+`trace_id`, trace backend, and finally the specific failing dependency or code
+path.

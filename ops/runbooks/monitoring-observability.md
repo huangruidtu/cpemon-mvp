@@ -374,6 +374,43 @@ In Grafana, add Tempo as a data source pointing at
 `http://tempo.observability.svc.cluster.local:3200`. Then search by `trace_id`
 from the structured request log.
 
+## End-to-end validation
+
+The Story 12 validation model has three layers.
+
+| Layer | What it proves | Command |
+| --- | --- | --- |
+| Repository proof | Expected manifests, queries, scripts, and docs exist. | `make observability-e2e-check` |
+| Render proof | Helm templates and static artifacts render locally. | `helm lint deploy/helm/cpemon -f deploy/helm/cpemon/values-dev.yaml` |
+| Live cluster proof | Prometheus, Grafana, alerts, logs, and Tempo receive real signals. | `kubectl`, Grafana, Prometheus, and Tempo checks below |
+
+Repository proof is the CI-friendly baseline:
+
+```powershell
+make observability-e2e-check
+go test ./...
+```
+
+Live cluster proof requires a reachable Kubernetes API:
+
+```powershell
+kubectl get application monitoring-dev -n argocd
+kubectl get pods,svc -n monitoring
+kubectl get pods,svc -n observability
+kubectl get servicemonitor -A
+kubectl get prometheusrule -A
+kubectl logs deploy/otel-collector -n observability
+```
+
+Then prove the operator workflow:
+
+1. Open the Grafana pipeline dashboard and API health dashboard.
+2. Confirm Prometheus targets are up for CPEmon services and Kafka metrics.
+3. Trigger or inspect a request that emits `event=http_request`.
+4. Copy `trace_id` from logs.
+5. Search that `trace_id` in Tempo.
+6. Confirm alerts have runbook links and bounded labels.
+
 ## Interview Framing
 
 The clean answer is:

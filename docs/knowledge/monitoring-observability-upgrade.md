@@ -250,6 +250,37 @@ Interview framing:
 * Jaeger would also work, but Tempo fits better when Grafana is already the
   primary UI.
 
+## CCPU-187 Learning Notes: End-to-end validation
+
+End-to-end observability validation should not be a vague statement like "we
+have monitoring." It should prove each layer of the evidence chain.
+
+| Proof type | Meaning |
+| --- | --- |
+| Repository proof | Manifests, dashboards, rules, scripts, and docs are present and internally consistent. |
+| Render proof | Helm and YAML artifacts render or lint locally. |
+| Live cluster proof | A reachable cluster accepts resources and emits real metrics, logs, alerts, and traces. |
+
+For this environment, `make observability-e2e-check` is the repository proof. It
+runs the Story 12 validation scripts for GitOps, ServiceMonitor, application
+metrics, Kafka metrics, dashboards, alerts, Collector, tracing, log
+correlation, and Tempo export.
+
+The live cluster proof remains a separate operator workflow because the local
+kubeconfig currently points at `localhost:8080`. That distinction is important
+in interviews: a good engineer explains what has been proven and what still
+requires a live system.
+
+Interview narrative:
+
+```text
+I can prove observability in layers. First, repo checks prove the manifests,
+queries, alerts, and runbooks are present. Then Helm lint/render checks prove
+the app observability templates are valid. Finally, in a live cluster, I prove
+Prometheus scrape targets, Grafana panels, alert rules, structured logs, and
+Tempo trace lookup with a real trace_id.
+```
+
 ## Validation
 
 ```powershell
@@ -266,6 +297,7 @@ make otel-collector-boundary-check
 make minimal-tracing-check
 make trace-id-structured-logs-check
 make trace-export-boundary-check
+make observability-e2e-check
 make monitoring-template
 ```
 
