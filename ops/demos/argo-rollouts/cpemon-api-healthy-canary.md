@@ -129,6 +129,27 @@ Canary traffic is no longer partially split.
 The most recent AnalysisRuns are Successful.
 ```
 
+## Scripted Demo
+
+The safe local script is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-successful-rollout.ps1
+```
+
+By default the script runs in dry-run mode. It validates local tooling and Helm
+rendering, then prints the live `kubectl` commands that should be run in a dev
+cluster.
+
+Run live commands only when connected to the intended dev cluster:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-successful-rollout.ps1 -Execute
+```
+
+The script walks through starting status, endpoint inspection, rollout watch,
+AnalysisRun inspection, step-by-step promotion, and final Healthy verification.
+
 ## Interview Narrative
 
 A concise interview answer:
@@ -139,4 +160,3 @@ A concise interview answer:
 > 50%. I only promote after checking pods, services, endpoints, AnalysisRuns,
 > logs, traces, and metrics. The demo ends when the Rollout is Healthy and the
 > new ReplicaSet has become stable.
-

@@ -267,6 +267,16 @@ kubectl argo rollouts promote cpemon-api -n cpemon
 The scenario is safe for dev because it uses the existing rollout gates,
 explicit operator checkpoints, and documented stop conditions before promotion.
 
+Scripted successful demo:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-successful-rollout.ps1
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-successful-rollout.ps1 -Execute
+```
+
+The first command is the default safe dry-run. The second command is for a
+connected dev cluster only.
+
 ## CCPU-193: Failed Canary Demo Scenario
 
 The failed canary scenario is documented in:

@@ -281,3 +281,15 @@ serving path instead of letting the bad version become stable.
 I should explain the failed signal, the user impact boundary, and the next
 decision: rollback, retry, or fix forward. A failed canary is not just an error;
 it is useful release evidence.
+
+## Q41: Why make the successful demo script default to dry-run?
+
+Because rollout commands can change live traffic. A dry-run default lets me
+rehearse and teach the workflow safely, while `-Execute` makes the same script
+usable in a controlled dev cluster.
+
+## Q42: What evidence does the successful demo script collect?
+
+It collects rollout status, stable/canary endpoints, AnalysisRuns, promotion
+steps, and final Healthy status. That evidence lets me explain not just that a
+release completed, but why it was safe to promote.

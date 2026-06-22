@@ -559,3 +559,30 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-failed-canary-demo.ps1
 ```
+
+## CCPU-194: Successful Rollout Demo Script
+
+The successful rollout script is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo-cpemon-api-successful-rollout.ps1
+```
+
+It defaults to dry-run mode so the command sequence can be rehearsed safely on
+a workstation. With `-Execute`, it runs the live `kubectl` commands against the
+current dev cluster context.
+
+The script produces the same evidence the interview story needs:
+
+* Starting rollout status.
+* Stable and canary endpoint inspection.
+* Rollout watch through pause and analysis gates.
+* AnalysisRun inspection.
+* Step-by-step promote commands.
+* Final Healthy rollout check.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-successful-rollout-demo-script.ps1
+```
