@@ -607,3 +607,55 @@ Synced -> OutOfSync -> Synced
 This proves drift detection and manual reconciliation. It does not prove
 automated self-heal because self-heal is intentionally disabled in the current
 guardrail.
+
+## CCPU-103: Document CI/CD Separation
+
+The CI/CD separation runbook is:
+
+```text
+ops/runbooks/argocd-ci-cd-separation.md
+```
+
+The platform boundary is:
+
+```text
+GitHub Actions -> tests, builds, and publishes immutable images
+Git           -> records the desired Kubernetes deployment state
+Argo CD       -> reconciles the cluster to the desired state in Git
+Kubernetes    -> runs the workloads
+```
+
+This distinction matters because it prevents two common architecture mistakes:
+
+* treating Argo CD as a build system
+* letting CI mutate the cluster directly after GitOps is introduced
+
+For CPEmon, a normal promotion should look like this:
+
+```text
+code change -> CI image tag -> Git values promotion -> Argo CD diff -> manual sync
+```
+
+The image tag handoff belongs in Git. Argo CD should see a concrete desired
+tag in the Helm values before it syncs. In the current learning repository,
+`values-dev.yaml` still uses an image tag placeholder, so a live deployment
+must promote a real immutable tag first.
+
+Rollback is also Git-first:
+
+```powershell
+git revert <promotion-commit>
+argocd app sync cpemon-dev
+argocd app wait cpemon-dev --sync --health --timeout 300
+```
+
+Interview framing:
+
+> CI produces artifacts. Git records the desired deployment state. Argo CD
+> reconciles Kubernetes to that reviewed desired state and reports drift.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-ci-cd-separation.ps1
+```

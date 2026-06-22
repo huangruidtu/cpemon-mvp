@@ -378,3 +378,33 @@ the guardrails are approved.
 It makes the cluster auditable against Git. Operators can see when live state
 differs from reviewed desired state and choose whether to reconcile or update
 Git.
+
+## Q61: What did CCPU-103 add?
+
+It added a CI/CD separation runbook and validation script. The documentation
+explains that CI tests, builds, and publishes images; Git records desired
+state; and Argo CD reconciles Kubernetes to that desired state.
+
+## Q62: Why is it wrong to say Argo CD builds the application?
+
+Argo CD is not the build system. It reads Git or chart sources, renders desired
+Kubernetes manifests, compares them with live state, and syncs when approved.
+The image must already exist before Argo CD deploys it.
+
+## Q63: Where does image promotion belong in GitOps?
+
+Image promotion belongs in Git as a values change or promotion pull request.
+CI publishes an immutable tag, then Git records that tag as desired state, and
+Argo CD deploys that reviewed change.
+
+## Q64: How do you roll back in this architecture?
+
+Prefer a Git rollback such as `git revert <promotion-commit>`, then run
+`argocd app sync cpemon-dev`. That keeps the rollback auditable and avoids
+rebuilding or overwriting old image tags.
+
+## Q65: What is a concise interview answer for CI/CD separation?
+
+CI produces artifacts. Git records what should run. Argo CD reconciles the
+cluster to that reviewed desired state and detects drift when live state no
+longer matches Git.
