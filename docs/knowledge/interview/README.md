@@ -30,6 +30,7 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 14: Kafka Platform Introduction](story-14-kafka-platform-introduction.md)
 - [Story 15: acs-ingest Kafka Producer Refactor](story-15-acs-ingest-kafka-producer-refactor.md)
 - [Story 16: cpemon-writer Kafka Consumer Refactor](story-16-cpemon-writer-kafka-consumer-refactor.md)
+- [Story 17: Argo CD GitOps Deployment](story-17-argocd-gitops-deployment.md)
 - [acs-ingest Kafka Producer Learning Notes](acs-ingest-kafka-producer-learning-notes.md)
 - [cpemon-writer Kafka Consumer Learning Notes](cpemon-writer-kafka-consumer-learning-notes.md)
 - [Kafka Platform Learning Notes](kafka-platform-learning-notes.md)
@@ -76,3 +77,12 @@ consumer narrative:
 - how at-least-once delivery changes database write design
 - how retry, dead-letter publishing, lag metrics, structured logs, and API
   validation turn the implementation into an operational story
+
+For Story 11 of the deployment migration, practice the Argo CD GitOps
+narrative:
+
+- why Argo CD comes after Terraform and Helm
+- why GitHub Actions remains CI while Argo CD owns CD
+- how `argocd` namespace installation is verified
+- why the learning install can use upstream stable manifests
+- why production should pin versions and harden SSO/RBAC/TLS

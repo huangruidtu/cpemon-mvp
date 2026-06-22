@@ -25,6 +25,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Topic Naming Convention](kafka-topic-naming-convention.md)
 - [acs-ingest Kafka Producer Refactor](acs-ingest-kafka-producer-refactor.md)
 - [cpemon-writer Kafka Consumer Refactor](cpemon-writer-kafka-consumer-refactor.md)
+- [Argo CD GitOps Deployment](argocd-gitops-deployment.md)
 
 ## Architecture Decisions
 
@@ -54,9 +55,11 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Kafka Produce and Consume Validation Runbook](../../ops/runbooks/kafka-produce-consume-validation.md)
 - [Kafka Topics Runbook](../../ops/runbooks/kafka-topics.md)
 - [Kafka Validation and Observability Runbook](../../ops/runbooks/kafka-validation-observability.md)
+- [Argo CD Installation Runbook](../../ops/runbooks/argocd-installation.md)
 
 ## Interview Prep
 
 - [Interview Q&A](interview/README.md)
 - [cpemon-writer Kafka Consumer Interview Q&A](interview/story-16-cpemon-writer-kafka-consumer-refactor.md)
 - [cpemon-writer Kafka Consumer Learning Notes](interview/cpemon-writer-kafka-consumer-learning-notes.md)
+- [Argo CD GitOps Deployment Interview Q&A](interview/story-17-argocd-gitops-deployment.md)
