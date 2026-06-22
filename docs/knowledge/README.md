@@ -28,6 +28,8 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD GitOps Deployment](argocd-gitops-deployment.md)
 - [Monitoring and Observability Upgrade](monitoring-observability-upgrade.md)
 - [Argo Rollouts Canary Deployment](argo-rollouts-canary-deployment.md)
+- [Platform Governance, Cost Visibility, and Basic Autoscaling](platform-governance-cost-autoscaling.md)
+- [Platform Governance Boundary Runbook](../../ops/runbooks/platform-governance-boundary.md)
 - [Argo Rollouts CPEmon API Runbook](../../ops/runbooks/argo-rollouts-cpemon-api.md)
 - [CPEmon API Prometheus Analysis Inputs](../../ops/runbooks/cpemon-api-prometheus-analysis-inputs.md)
 - [CPEmon API HTTP 5xx AnalysisTemplate](../../ops/runbooks/cpemon-api-http5xx-analysis.md)
@@ -89,6 +91,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [CPEmon API p95 Latency AnalysisTemplate](../../ops/runbooks/cpemon-api-p95-latency-analysis.md)
 - [CPEmon API Rollout Analysis Wiring](../../ops/runbooks/cpemon-api-analysis-wiring.md)
 - [CPEmon API AnalysisRun Troubleshooting](../../ops/runbooks/cpemon-api-analysisrun-troubleshooting.md)
+- [Platform Governance Boundary Runbook](../../ops/runbooks/platform-governance-boundary.md)
 
 ## Interview Prep
 
@@ -98,3 +101,4 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD GitOps Deployment Interview Q&A](interview/story-17-argocd-gitops-deployment.md)
 - [Monitoring and Observability Upgrade Interview Q&A](interview/story-18-monitoring-observability-upgrade.md)
 - [Argo Rollouts Canary Deployment Interview Q&A](interview/story-19-argo-rollouts-canary-deployment.md)
+- [Platform Governance, Cost Visibility, and Basic Autoscaling Interview Q&A](interview/story-20-platform-governance-cost-autoscaling.md)

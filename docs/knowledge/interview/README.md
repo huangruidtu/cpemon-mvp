@@ -33,6 +33,7 @@ The goal is not to memorize answers word for word. The goal is to build a clear 
 - [Story 17: Argo CD GitOps Deployment](story-17-argocd-gitops-deployment.md)
 - [Story 18: Monitoring and Observability Upgrade](story-18-monitoring-observability-upgrade.md)
 - [Story 19: Argo Rollouts Canary Deployment](story-19-argo-rollouts-canary-deployment.md)
+- [Story 20: Platform Governance, Cost Visibility, and Basic Autoscaling](story-20-platform-governance-cost-autoscaling.md)
 - [acs-ingest Kafka Producer Learning Notes](acs-ingest-kafka-producer-learning-notes.md)
 - [cpemon-writer Kafka Consumer Learning Notes](cpemon-writer-kafka-consumer-learning-notes.md)
 - [Kafka Platform Learning Notes](kafka-platform-learning-notes.md)
@@ -101,3 +102,11 @@ For Story 19, practice the Argo Rollouts canary narrative:
 - how manual promote differs from `promote --full`
 - how abort differs from Git-first rollback
 - how the healthy and failed demo scripts prove both success and safety paths
+
+For Story 20, practice the platform governance and visibility narrative:
+
+- why Kyverno belongs in the platform layer
+- why OpenCost is visibility before chargeback
+- why HPA is the right Step 1 autoscaling tool
+- why KEDA is deferred to Step 2 for event-driven scaling
+- how policy, cost, and autoscaling together make the platform more operationally mature

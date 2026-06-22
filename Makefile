@@ -262,6 +262,9 @@ cpemon-api-canary-steps-check:
 cpemon-api-prometheus-analysis-inputs-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-prometheus-analysis-inputs.ps1
 
+platform-governance-boundary-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-platform-governance-boundary.ps1
+
 cpemon-api-http5xx-analysis-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-http5xx-analysis.ps1
 
