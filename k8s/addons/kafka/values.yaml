@@ -25,9 +25,14 @@ externalAccess:
 
 metrics:
   jmx:
-    enabled: false
+    enabled: true
   serviceMonitor:
-    enabled: false
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: kps
 
 volumePermissions:
   enabled: false

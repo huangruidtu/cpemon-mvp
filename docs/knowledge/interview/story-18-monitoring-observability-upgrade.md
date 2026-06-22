@@ -64,3 +64,17 @@ Prometheus labels create time series. If we label metrics by device serial
 number or raw event key, every device creates new series and the monitoring
 system becomes expensive and noisy. I keep labels like `code`, `reason`, and
 `result` in metrics, and put device-specific identifiers in logs and traces.
+
+## Q9: How do you explain broker metrics versus application metrics?
+
+Broker metrics versus application metrics is one of the most important
+observability boundaries in this story.
+
+Broker metrics come from Kafka/JMX and describe the platform: broker up status,
+request rate, topic throughput, partitions, JVM pressure, and replication health.
+Application metrics come from CPEmon code and describe the business pipeline:
+producer publish success/failure/duration, consumer offset progress, retry
+counts, dead-letter counts, and database write outcomes.
+
+In an incident, I use both. Broker metrics tell me whether Kafka is healthy.
+Application metrics tell me whether CPEmon is using Kafka correctly.

@@ -122,6 +122,50 @@ histogram_quantile(0.95, sum(rate(acs_webhook_duration_seconds_bucket[5m])) by (
 sum(rate(acs_ingest_events_total[5m])) by (result)
 ```
 
+## Kafka Metrics Boundary
+
+Kafka observability has two layers:
+
+| Layer | Metrics | Owner |
+| --- | --- | --- |
+| Broker/platform | JMX exporter metrics such as broker health, request rate, topic state, partition state, and JVM pressure. | Kafka platform chart |
+| Application pipeline | Producer publish totals/errors/duration and writer consumer offset/lag/processing metrics. | CPEmon services |
+
+The Bitnami Kafka values now enable JMX metrics and a ServiceMonitor:
+
+```yaml
+metrics:
+  jmx:
+    enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    labels:
+      release: kps
+```
+
+Repository validation:
+
+```powershell
+make kafka-metrics-boundary-check
+```
+
+Live checks:
+
+```powershell
+kubectl get servicemonitor -n monitoring -l release=kps
+kubectl get svc -n kafka | Select-String metrics
+kubectl port-forward svc/prometheus-operated -n monitoring 9090:9090
+```
+
+Prometheus queries to try after sync:
+
+```promql
+up{namespace="kafka"}
+kafka_server_brokertopicmetrics_messagesin_total
+kafka_server_replicamanager_underreplicatedpartitions
+```
+
 ## Interview Framing
 
 The clean answer is:

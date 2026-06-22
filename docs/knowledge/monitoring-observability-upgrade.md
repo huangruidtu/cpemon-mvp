@@ -77,12 +77,36 @@ The metrics added for this boundary are:
 All labels are low-cardinality. Do not put `sn`, event IDs, raw Kafka keys, or
 payload data into Prometheus labels.
 
+## CCPU-107 Learning Notes: Kafka Metrics
+
+Kafka metrics must be explained in two layers.
+
+Broker metrics come from Kafka/JMX and answer platform questions:
+
+* Is the broker up?
+* Are topics receiving messages?
+* Are partitions healthy?
+* Is the JVM or request path under pressure?
+
+Application metrics come from CPEmon services and answer business-flow
+questions:
+
+* Did `acs-ingest` publish events?
+* Did `cpemon-writer` consume and commit offsets?
+* Are retries or dead-letter events increasing?
+
+The Kafka chart now enables JMX exporter metrics and creates a ServiceMonitor
+with `release: kps` in the `monitoring` namespace. That lets the shared
+kube-prometheus-stack discover Kafka broker metrics while CPEmon services keep
+their own producer and consumer metrics.
+
 ## Validation
 
 ```powershell
 make monitoring-gitops-check
 make cpemon-servicemonitor-check
 make acs-ingest-ingestion-metrics-check
+make kafka-metrics-boundary-check
 make monitoring-template
 ```
 
