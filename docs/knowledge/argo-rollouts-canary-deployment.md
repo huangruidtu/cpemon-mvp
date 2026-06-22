@@ -300,3 +300,53 @@ Validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-http5xx-analysis.ps1
 ```
+
+## CCPU-190: Add Prometheus AnalysisTemplate for p95 Latency
+
+The second automated canary signal is p95 latency.
+
+Template:
+
+```text
+AnalysisTemplate/cpemon-api-p95-latency
+```
+
+Metric:
+
+```text
+cpemon_api_http_request_duration_seconds_bucket
+```
+
+Query:
+
+```promql
+histogram_quantile(
+  0.95,
+  sum by (le) (
+    rate(cpemon_api_http_request_duration_seconds_bucket[2m])
+  )
+)
+```
+
+Threshold:
+
+```text
+successCondition: result[0] < 0.5
+```
+
+Why this signal:
+
+* 5xx rate catches failed requests.
+* p95 latency catches slow successful requests.
+* Histograms are the Prometheus-native way to calculate quantiles.
+* Grouping by `le` preserves the histogram buckets needed by
+  `histogram_quantile`.
+
+This template is also rendered independently first. The Rollout connects both
+5xx and p95 templates in a later subtask.
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-p95-analysis.ps1
+```

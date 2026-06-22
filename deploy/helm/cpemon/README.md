@@ -288,6 +288,39 @@ That means the canary should only continue when the measured 5xx ratio is below
 5%. The template is rendered independently first; a later subtask connects it
 to the Rollout steps.
 
+`CCPU-190` adds the p95 latency AnalysisTemplate:
+
+```text
+AnalysisTemplate/cpemon-api-p95-latency
+```
+
+It uses the Story 12 API duration histogram:
+
+```text
+cpemon_api_http_request_duration_seconds_bucket
+```
+
+The query calculates p95 latency over two minutes:
+
+```promql
+histogram_quantile(
+  0.95,
+  sum by (le) (
+    rate(cpemon_api_http_request_duration_seconds_bucket[2m])
+  )
+)
+```
+
+The dev threshold is:
+
+```text
+successCondition: result[0] < 0.5
+```
+
+That means the canary should only continue when p95 latency is under 500ms.
+The 5xx template catches failures; the p95 template catches slow canaries that
+are technically successful but operationally unhealthy.
+
 ## ConfigMap and Secret References
 
 `CCPU-54` adds a chart-owned ConfigMap for non-secret runtime configuration:

@@ -21,3 +21,27 @@ spec:
           query: |
 {{ .Values.rolloutAnalysis.templates.http5xxRate.query | nindent 12 }}
 {{- end }}
+{{- if and .Values.rolloutAnalysis.enabled .Values.rolloutAnalysis.templates.p95Latency.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ .Values.rolloutAnalysis.templates.p95Latency.name | quote }}
+  namespace: {{ include "cpemon.namespace" . | quote }}
+  labels:
+{{ include "cpemon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: "api"
+    cpemon.io/analysis-signal: p95-latency
+spec:
+  metrics:
+    - name: {{ .Values.rolloutAnalysis.templates.p95Latency.metricName | quote }}
+      interval: {{ .Values.rolloutAnalysis.templates.p95Latency.interval | quote }}
+      count: {{ .Values.rolloutAnalysis.templates.p95Latency.count }}
+      failureLimit: {{ .Values.rolloutAnalysis.templates.p95Latency.failureLimit }}
+      successCondition: {{ .Values.rolloutAnalysis.templates.p95Latency.successCondition | quote }}
+      provider:
+        prometheus:
+          address: {{ .Values.rolloutAnalysis.prometheus.address | quote }}
+          query: |
+{{ .Values.rolloutAnalysis.templates.p95Latency.query | nindent 12 }}
+{{- end }}

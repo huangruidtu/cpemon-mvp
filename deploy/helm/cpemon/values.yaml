@@ -401,3 +401,18 @@ rolloutAnalysis:
         sum(rate(cpemon_api_http_requests_total{code=~"5.."}[2m]))
         /
         clamp_min(sum(rate(cpemon_api_http_requests_total[2m])), 1)
+    p95Latency:
+      enabled: true
+      name: cpemon-api-p95-latency
+      metricName: p95-latency
+      interval: 30s
+      count: 3
+      failureLimit: 1
+      successCondition: result[0] < 0.5
+      query: |
+        histogram_quantile(
+          0.95,
+          sum by (le) (
+            rate(cpemon_api_http_request_duration_seconds_bucket[2m])
+          )
+        )

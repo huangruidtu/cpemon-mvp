@@ -164,3 +164,21 @@ threshold meaningful across different traffic levels.
 The query filters on bounded labels such as HTTP status code. It does not group
 by device serial number, raw route parameter, payload value, or customer ID.
 That keeps Prometheus cardinality controlled during canary analysis.
+
+## Q23: Why add p95 latency analysis in addition to 5xx analysis?
+
+5xx analysis catches failed requests, but a canary can be bad even when it still
+returns 200. p95 latency catches slow successful requests and protects user
+experience during promotion.
+
+## Q24: Why use `histogram_quantile`?
+
+Prometheus histograms store request durations in buckets. `histogram_quantile`
+is the standard way to estimate quantiles such as p95 from those buckets. The
+query must keep the `le` bucket label, so it uses `sum by (le)`.
+
+## Q25: What does `result[0] < 0.5` mean?
+
+It means the p95 latency returned by the Prometheus query must be below 0.5
+seconds. For this dev learning environment, that is a clear threshold that is
+easy to explain and tune later.
