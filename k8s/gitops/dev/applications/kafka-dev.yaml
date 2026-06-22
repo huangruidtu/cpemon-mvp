@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kafka-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/environment: dev
+    cpemon.io/layer: data-streaming
+    cpemon.io/managed-by: argocd
+spec:
+  project: cpemon
+  sources:
+    - repoURL: registry-1.docker.io/bitnamicharts
+      chart: kafka
+      targetRevision: 32.4.3
+      helm:
+        releaseName: kafka
+        valueFiles:
+          - $values/k8s/addons/kafka/values.yaml
+    - repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kafka
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

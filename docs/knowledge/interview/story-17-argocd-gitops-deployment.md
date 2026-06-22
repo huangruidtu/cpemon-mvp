@@ -134,3 +134,36 @@ For `OutOfSync`, compare Git desired state with live resources and check
 whether the configured revision is correct. For `Degraded`, inspect workload
 Pods, required Secrets, database access, Kafka readiness, and optional CRDs
 such as `ServiceMonitor`.
+
+## Q21: What did CCPU-99 add?
+
+It added `kafka-dev`, an Argo CD Application for the Kafka platform. It points
+to the Bitnami Kafka Helm chart, pins chart version `32.4.3`, pulls CPEmon
+Kafka values from Git, and deploys into the `kafka` namespace.
+
+## Q22: Why does `kafka-dev` use multiple sources?
+
+The chart and values live in different places. The Kafka chart comes from the
+Bitnami OCI Helm repository, while the environment-specific values live in the
+CPEmon Git repository. Argo CD multiple sources lets one Application combine
+those inputs into one rendered desired state.
+
+## Q23: Why update the AppProject for Kafka?
+
+An AppProject limits which sources Applications can read. Because `kafka-dev`
+reads from the Bitnami chart repository and the CPEmon Git repository, both
+must be explicitly allowed by the project.
+
+## Q24: Why should Kafka sync before CPEmon Kafka workloads?
+
+Kafka is a platform dependency. CPEmon producers and consumers can be rendered
+from Git, but runtime event flow depends on a ready broker, bootstrap service,
+topics, and persistent storage. Syncing Kafka first reduces noisy application
+failures.
+
+## Q25: What would you check if Kafka is synced but not healthy?
+
+Inspect the `kafka-controller` StatefulSet, Pod events, PVC binding, node
+capacity, StorageClass behavior, and bootstrap Service. For Kafka, `Synced`
+only proves Argo CD applied desired manifests; `Healthy` depends on stateful
+runtime readiness.

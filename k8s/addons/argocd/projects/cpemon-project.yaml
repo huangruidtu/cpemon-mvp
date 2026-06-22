@@ -12,6 +12,7 @@ spec:
   description: CPEmon learning GitOps project for application and platform add-on deployment.
   sourceRepos:
     - https://github.com/huangruidtu/cpemon-mvp.git
+    - registry-1.docker.io/bitnamicharts
   destinations:
     - namespace: cpemon
       server: https://kubernetes.default.svc
@@ -33,4 +34,3 @@ spec:
       kind: "*"
   orphanedResources:
     warn: true
-

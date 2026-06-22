@@ -188,3 +188,59 @@ kubectl get application cpemon-dev -n argocd
 kubectl describe application cpemon-dev -n argocd
 argocd app get cpemon-dev
 ```
+
+## CCPU-99: Create Application for Kafka
+
+The Kafka Application is:
+
+```text
+k8s/gitops/dev/applications/kafka-dev.yaml
+```
+
+It tells Argo CD:
+
+* use the `cpemon` AppProject
+* render the Bitnami Kafka Helm chart from `registry-1.docker.io/bitnamicharts`
+* pin the chart version to `32.4.3`
+* pull values from this repository at `k8s/addons/kafka/values.yaml`
+* deploy the release as `kafka` into the `kafka` namespace
+
+The AppProject now allows both the CPEmon Git repository and the Bitnami chart
+repository. This is intentional: Argo CD must be allowed to read every source
+referenced by Applications in that project.
+
+`kafka-dev` uses Argo CD multiple sources because the chart is external and the
+values file is local to the CPEmon Git repository.
+
+Sequencing:
+
+```text
+Argo CD control plane
+        |
+        v
+cpemon AppProject
+        |
+        v
+kafka-dev Application
+        |
+        v
+cpemon-dev Application can use Kafka bootstrap config
+```
+
+Validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-kafka-application.ps1
+helm template kafka oci://registry-1.docker.io/bitnamicharts/kafka `
+  --namespace kafka `
+  --version 32.4.3 `
+  --values k8s/addons/kafka/values.yaml
+```
+
+Live Argo CD inspection:
+
+```powershell
+kubectl get application kafka-dev -n argocd
+kubectl describe application kafka-dev -n argocd
+argocd app get kafka-dev
+```

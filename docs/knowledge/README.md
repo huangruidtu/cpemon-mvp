@@ -27,6 +27,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [cpemon-writer Kafka Consumer Refactor](cpemon-writer-kafka-consumer-refactor.md)
 - [Argo CD GitOps Deployment](argocd-gitops-deployment.md)
 - [Argo CD CPEmon Application Runbook](../../ops/runbooks/argocd-cpemon-application.md)
+- [Argo CD Kafka Application Runbook](../../ops/runbooks/argocd-kafka-application.md)
 
 ## Architecture Decisions
 

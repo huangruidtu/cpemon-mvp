@@ -17,6 +17,7 @@ k8s/gitops/
     applications/
       README.md
       cpemon-dev.yaml
+      kafka-dev.yaml
 ```
 
 Bootstrap resources stay under `k8s/addons/argocd` because they install and
@@ -73,6 +74,10 @@ k8s/gitops/dev/applications/cpemon-dev.yaml
 
 `cpemon-dev` reconciles the CPEmon Helm chart from
 `deploy/helm/cpemon` with `values-dev.yaml` into the `cpemon` namespace.
+
+`kafka-dev` reconciles the Bitnami Kafka Helm chart version `32.4.3` with the
+repository values file `k8s/addons/kafka/values.yaml` into the `kafka`
+namespace.
 
 ## Interview Framing
 
