@@ -169,6 +169,9 @@ cpemon-api-http-metrics-check:
 grafana-pipeline-dashboard-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-grafana-pipeline-dashboard.ps1
 
+grafana-api-health-dashboard-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-grafana-api-health-dashboard.ps1
+
 cpemon-api-kafka-status-validation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-cpemon-api-kafka-status-validation.ps1
 

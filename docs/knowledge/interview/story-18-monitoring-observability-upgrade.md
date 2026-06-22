@@ -113,3 +113,11 @@ webhooks arrive, ingestion accepts or rejects events, Kafka exposes broker
 health, the writer consumes/processes/retries/dead-letters events, and the API
 serves read traffic with RED metrics. That order makes troubleshooting faster
 because each panel corresponds to one pipeline boundary.
+
+## Q15: Why create a separate API reliability dashboard?
+
+An API reliability dashboard answers a narrower question than a pipeline
+dashboard: are user-facing API routes fast, successful, and scrapeable? The
+pipeline dashboard explains event flow, while the API reliability dashboard
+focuses on RED metrics for `cpemon-api`: request rate, 5xx errors, p95 latency,
+and service up status.

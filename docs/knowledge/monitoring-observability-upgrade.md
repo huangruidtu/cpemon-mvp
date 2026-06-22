@@ -148,6 +148,20 @@ The important design principle is that each panel maps to a pipeline question:
 * Is `cpemon-writer` processing, retrying, or dead-lettering events?
 * Is `cpemon-api` healthy by RED metrics?
 
+## CCPU-182 Learning Notes: API Health Dashboard
+
+The API health dashboard is focused on user-facing reliability. It uses the same
+RED metrics as `CCPU-109`, but it presents them as a dedicated operational view:
+
+* request rate by route and status
+* 5xx error rate by route
+* p95 latency by route
+* scrape health for `cpemon-api`
+
+The dashboard is separate from the pipeline dashboard because the API can have a
+user-facing incident even when the ingestion pipeline is healthy. Separating the
+views makes the operating model easier to explain in an interview.
+
 ## Validation
 
 ```powershell
@@ -158,6 +172,7 @@ make kafka-metrics-boundary-check
 make cpemon-writer-observability-story12-check
 make cpemon-api-http-metrics-check
 make grafana-pipeline-dashboard-check
+make grafana-api-health-dashboard-check
 make monitoring-template
 ```
 

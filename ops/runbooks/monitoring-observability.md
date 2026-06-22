@@ -242,6 +242,27 @@ Validate the dashboard artifact:
 make grafana-pipeline-dashboard-check
 ```
 
+## API health dashboard
+
+Grafana loads the API health dashboard from
+`k8s/monitoring/grafana-dashboard-cpemon-api-health.yaml`.
+
+This dashboard is intentionally narrower than the pipeline dashboard. It focuses
+on API reliability:
+
+| Panel | Question |
+| --- | --- |
+| Request Rate by Route and Status | Which API routes are receiving traffic? |
+| 5xx Error Rate by Route | Which routes are failing server-side? |
+| p95 Latency by Route | Which routes are slow? |
+| cpemon-api Service Up | Is Prometheus scraping the API service? |
+
+Validate the dashboard artifact:
+
+```powershell
+make grafana-api-health-dashboard-check
+```
+
 ## Interview Framing
 
 The clean answer is:
