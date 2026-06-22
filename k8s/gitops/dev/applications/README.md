@@ -13,6 +13,7 @@ Planned Applications:
 | `external-secrets-dev` | `external-secrets` | External Secrets Operator chart `2.6.0` with `k8s/addons/external-secrets/values.yaml` |
 | `policy-security-dev` | `cpemon` | CPEmon baseline NetworkPolicy candidate from `k8s/netpol/baseline` |
 | `argo-rollouts-dev` | `argo-rollouts` | Argo Rollouts chart `2.41.0` with `k8s/addons/argo-rollouts/values.yaml` |
+| `kyverno-dev` | `kyverno` | Kyverno chart `3.8.1` with `k8s/addons/kyverno/values.yaml` |
 
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
@@ -122,3 +123,22 @@ project:        cpemon
 The controller is platform delivery infrastructure. CPEmon application charts
 can later define `Rollout`, stable Service, canary Service, and analysis
 resources, but the controller itself stays outside the application chart.
+
+## `kyverno-dev`
+
+`kyverno-dev.yaml` deploys the Kyverno governance control plane:
+
+```text
+chart repo:     https://kyverno.github.io/kyverno/
+chart:          kyverno
+chart version:  3.8.1
+release:        kyverno
+values repo:    https://github.com/huangruidtu/cpemon-mvp.git
+values file:    k8s/addons/kyverno/values.yaml
+destination:    https://kubernetes.default.svc / kyverno
+project:        cpemon
+```
+
+Kyverno is platform governance infrastructure. This Application installs the
+controllers and CRDs. The concrete CPEmon policies are added separately so the
+control plane and policy package can be reviewed independently.

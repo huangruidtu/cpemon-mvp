@@ -71,6 +71,44 @@ For CPEmon, the first useful policies are:
 This is not the whole security program. It is a baseline that prevents common
 operational mistakes from becoming cluster state.
 
+## CCPU-200: Kyverno Platform Installation
+
+Kyverno is installed through the `kyverno-dev` Argo CD Application:
+
+```text
+Application:    k8s/gitops/dev/applications/kyverno-dev.yaml
+Chart repo:     https://kyverno.github.io/kyverno/
+Chart:          kyverno
+Chart version:  3.8.1
+App version:    v1.18.1
+Values file:    k8s/addons/kyverno/values.yaml
+Namespace:      kyverno
+```
+
+The important design choice is that Kyverno is platform-owned. CPEmon
+application charts should not install policy controllers. They should render
+workloads that satisfy the policy layer.
+
+The installation and policy package are also separated. CCPU-200 installs the
+controllers and CRDs. Later subtasks add the actual `ClusterPolicy` resources
+and validation fixtures. This keeps the control plane review separate from the
+policy behavior review.
+
+The AppProject allows only the Kyverno chart repository and the `kyverno`
+destination namespace needed by this Application. It also keeps manual sync,
+prune disabled, and self-heal disabled so CRDs and admission webhooks are
+reviewed before reconciliation changes the cluster.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-kyverno-installation.ps1
+helm template kyverno kyverno/kyverno `
+  --version 3.8.1 `
+  --namespace kyverno `
+  --values k8s/addons/kyverno/values.yaml
+```
+
 ## Why OpenCost
 
 OpenCost makes Kubernetes cost visible by namespace, workload, and service.

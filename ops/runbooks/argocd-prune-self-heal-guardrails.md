@@ -42,7 +42,7 @@ That can be correct when ownership is clean, but dangerous when:
 * a manifest path is temporarily empty or wrong
 * Git history is rewritten or a bad commit removes resources
 
-For CPEmon, Kafka, monitoring, ESO, and NetworkPolicy all deserve staged
+For CPEmon, Kafka, monitoring, ESO, Kyverno, and NetworkPolicy all deserve staged
 validation before automatic deletion is allowed.
 
 ## Why Self-Heal Needs Care
@@ -56,6 +56,7 @@ learning and incident response:
 * a controller may add runtime fields or generated settings
 * NetworkPolicy changes can lock out expected traffic
 * ESO and monitoring controllers reconcile their own dependent objects
+* Kyverno owns admission webhooks and policy CRDs that should not be pruned by accident
 
 The current approach is to inspect drift first, then sync deliberately.
 

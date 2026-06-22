@@ -11,6 +11,7 @@ $applications = @(
     "kafka-dev.yaml",
     "monitoring-dev.yaml",
     "external-secrets-dev.yaml",
+    "kyverno-dev.yaml",
     "policy-security-dev.yaml"
 )
 

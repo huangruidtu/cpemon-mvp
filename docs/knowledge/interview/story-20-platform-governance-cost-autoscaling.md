@@ -61,3 +61,31 @@ OpenCost for namespace cost visibility, and HPA for basic `cpemon-api`
 autoscaling. The key tradeoff is scope control: enforce the most valuable
 guardrails first, expose cost before optimizing it, and use HPA before adding
 KEDA for event-driven scaling.
+
+## Q9: What did CCPU-200 add?
+
+It added the Kyverno control plane as a GitOps-managed platform add-on. The
+`kyverno-dev` Argo CD Application pins the Kyverno Helm chart to `3.8.1`, reads
+values from `k8s/addons/kyverno/values.yaml`, and deploys into the `kyverno`
+namespace. The AppProject was updated with only the required chart repo and
+destination namespace.
+
+## Q10: Why separate Kyverno installation from Kyverno policies?
+
+The controller and the policies have different risk profiles. Installing
+Kyverno introduces CRDs, controllers, RBAC, and admission webhooks. Policies
+decide what workloads are accepted or rejected. Keeping them in separate
+subtasks makes review easier and lets an operator validate the policy engine
+before enforcing CPEmon-specific rules.
+
+## Q11: Why is Kyverno not installed inside the CPEmon Helm chart?
+
+Kyverno is shared platform infrastructure. If every application installed its
+own policy engine, policy ownership would be fragmented and upgrades would be
+dangerous. The platform owns Kyverno once; applications satisfy the policies.
+
+## Q12: What should you check after syncing `kyverno-dev`?
+
+Check the Application health, Kyverno pods in the `kyverno` namespace, Kyverno
+CRDs, and admission webhook configurations. Only after the controller is healthy
+should the team sync `ClusterPolicy` resources.
