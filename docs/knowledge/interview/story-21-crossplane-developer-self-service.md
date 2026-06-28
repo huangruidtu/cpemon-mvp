@@ -183,3 +183,16 @@ GitOps.
 Developers own request intent and metadata such as environment, owner, cost
 center, and resource-specific suffixes. Platform engineers own XRDs,
 Compositions, ProviderConfig, IRSA, guardrails, and review policy.
+
+## Q29: What did CCPU-224 add?
+
+It wired the Crossplane layers through Argo CD Applications: providers and
+functions, platform APIs, and developer requests. The sync order is controller,
+providers/functions, XRDs and Compositions, then application requests.
+
+## Q30: Why separate provider, platform API, and claim Applications?
+
+Because they have different owners and failure modes. Provider issues are IAM
+or control-plane problems, platform API issues are schema/composition problems,
+and request issues are developer intent problems. Separate Argo CD Applications
+make that operational boundary visible.

@@ -343,3 +343,30 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-developer-requests.ps1
 ```
+
+## CCPU-224: Argo CD Wiring for Crossplane
+
+Crossplane is now represented as layered Argo CD Applications:
+
+```text
+crossplane-dev                 -> Crossplane controller
+crossplane-providers-dev       -> providers, ProviderConfig, runtime config, functions
+crossplane-platform-apis-dev   -> XRDs and Compositions
+crossplane-claims-dev          -> cpemon-api developer requests
+```
+
+The ordering matters:
+
+```text
+controller -> providers/functions -> platform APIs -> developer requests
+```
+
+This keeps ownership clear. Platform engineers own provider and API layers.
+Application teams own request intent. Argo CD gives each layer an observable
+sync and health boundary.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-crossplane-wiring.ps1
+```

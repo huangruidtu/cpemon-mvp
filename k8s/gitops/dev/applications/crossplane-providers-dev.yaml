@@ -1,0 +1,78 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane-providers-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/layer: platform-control-plane
+    cpemon.io/sync-order: "21"
+  annotations:
+    argocd.argoproj.io/sync-wave: "21"
+spec:
+  project: cpemon
+  source:
+    repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+    targetRevision: HEAD
+    path: k8s/crossplane
+    directory:
+      include: "{providers/aws/*.yaml,functions/*.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crossplane-system
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane-platform-apis-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/layer: platform-api
+    cpemon.io/sync-order: "22"
+  annotations:
+    argocd.argoproj.io/sync-wave: "22"
+spec:
+  project: cpemon
+  source:
+    repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+    targetRevision: HEAD
+    path: k8s/crossplane/platform-apis
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crossplane-system
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane-claims-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/layer: developer-requests
+    cpemon.io/sync-order: "23"
+  annotations:
+    argocd.argoproj.io/sync-wave: "23"
+spec:
+  project: cpemon
+  source:
+    repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+    targetRevision: HEAD
+    path: k8s/crossplane/claims/dev/cpemon-api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cpemon
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
