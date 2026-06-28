@@ -1,0 +1,82 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xcpemonbucket.aws-s3.standard
+  labels:
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/provider: aws
+    cpemon.io/resource: s3
+    cpemon.io/resource-class: standard
+    cpemon.io/story: CCPU-220
+spec:
+  compositeTypeRef:
+    apiVersion: platform.cpemon.io/v1alpha1
+    kind: XCPemonBucket
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: bucket
+            base:
+              apiVersion: s3.aws.m.upbound.io/v1beta1
+              kind: Bucket
+              metadata:
+                labels:
+                  app.kubernetes.io/part-of: cpemon
+                  cpemon.io/managed-by: crossplane
+              spec:
+                deletionPolicy: Delete
+                providerConfigRef:
+                  name: aws-dev-irsa
+                forProvider:
+                  region: eu-north-1
+                  tags:
+                    app: cpemon
+                    managed-by: crossplane
+                    platform-api: XCPemonBucket
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.namespace
+                toFieldPath: metadata.namespace
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  strategy: string
+                  string:
+                    fmt: cpemon-%s-%s-%s
+                  variables:
+                    - fromFieldPath: spec.parameters.environment
+                    - fromFieldPath: spec.parameters.owner
+                    - fromFieldPath: spec.parameters.bucketNameSuffix
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.region
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.deletionPolicy
+                toFieldPath: spec.deletionPolicy
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.environment
+                toFieldPath: spec.forProvider.tags[environment]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.owner
+                toFieldPath: spec.forProvider.tags[owner]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.costCenter
+                toFieldPath: spec.forProvider.tags[cost-center]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.resourceClass
+                toFieldPath: spec.forProvider.tags[resource-class]
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.arn
+                toFieldPath: status.bucketArn
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.id
+                toFieldPath: status.bucketName

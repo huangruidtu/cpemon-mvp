@@ -187,3 +187,48 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-platform-api-conventions.ps1
 ```
+
+## CCPU-220: S3 Bucket XRD, Composition, and Developer Request
+
+The first concrete platform API is an S3 bucket request:
+
+```text
+k8s/crossplane/functions/function-patch-and-transform.yaml
+k8s/crossplane/platform-apis/s3/xrd.yaml
+k8s/crossplane/platform-apis/s3/composition.yaml
+k8s/crossplane/claims/dev/cpemon-api/s3-artifacts-bucket.yaml
+```
+
+The XRD uses Crossplane v2 with `scope: Namespaced`. That means the developer
+request is a namespaced composite resource:
+
+```yaml
+apiVersion: platform.cpemon.io/v1alpha1
+kind: XCPemonBucket
+metadata:
+  namespace: cpemon
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+    bucketNameSuffix: api-artifacts
+```
+
+In older Crossplane language this would often be called a claim. In Crossplane
+v2, the safer interview wording is "namespaced composite resource request" or
+"developer request."
+
+The Composition maps the request to an AWS S3 `Bucket` through
+`providerConfigRef: aws-dev-irsa`. Developers do not choose raw S3 provider
+fields; the platform owns naming, tags, provider config, and composition
+update policy.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-s3-bucket-platform-api.ps1
+```

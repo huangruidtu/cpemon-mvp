@@ -1,0 +1,29 @@
+apiVersion: platform.cpemon.io/v1alpha1
+kind: XCPemonBucket
+metadata:
+  name: cpemon-api-artifacts
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/name: cpemon-api
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/environment: dev
+    cpemon.io/owner: platform
+    cpemon.io/cost-center: learning
+    cpemon.io/story: CCPU-220
+  annotations:
+    cpemon.io/requested-by: platform-team
+    cpemon.io/jira: CCPU-220
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+    bucketNameSuffix: api-artifacts
+    versioning: false
+  crossplane:
+    compositionRef:
+      name: xcpemonbucket.aws-s3.standard
+    compositionUpdatePolicy: Manual

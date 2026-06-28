@@ -101,3 +101,24 @@ Developers should configure approved business and sizing inputs such as
 environment, owner, cost center, region, resource class, and a small number of
 resource-specific parameters. They should not configure raw provider fields,
 IAM behavior, encryption defaults, or provider credentials.
+
+## Q17: What did CCPU-220 add?
+
+It added the first concrete Crossplane platform API: an S3 bucket. The work
+includes a namespaced XRD, a pipeline Composition, the patch-and-transform
+function package, a developer request example for `cpemon-api`, a runbook, and
+an offline validation script.
+
+## Q18: Why is the S3 example called a developer request instead of only a claim?
+
+Crossplane v2 emphasizes namespaced composite resources. Older Crossplane
+patterns used separate claim objects. The repository keeps the `claims`
+directory name because it is still the developer self-service request area, but
+the object itself is a namespaced `XCPemonBucket`.
+
+## Q19: What does the S3 Composition hide from developers?
+
+It hides the AWS provider config, external bucket name construction, mandatory
+tags, provider API details, and composition update policy. Developers only
+choose approved parameters such as environment, owner, cost center, region,
+resource class, deletion policy, and a bucket suffix.

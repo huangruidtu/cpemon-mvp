@@ -1,0 +1,84 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: xcpemonbuckets.platform.cpemon.io
+  labels:
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/story: CCPU-220
+spec:
+  scope: Namespaced
+  group: platform.cpemon.io
+  names:
+    kind: XCPemonBucket
+    plural: xcpemonbuckets
+  defaultCompositionRef:
+    name: xcpemonbucket.aws-s3.standard
+  enforcedCompositionRef:
+    name: xcpemonbucket.aws-s3.standard
+  defaultCompositionUpdatePolicy: Manual
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - parameters
+              properties:
+                parameters:
+                  type: object
+                  required:
+                    - environment
+                    - owner
+                    - costCenter
+                    - region
+                    - resourceClass
+                    - deletionPolicy
+                    - bucketNameSuffix
+                  properties:
+                    environment:
+                      type: string
+                      enum:
+                        - dev
+                        - staging
+                        - prod
+                    owner:
+                      type: string
+                      minLength: 2
+                    costCenter:
+                      type: string
+                      minLength: 2
+                    region:
+                      type: string
+                      enum:
+                        - eu-north-1
+                        - eu-west-1
+                        - us-east-1
+                    resourceClass:
+                      type: string
+                      enum:
+                        - standard
+                        - critical
+                    deletionPolicy:
+                      type: string
+                      enum:
+                        - Delete
+                        - Orphan
+                    bucketNameSuffix:
+                      type: string
+                      pattern: "^[a-z0-9][a-z0-9-]{2,40}[a-z0-9]$"
+                      description: Developer-chosen suffix. The composition controls the full external name pattern.
+                    versioning:
+                      type: boolean
+                      default: false
+            status:
+              type: object
+              properties:
+                bucketArn:
+                  type: string
+                bucketName:
+                  type: string

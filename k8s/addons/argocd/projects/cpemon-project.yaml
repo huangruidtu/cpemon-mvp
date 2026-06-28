@@ -62,6 +62,8 @@ spec:
     - group: pkg.crossplane.io
       kind: Configuration
     - group: pkg.crossplane.io
+      kind: Function
+    - group: pkg.crossplane.io
       kind: DeploymentRuntimeConfig
     - group: aws.upbound.io
       kind: ProviderConfig

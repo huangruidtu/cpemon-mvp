@@ -34,6 +34,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo CD Crossplane Installation Runbook](../../ops/runbooks/argocd-crossplane-installation.md)
 - [Crossplane AWS Provider and IRSA Runbook](../../ops/runbooks/crossplane-aws-provider-irsa.md)
 - [Crossplane Platform API Conventions Runbook](../../ops/runbooks/crossplane-platform-api-conventions.md)
+- [Crossplane S3 Bucket Platform API Runbook](../../ops/runbooks/crossplane-s3-bucket-platform-api.md)
 - [Terraform and Crossplane Ownership Boundary ADR](../../ADR/cloud-platform-upgrade-crossplane-terraform-boundary.md)
 - [Argo CD Kyverno Installation Runbook](../../ops/runbooks/argocd-kyverno-installation.md)
 - [Kyverno Baseline Resource Policy Runbook](../../ops/runbooks/kyverno-resource-policy.md)
