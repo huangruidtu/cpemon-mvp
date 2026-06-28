@@ -232,3 +232,44 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-s3-bucket-platform-api.ps1
 ```
+
+## CCPU-221: DynamoDB Table XRD, Composition, and Developer Request
+
+The second concrete platform API is a DynamoDB table request:
+
+```text
+k8s/crossplane/platform-apis/dynamodb/xrd.yaml
+k8s/crossplane/platform-apis/dynamodb/composition.yaml
+k8s/crossplane/claims/dev/cpemon-api/dynamodb-health-table.yaml
+```
+
+The developer request keeps the API intentionally small:
+
+```yaml
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+    tableNameSuffix: health-events
+    partitionKey: healthId
+    billingMode: PAY_PER_REQUEST
+```
+
+The first version only allows `PAY_PER_REQUEST`. That avoids premature capacity
+tuning and is a reasonable default for a learning platform where traffic
+patterns are not yet proven.
+
+The Composition maps the request to an AWS DynamoDB `Table` through
+`providerConfigRef: aws-dev-irsa`. Developers choose the partition key and
+metadata; the platform controls provider auth, external name pattern, tags, and
+composition behavior.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-dynamodb-table-platform-api.ps1
+```

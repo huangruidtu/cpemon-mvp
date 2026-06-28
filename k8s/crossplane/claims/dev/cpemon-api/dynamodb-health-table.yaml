@@ -1,0 +1,30 @@
+apiVersion: platform.cpemon.io/v1alpha1
+kind: XCPemonDynamoTable
+metadata:
+  name: cpemon-api-health-events
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/name: cpemon-api
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/environment: dev
+    cpemon.io/owner: platform
+    cpemon.io/cost-center: learning
+    cpemon.io/story: CCPU-221
+  annotations:
+    cpemon.io/requested-by: platform-team
+    cpemon.io/jira: CCPU-221
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+    tableNameSuffix: health-events
+    partitionKey: healthId
+    billingMode: PAY_PER_REQUEST
+  crossplane:
+    compositionRef:
+      name: xcpemondynamotable.aws-dynamodb.standard
+    compositionUpdatePolicy: Manual

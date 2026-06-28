@@ -122,3 +122,23 @@ It hides the AWS provider config, external bucket name construction, mandatory
 tags, provider API details, and composition update policy. Developers only
 choose approved parameters such as environment, owner, cost center, region,
 resource class, deletion policy, and a bucket suffix.
+
+## Q20: What did CCPU-221 add?
+
+It added a DynamoDB table platform API with a namespaced XRD, pipeline
+Composition, developer request example, runbook, and offline validation script.
+The API exposes approved fields like partition key, billing mode, owner, cost
+center, region, and deletion policy.
+
+## Q21: Why only allow PAY_PER_REQUEST in the first DynamoDB version?
+
+Because the platform does not yet have production traffic evidence for
+provisioned throughput. `PAY_PER_REQUEST` is simpler for a self-service
+developer path and avoids capacity tuning becoming part of the first API
+contract.
+
+## Q22: What does the DynamoDB Composition hide?
+
+It hides provider configuration, table external name construction, mandatory
+tags, and provider-specific implementation details. Developers get a safer API
+for a table request instead of direct access to the raw AWS provider schema.
