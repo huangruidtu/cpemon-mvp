@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: cpemon-api-crossplane-requests-dev
+resources:
+  - s3-artifacts-bucket.yaml
+  - dynamodb-health-table.yaml
+  - ecr-image-repository.yaml
+commonLabels:
+  app.kubernetes.io/part-of: cpemon
+  cpemon.io/environment: dev
+  cpemon.io/request-type: crossplane-self-service

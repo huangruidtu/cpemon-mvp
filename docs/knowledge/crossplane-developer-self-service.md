@@ -310,3 +310,36 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-ecr-repository-platform-api.ps1
 ```
+
+## CCPU-223: Developer Self-Service Request Layout
+
+The developer golden path is now documented and represented in the repository:
+
+```text
+k8s/crossplane/claims/README.md
+k8s/crossplane/claims/dev/cpemon-api/README.md
+k8s/crossplane/claims/dev/cpemon-api/kustomization.yaml
+ops/runbooks/crossplane-developer-self-service-requests.md
+```
+
+The workflow is:
+
+```text
+edit request YAML -> open PR -> CI validation -> platform review -> merge -> Argo CD sync -> Crossplane reconcile
+```
+
+This is important because Crossplane self-service is not just an API design.
+It also needs an operating model: folder ownership, review rules, validation,
+and a clear boundary between developer intent and platform implementation.
+
+The `cpemon-api` dev folder includes three request examples:
+
+* S3 artifacts bucket
+* DynamoDB health table
+* ECR image repository
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-developer-requests.ps1
+```

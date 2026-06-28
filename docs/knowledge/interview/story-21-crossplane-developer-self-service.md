@@ -164,3 +164,22 @@ The main guardrail is release traceability: immutable tags and scan-on-push are
 part of the platform API. Developers can request a repository, but they cannot
 turn the registry into an unsafe mutable image store through the self-service
 contract.
+
+## Q26: What did CCPU-223 add?
+
+It added the developer self-service request layout: a top-level claims README,
+a `cpemon-api` dev folder README, a kustomization that groups the S3,
+DynamoDB, and ECR requests, a runbook, and an offline validator.
+
+## Q27: Why does the folder layout matter?
+
+The folder layout turns Crossplane from a set of platform manifests into a
+developer workflow. App teams know where to request resources, reviewers know
+what to inspect, and Argo CD can later reconcile the same directory through
+GitOps.
+
+## Q28: Who owns what in the self-service workflow?
+
+Developers own request intent and metadata such as environment, owner, cost
+center, and resource-specific suffixes. Platform engineers own XRDs,
+Compositions, ProviderConfig, IRSA, guardrails, and review policy.
