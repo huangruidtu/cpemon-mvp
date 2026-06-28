@@ -402,3 +402,34 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-policy-guardrails.ps1
 ```
+
+## CCPU-226: Connection Outputs and Application Consumption
+
+Crossplane provisioning is only useful if applications can consume the outputs
+cleanly. This task documents the consumption boundary:
+
+```text
+k8s/crossplane/consumption/cpemon-api-infra-outputs-example.yaml
+ops/runbooks/crossplane-connection-outputs-and-app-consumption.md
+```
+
+The model is:
+
+```text
+Crossplane request -> composed AWS resource -> platform-owned output -> app config
+```
+
+Applications use ConfigMaps for non-sensitive references and Secrets for
+sensitive/generated connection outputs. External Secrets Operator still owns
+secrets sourced from AWS Secrets Manager and KMS; Crossplane connection outputs
+are a separate resource-reconciliation lifecycle.
+
+The example uses placeholders such as
+`resolved-after-live-crossplane-reconciliation` to avoid claiming live AWS
+outputs before a real cluster and AWS reconciliation are validated.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-connection-outputs.ps1
+```

@@ -215,3 +215,23 @@ and safe ECR defaults.
 
 The fixtures cover missing cost-center metadata, an unapproved AWS region, and
 an unsafe ECR repository with mutable tags and scan-on-push disabled.
+
+## Q34: What did CCPU-226 add?
+
+It documented how applications consume Crossplane outputs. The repository now
+has a placeholder ConfigMap/Secret example and a runbook explaining what should
+be ConfigMap data, what should be Secret data, and where External Secrets
+Operator fits.
+
+## Q35: How do Crossplane connection outputs differ from External Secrets?
+
+External Secrets pulls existing secrets from systems such as AWS Secrets Manager
+into Kubernetes. Crossplane connection outputs are produced by resource
+reconciliation. They may later be written to Kubernetes Secrets or an external
+store, but they come from a different lifecycle.
+
+## Q36: Why use placeholders in the example Secret?
+
+Because no live AWS reconciliation has been proven in this task. The placeholder
+documents the expected shape without pretending that real bucket, table, or
+repository outputs already exist.
