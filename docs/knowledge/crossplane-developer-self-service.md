@@ -459,3 +459,24 @@ Documentation:
 ```text
 ops/runbooks/crossplane-offline-validation.md
 ```
+
+## CCPU-228: Lifecycle, Update, Deletion, and Rollback
+
+Crossplane resources need an operating model after the first request is merged:
+
+```text
+ops/runbooks/crossplane-lifecycle-update-delete-rollback.md
+```
+
+The runbook covers:
+
+* creation through PR, CI, review, Argo CD, and Crossplane reconciliation
+* safe update review
+* `Delete` versus `Orphan` deletion policy
+* Git-based rollback
+* failure modes for provider auth, composition errors, stuck resources, Argo CD
+  sync issues, and missing connection outputs
+
+The main interview point is that self-service infrastructure is not finished
+when the YAML exists. It needs lifecycle ownership, rollback paths, and safe
+deletion rules.

@@ -253,3 +253,19 @@ developer examples are wired, guardrails exist, and documentation is indexed.
 It does not prove Crossplane controller health, provider package health, IRSA
 trust policy correctness, actual AWS resource creation, connection secret
 emission, or live Kyverno admission behavior.
+
+## Q40: What did CCPU-228 add?
+
+It added an operational lifecycle runbook for Crossplane resources: creation,
+update, deletion, rollback, deletion policy, and common failure modes.
+
+## Q41: Why is deletionPolicy important?
+
+Because deleting a Crossplane request can either delete the cloud resource or
+orphan it for manual review. Dev disposable resources can use `Delete`, while
+production-like data should generally use `Orphan`.
+
+## Q42: What is the safest rollback strategy?
+
+Use Git revert, then sync the affected Argo CD Application. If the issue is in
+a Composition, revert the platform API change first, then resync claims.
