@@ -1,0 +1,41 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-aws-s3
+  labels:
+    app.kubernetes.io/name: provider-aws-s3
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: platform-control-plane
+    cpemon.io/managed-by: argocd
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-s3:v2.0.0
+  runtimeConfigRef:
+    name: aws-irsa-runtime
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-aws-dynamodb
+  labels:
+    app.kubernetes.io/name: provider-aws-dynamodb
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: platform-control-plane
+    cpemon.io/managed-by: argocd
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-dynamodb:v2.0.0
+  runtimeConfigRef:
+    name: aws-irsa-runtime
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-aws-ecr
+  labels:
+    app.kubernetes.io/name: provider-aws-ecr
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/layer: platform-control-plane
+    cpemon.io/managed-by: argocd
+spec:
+  package: xpkg.upbound.io/upbound/provider-aws-ecr:v2.0.0
+  runtimeConfigRef:
+    name: aws-irsa-runtime

@@ -62,3 +62,21 @@ piece its own review and validation boundary.
 Do not claim real AWS provisioning. This task only adds the GitOps installation
 path for the Crossplane control plane. AWS provisioning needs provider
 installation, ProviderConfig, IRSA, claims, and a live EKS/AWS environment.
+
+## Q11: What did CCPU-218 add?
+
+It added the AWS Provider configuration boundary for Crossplane: provider
+package manifests, a provider runtime config with an IRSA role annotation, an
+`aws-dev-irsa` `ProviderConfig`, a runbook, and an offline validation script.
+
+## Q12: Why use IRSA for Crossplane AWS authentication?
+
+IRSA lets the provider controller pod assume an AWS IAM role through the EKS
+OIDC provider. This avoids long-lived AWS keys in Kubernetes secrets and keeps
+the cloud permissions attached to a Kubernetes service account boundary.
+
+## Q13: Does CCPU-218 prove AWS provisioning works?
+
+No. It proves the repository has the provider and authentication manifests.
+Live provisioning requires a real role ARN, trust policy, provider health, and a
+claim that successfully creates an AWS resource.

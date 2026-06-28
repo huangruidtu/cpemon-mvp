@@ -1,0 +1,13 @@
+apiVersion: aws.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: aws-dev-irsa
+  labels:
+    app.kubernetes.io/name: provider-aws
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/environment: dev
+    cpemon.io/layer: platform-control-plane
+    cpemon.io/managed-by: argocd
+spec:
+  credentials:
+    source: IRSA

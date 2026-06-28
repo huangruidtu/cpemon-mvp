@@ -111,3 +111,39 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-crossplane-installation.ps1
 ```
+
+## CCPU-218: AWS Provider and IRSA Authentication Boundary
+
+This task adds the AWS Provider configuration boundary:
+
+```text
+k8s/crossplane/providers/aws/provider-family-aws.yaml
+k8s/crossplane/providers/aws/provider-services.yaml
+k8s/crossplane/providers/aws/providerconfig.yaml
+```
+
+The provider path uses IRSA:
+
+```text
+Provider pod -> ServiceAccount annotation -> EKS OIDC -> AWS STS -> IAM role
+```
+
+The `ProviderConfig` uses:
+
+```yaml
+credentials:
+  source: IRSA
+```
+
+This is safer than static AWS access keys because the provider receives
+short-lived credentials from AWS instead of storing long-lived keys in a
+Kubernetes Secret.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-aws-provider-irsa.ps1
+```
+
+Live validation requires the real IAM role ARN, EKS OIDC provider, trust policy,
+provider pods, and an actual managed resource reconciliation.

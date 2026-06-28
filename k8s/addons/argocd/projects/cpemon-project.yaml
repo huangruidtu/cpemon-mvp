@@ -61,6 +61,10 @@ spec:
       kind: Provider
     - group: pkg.crossplane.io
       kind: Configuration
+    - group: pkg.crossplane.io
+      kind: DeploymentRuntimeConfig
+    - group: aws.upbound.io
+      kind: ProviderConfig
     - group: apiextensions.crossplane.io
       kind: Composition
     - group: apiextensions.crossplane.io
