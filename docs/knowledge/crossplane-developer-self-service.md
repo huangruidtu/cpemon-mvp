@@ -273,3 +273,40 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-dynamodb-table-platform-api.ps1
 ```
+
+## CCPU-222: Optional ECR Repository Self-Service Extension
+
+ECR is implemented as an optional platform API because it is small, useful for
+developer delivery, and can be safely constrained:
+
+```text
+k8s/crossplane/platform-apis/ecr/xrd.yaml
+k8s/crossplane/platform-apis/ecr/composition.yaml
+k8s/crossplane/claims/dev/cpemon-api/ecr-image-repository.yaml
+```
+
+The API exposes only safe parameters:
+
+```yaml
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+    repositoryNameSuffix: cpemon-api
+    imageTagMutability: IMMUTABLE
+    scanOnPush: true
+```
+
+The first version intentionally forces immutable image tags and scan-on-push.
+That keeps ECR self-service aligned with platform security and release
+traceability instead of becoming an unconstrained image registry request.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-ecr-repository-platform-api.ps1
+```

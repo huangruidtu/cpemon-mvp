@@ -1,0 +1,91 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xcpemonecrrepository.aws-ecr.standard
+  labels:
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/provider: aws
+    cpemon.io/resource: ecr
+    cpemon.io/resource-class: standard
+    cpemon.io/story: CCPU-222
+spec:
+  compositeTypeRef:
+    apiVersion: platform.cpemon.io/v1alpha1
+    kind: XCPemonECRRepository
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: repository
+            base:
+              apiVersion: ecr.aws.m.upbound.io/v1beta1
+              kind: Repository
+              metadata:
+                labels:
+                  app.kubernetes.io/part-of: cpemon
+                  cpemon.io/managed-by: crossplane
+              spec:
+                deletionPolicy: Delete
+                providerConfigRef:
+                  name: aws-dev-irsa
+                forProvider:
+                  region: eu-north-1
+                  imageTagMutability: IMMUTABLE
+                  imageScanningConfiguration:
+                    - scanOnPush: true
+                  tags:
+                    app: cpemon
+                    managed-by: crossplane
+                    platform-api: XCPemonECRRepository
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.namespace
+                toFieldPath: metadata.namespace
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  strategy: string
+                  string:
+                    fmt: cpemon/%s/%s/%s
+                  variables:
+                    - fromFieldPath: spec.parameters.environment
+                    - fromFieldPath: spec.parameters.owner
+                    - fromFieldPath: spec.parameters.repositoryNameSuffix
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.region
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.deletionPolicy
+                toFieldPath: spec.deletionPolicy
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.imageTagMutability
+                toFieldPath: spec.forProvider.imageTagMutability
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.scanOnPush
+                toFieldPath: spec.forProvider.imageScanningConfiguration[0].scanOnPush
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.environment
+                toFieldPath: spec.forProvider.tags[environment]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.owner
+                toFieldPath: spec.forProvider.tags[owner]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.costCenter
+                toFieldPath: spec.forProvider.tags[cost-center]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.resourceClass
+                toFieldPath: spec.forProvider.tags[resource-class]
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.arn
+                toFieldPath: status.repositoryArn
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.repositoryUrl
+                toFieldPath: status.repositoryUrl

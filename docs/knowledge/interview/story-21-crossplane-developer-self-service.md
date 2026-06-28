@@ -142,3 +142,25 @@ contract.
 It hides provider configuration, table external name construction, mandatory
 tags, and provider-specific implementation details. Developers get a safer API
 for a table request instead of direct access to the raw AWS provider schema.
+
+## Q23: What did CCPU-222 add?
+
+It added an optional ECR repository self-service extension with a namespaced
+XRD, pipeline Composition, developer request example, runbook, and offline
+validator. The API is intentionally narrow: immutable tags, scan-on-push,
+approved regions, required cost metadata, and the `aws-dev-irsa` provider
+boundary.
+
+## Q24: Why implement ECR instead of deferring it?
+
+ECR is close to developer delivery and small enough to fit the same platform
+API model as S3 and DynamoDB. Implementing it shows how Crossplane can expose a
+consistent self-service pattern across storage, database, and image repository
+resources.
+
+## Q25: What is the main ECR guardrail?
+
+The main guardrail is release traceability: immutable tags and scan-on-push are
+part of the platform API. Developers can request a repository, but they cannot
+turn the registry into an unsafe mutable image store through the self-service
+contract.

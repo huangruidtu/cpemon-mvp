@@ -1,0 +1,30 @@
+apiVersion: platform.cpemon.io/v1alpha1
+kind: XCPemonECRRepository
+metadata:
+  name: cpemon-api-images
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/name: cpemon-api
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/environment: dev
+    cpemon.io/owner: platform
+    cpemon.io/cost-center: learning
+    cpemon.io/story: CCPU-222
+  annotations:
+    cpemon.io/requested-by: platform-team
+    cpemon.io/jira: CCPU-222
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+    repositoryNameSuffix: cpemon-api
+    imageTagMutability: IMMUTABLE
+    scanOnPush: true
+  crossplane:
+    compositionRef:
+      name: xcpemonecrrepository.aws-ecr.standard
+    compositionUpdatePolicy: Manual
