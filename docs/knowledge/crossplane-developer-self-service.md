@@ -480,3 +480,27 @@ The runbook covers:
 The main interview point is that self-service infrastructure is not finished
 when the YAML exists. It needs lifecycle ownership, rollback paths, and safe
 deletion rules.
+
+## CCPU-229: ADR, Concepts, and Interview Narrative
+
+The final decision and learning package is split into:
+
+```text
+ADR/cloud-platform-upgrade-crossplane-developer-self-service.md
+docs/knowledge/crossplane-concepts.md
+docs/knowledge/interview/story-21-crossplane-developer-self-service.md
+```
+
+The core narrative:
+
+```text
+Terraform owns the foundation.
+Crossplane exposes selected app-level self-service APIs.
+Argo CD reconciles the workflow.
+Kyverno validates developer requests.
+IRSA avoids static AWS keys.
+Offline validation proves repository consistency.
+Live validation proves real reconciliation.
+```
+
+That is the interview-ready arc for this story.

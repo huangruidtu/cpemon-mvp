@@ -269,3 +269,21 @@ production-like data should generally use `Orphan`.
 
 Use Git revert, then sync the affected Argo CD Application. If the issue is in
 a Composition, revert the platform API change first, then resync claims.
+
+## Q43: What did CCPU-229 add?
+
+It added the final ADR, a Crossplane concepts note, and the interview narrative
+that ties Terraform, Crossplane, Argo CD, Kyverno, IRSA, offline validation, and
+live validation together.
+
+## Q44: What is the short interview version of the whole story?
+
+Terraform owns the foundation. Crossplane exposes selected app-level APIs.
+Developers request infrastructure through GitOps. The platform owns providers,
+IRSA, schemas, Compositions, policies, lifecycle, and validation.
+
+## Q45: What tradeoff did you accept by adding Crossplane?
+
+Crossplane adds a new control plane and operational responsibility, but it gives
+developers a safer self-service API while preserving platform ownership of cloud
+provider details.
