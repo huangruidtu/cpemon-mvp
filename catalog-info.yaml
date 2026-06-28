@@ -1,0 +1,45 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: cpemon
+  description: CPEmon CPE monitoring platform upgrade case study.
+  annotations:
+    backstage.io/source-location: url:https://github.com/huangruidtu/cpemon-mvp
+spec:
+  owner: platform-engineering
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: acs-ingest
+  description: Ingests ACS events and publishes CPEmon domain events.
+  tags: [go, kafka, ingestion]
+spec:
+  type: service
+  lifecycle: experimental
+  owner: platform-engineering
+  system: cpemon
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: cpemon-writer
+  description: Consumes CPEmon events and writes the application read model.
+  tags: [go, kafka, mysql]
+spec:
+  type: service
+  lifecycle: experimental
+  owner: platform-engineering
+  system: cpemon
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: cpemon-api
+  description: Exposes CPEmon API and dashboard-facing read endpoints.
+  tags: [go, api, observability]
+spec:
+  type: service
+  lifecycle: experimental
+  owner: platform-engineering
+  system: cpemon

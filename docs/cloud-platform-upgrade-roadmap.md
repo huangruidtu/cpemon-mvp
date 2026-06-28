@@ -26,9 +26,26 @@ Success means a reviewer can explain why the platform moved from the MVP model t
 
 Goal: add a small number of platform enhancements on top of the Step 1 foundation.
 
-Step 2 candidates:
+Completed Step 2 enhancements:
 
 - Crossplane for platform resource provisioning.
 - k8sGPT-assisted operational insight.
 
+Final packaging:
+
+- Developer golden path.
+- Final architecture diagrams.
+- Evidence matrix.
+- Final demo script.
+- Interview pack.
+- Service catalog metadata.
+
 Step 2 is intentionally small. The goal is to avoid turning the MVP upgrade into a full internal developer platform before the EKS, GitOps, CI, security, and cost visibility baseline is proven.
+
+## Future Roadmap
+
+- Backstage full portal.
+- KEDA and Karpenter after HPA and static node group baselines.
+- SBOM, Cosign, and SLSA.
+- K8sGPT alert enrichment after privacy, quality, and cost controls are proven.
+- Production-grade live EKS validation and disaster recovery drills.

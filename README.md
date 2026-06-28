@@ -1,428 +1,116 @@
-# MVP-CPEmon – Cloud-Native CPE Monitoring Demo
+# CPEmon Cloud Platform Upgrade
 
-**Goal:**  
-Give a reviewer enough context to go from **zero** to **“can deploy and run the MVP-CPEmon demo”** using only this README and basic Kubernetes knowledge.
+CPEmon is a telco-style CPE monitoring project upgraded into an interview-ready
+cloud platform engineering case study.
 
----
+The original MVP proved an end-to-end device monitoring path. This upgrade
+packages that MVP into an EKS-oriented platform with Terraform, Helm, GitOps,
+Kafka, External Secrets, Argo Rollouts, Prometheus/Grafana, Kyverno, OpenCost,
+Crossplane, and K8sGPT.
 
-## 1. Project overview
+The repo is intentionally written as a portfolio project: each major platform
+claim links to implementation files, runbooks, ADRs, diagrams, and validation
+commands.
 
-MVP-CPEmon is a small “telco-style” lab project that simulates how an ISP monitors CPE (home router) devices end-to-end.
-
-It glues together:
-
-- CPE heartbeat simulators (Python, on a separate VM)
-- GenieACS (TR-069 ACS, also on that VM)
-- A Kubernetes-hosted ingest pipeline (`acs-ingest`, `cpemon-writer`)
-- An API / dashboard service (`cpemon-api`)
-- A full observability stack (Prometheus, Grafana, Elasticsearch/Kibana)
-- Backup & disaster recovery (Velero + MinIO/S3)
-
-The result is a **small but realistic** pipeline you can demo in interviews:
-
-> CPE → GenieACS → Ingress → acs-ingest → MySQL queues → cpemon-writer → cpemon-api → Grafana / Kibana / Velero.
-
----
-
-## 2. Architecture
-
-### 2.1 Data flow
-
-High-level flow:
-
-- **CPE simulator (vm3)**
-  - Sends TR-069 traffic to **GenieACS**.
-  - Sends HTTP heartbeats to `/cpe/heartbeat` on **cpemon-api**.
-
-- **GenieACS (vm3)**
-  - Manages CPEs.
-  - For important events, calls a webhook `/acs/webhook` exposed by the cluster.
-
-- **Kubernetes cluster**
-  - **Ingress-NGINX** exposes:
-    - `https://api.local` → `cpemon-api`
-    - `https://api.local/acs/webhook` → `acs-ingest`
-  - **acs-ingest**
-    - Validates / normalises ACS events.
-    - Writes them into **MySQL queue tables**.
-    - Exposes Prometheus metrics (including `acs_webhook_requests_total`, `acs_webhook_errors_total`).
-  - **cpemon-api**
-    - Ingests CPE heartbeat (`/cpe/heartbeat`).
-    - Exposes REST APIs for dashboards.
-  - **cpemon-writer**
-    - Consumes queue tables and writes into **business tables**.
-  - **Prometheus + Grafana**
-    - Scrapes metrics from all above components.
-    - Provides the main **“CPEmon Pipeline Overview”** dashboard.
-  - **Filebeat + Elasticsearch + Kibana**
-    - Collect and visualise logs.
-  - **Velero + MinIO/S3**
-    - Back up `cpemon` namespace + MySQL state.
-    - Restore for DR demo.
-
-### 2.2 Mermaid diagram (optional in GitHub)
-
-<img width="4152" height="2531" alt="MVP-CPEmon-ADR-001" src="https://github.com/user-attachments/assets/b14e3915-e63a-4cfd-9f9a-f2ea99c653a2" />
-
----
-
-## 3. Tech stack
-
-### Platform
-
-- Kubernetes (kubeadm lab cluster)
-- MetalLB (LoadBalancer on bare-metal)
-- ingress-nginx
-
-### Application services
-
-- `cpemon-api` (Go)
-- `cpemon-admin` web UI (served at `https://admin.local`, backed by `cpemon-api`)
-- `cpemon-writer` (Go)
-- `acs-ingest` (Go)
-- GenieACS (Node.js, Docker on vm3)
-- CPE heartbeat simulator (Python, Docker on vm3)
-
-### Data layer
-
-- MySQL (queue / business tables)
-- MinIO / S3 (MySQL dumps, Velero backup storage)
-- Elasticsearch (logs)
-
-### Observability
-
-- Prometheus + kube-prometheus-stack
-- Grafana (dashboards in `dashboards/`)
-- Filebeat + Elasticsearch + Kibana
-
-### Backup & DR
-
-- Velero
-- MinIO / S3-compatible object storage
-
----
-
-## 4. How to run in your lab cluster
-
-> Assumption: you already have a running cluster and `kubectl` access.
-
-### 4.1 Prerequisites
-
-On your **Kubernetes admin node**:
-
-- `kubectl`, `helm`, `docker`, `velero` installed.
-- `~/.kube/config` points to the target cluster.
-- `/etc/hosts` on your laptop (and vm3) contains something like:
-
-  ```text
-  10.0.0.200 api.local grafana.local kibana.local admin.local
-  ```
-
-On **vm3** (CPE/ACS host):
-
-- Docker engine installed.
-- Same `/etc/hosts` entry so vm3 can resolve `api.local` to ingress IP.
-
-### 4.2 Deploy the Kubernetes stack
-
-From repo root:
-
-```bash
-cd ~/cpemon-mvp
-```
-
-**Namespaces**
-
-```bash
-kubectl create namespace cpemon     || true
-kubectl create namespace monitoring || true
-kubectl create namespace logging    || true
-kubectl create namespace backup     || true
-kubectl create namespace genieacs   || true
-```
-
-**Data services**
-
-```bash
-kubectl apply -R -f k8s/mysql/
-kubectl apply -R -f k8s/minio/
-```
-
-**Ingress / MetalLB (if not already present)**
-
-```bash
-kubectl apply -R -f k8s/ingress-nginx/
-kubectl apply -R -f k8s/metallb/
-```
-
-**CPEmon apps**
-
-```bash
-kubectl apply -R -f k8s/cpemon/
-```
-
-**Observability & cronjobs**
-
-```bash
-kubectl apply -R -f k8s/monitoring/
-kubectl apply -R -f k8s/logging/
-kubectl apply -R -f k8s/cron/
-```
-
-> Check directory names against your repo; adjust if they differ.
-
-Verify everything is running:
-
-```bash
-kubectl get pods -A
-```
-
-### 4.3 Start GenieACS + CPE simulator on vm3
-
-On **vm3**:
-
-```bash
-cd ~/cpemon-mvp/vm3
-NUM_CPE=5 ./start-vm3-stack.sh
-```
-
-The script will:
-
-- Use `acs/docker-compose.yml` to start GenieACS, MongoDB, Redis.
-- Build `cpe-sim/Dockerfile` into `cpemon-cpe-sim:latest`.
-- Run `cpe-sim-N` containers that send periodic heartbeats to `https://api.local/cpe/heartbeat`.
-
-Check:
-
-```bash
-docker ps
-docker logs -f cpe-sim-1
-```
-
-You should see:
+## What This Project Shows
 
 ```text
-[OK] sent heartbeat ... status=202
+device events -> Kafka-backed ingestion -> writer -> API/read model
+             -> deployed by Helm and Argo CD
+             -> protected by policy, secrets, rollout, and observability layers
+             -> explained through runbooks, ADRs, diagrams, and interview notes
 ```
 
----
+## Platform Capabilities
 
-## 5. Demo scenarios (interview-ready)
-
-All helper scripts live in `scripts/`. Make them executable:
-
-```bash
-cd ~/cpemon-mvp
-chmod +x scripts/*.sh
-```
-
-### 5.1 Quick smoke test – `scripts/smoke.sh`
-
-**Goal:** verify cluster + core services are healthy.
-
-```bash
-scripts/smoke.sh
-```
-
-Roughly checks:
-
-- Key namespaces & Pods are running.
-- Ingress / MetalLB are listening on ports **80/443**.
-- `https://api.local` responds.
-- `cpemon-api` health endpoint.
-
-Use this at the start of a demo: *“environment is clean and working”*.
-
----
-
-### 5.2 Backlog scenario – `scripts/make_backlog.sh` + Grafana
-
-**Goal:** show what happens when the writer is down and queues build up, then recover.
-
-```bash
-HEARTBEAT_COUNT=300 PAUSE_BEFORE_RESUME=30   scripts/make_backlog.sh
-```
-
-The script will:
-
-1. Scale `cpemon-writer` to `0` (simulate consumer outage).  
-2. Hit `/cpe/heartbeat` many times to build up queue backlog.  
-3. Sleep for a while so you can see backlog rising in Grafana.  
-4. Scale `cpemon-writer` back to its original replica count and watch backlog drain.
-
-In Grafana’s **CPEmon Pipeline Overview** dashboard, focus on:
-
-- `cpemon-api: HTTP Requests by Status`
-- `cpemon-writer: Events (processed / dead)`
-- Any queue / lag panels you defined.
-
----
-
-### 5.3 Backup / Restore DR scenario – `scripts/backup_restore.sh` + Velero
-
-**Goal:** demonstrate using Velero to back up and restore `cpemon-api` and related resources.
-
-```bash
-scripts/backup_restore.sh
-```
-
-The script:
-
-- Creates a Velero backup for the `cpemon` namespace (name with timestamp).
-- Deletes `cpemon-api` Deployment / Service / Ingress to simulate a failure.
-- Restores from the backup.
-- Waits until restored resources are running again.
-- Optionally re-runs `scripts/smoke.sh` as final verification.
-
-This is your DR story: *“we can lose cpemon-api and get it back from backup”*.
-
----
-
-### 5.4 Admin Web UI demo – `https://admin.local`
-
-**Goal:** show a simple web UI on top of `cpemon-api`, so reviewers see both APIs and a small product-style UI.
-
-**How to use:**
-
-1. Make sure your `/etc/hosts` on your laptop contains:
-
-   ```text
-   10.0.0.200 admin.local
-   ```
-
-   (Replace `10.0.0.200` with your ingress IP if different.)
-
-2. After the cluster is up and `cpemon-api` is running, open a browser on your laptop and visit:
-
-   ```bash
-   https://admin.local
-   ```
-
-   If you are using a self-signed certificate, the browser will show a warning — accept it for this lab.
-
-3. In the admin UI you can, for example:
-
-   - See a list of CPE devices and their latest heartbeat status.
-   - Click into a CPE to see details (SN, WAN IP, SW version, last-seen timestamp).
-   - Cross-check what you see here with:
-     - Grafana’s **“CPEmon Pipeline Overview”** dashboard.
-     - Kibana logs for the same CPE SN.
-
----
-
-### 5.5 Extra demos (optional)
-
-- **CPE heartbeat demo – `scripts/demo_cpe_acs.sh`**  
-  Focused on **“CPE → cpemon-api → MySQL → cpemon-writer”** without ACS.  
-  Good if you want a shorter story.
-
-- **ACS webhook + error metrics – `scripts/acs-webhook-demo.sh`**  
-  Sends:
-
-  - valid webhooks (`202`)
-  - `invalid_json`
-  - `missing_sn`
-  - `invalid_signature`
-
-  and drives:
-
-  - `acs_webhook_requests_total`
-  - `acs_webhook_errors_total`
-
-  Use this when showcasing the ACS side of the pipeline.
-
-- **Ingress ports check – `scripts/ingress-ports-check.sh`**  
-  Shows which process is listening on 80/443, useful when debugging ingress.
-
----
-
-## 6. Repository structure
-
-At a glance:
-
-```text
-.
-├── app/              # Go services: cpemon-api, cpemon-writer, acs-ingest
-├── k8s/              # All Kubernetes manifests (infra, cpemon, monitoring, logging, cronjobs)
-├── backup/           # Velero / DB backup helpers
-├── scripts/          # Smoke, backlog, backup_restore, ACS demos, etc.
-├── dashboards/       # Grafana dashboard JSON
-├── docs/             # Extra docs / screenshots / notes (optional)
-├── adr/              # Architecture decision records
-├── ops/
-│   └── runbooks/     # Operational runbooks for demo
-├── sql/              # MySQL schema & migrations
-├── vm3/              # vm3-side setup: GenieACS docker-compose + CPE simulator
-├── docker/           # Dockerfiles for application images
-├── Makefile          # Optional build / lint helpers
-└── README.md         # This file
-```
-
-Helm chart validation helpers:
-
-```powershell
-make helm-cpemon-lint
-make helm-cpemon-template
-make helm-cpemon-validate
-```
-
-These render locally and do not install into a cluster. Live Helm install is deferred until the EKS cluster and required Secrets exist.
-
----
-
-## 7. What a reviewer should be able to do
-
-After reading this README, someone with **basic Kubernetes experience** should be able to:
-
-- Understand the purpose and architecture of MVP-CPEmon.  
-- Deploy the stack on their lab cluster (K8s + vm3).  
-- Run at least these three demo scripts:
-  - `scripts/smoke.sh`
-  - `scripts/make_backlog.sh`
-  - `scripts/backup_restore.sh`
-- Optionally run `scripts/acs-webhook-demo.sh` to showcase ACS-side metrics.  
-- Navigate the Grafana **“CPEmon Pipeline Overview”** dashboard and connect graphs to the underlying architecture.
-
----
-
-## 8. CPEmon Cloud Platform Upgrade: Evolution From Current MVP
-
-This documentation set describes the upgrade path from the current YAML-first MVP architecture to an EKS-based GitOps cloud platform version. It is an evolution track, not a replacement for the current MVP story above.
-
-Branch boundary:
-
-| Branch | Purpose |
+| Capability | Evidence |
 | --- | --- |
-| `main` | Current YAML-first MVP baseline. |
-| `codex/cpemon-cloud-platform-upgrade` | Cloud Platform Upgrade evolution track. |
+| EKS foundation with Terraform | `infra/terraform/`, `docs/knowledge/eks-*`, `ops/runbooks/eks-*` |
+| Application packaging with Helm | `deploy/helm/cpemon/`, `ops/runbooks/helm-cpemon-application.md` |
+| GitOps deployment with Argo CD | `k8s/gitops/dev/applications/`, `docs/knowledge/argocd-gitops-deployment.md` |
+| Kafka event platform | `k8s/addons/kafka/`, `docs/knowledge/kafka-platform-introduction.md` |
+| Producer/consumer refactor | `app/acs-ingest/`, `app/cpemon-writer/`, `docs/knowledge/*kafka*refactor.md` |
+| Secrets with ESO and AWS boundary | `deploy/helm/cpemon/templates/external-secrets.yaml`, `ops/runbooks/cpemon-secret-management.md` |
+| Progressive delivery | `deploy/helm/cpemon/templates/analysis-templates.yaml`, `ops/runbooks/argo-rollouts-cpemon-api.md` |
+| Monitoring and dashboards | `k8s/monitoring/`, `docs/knowledge/monitoring-observability-upgrade.md` |
+| Governance and cost visibility | `k8s/policies/kyverno/`, `k8s/addons/opencost/`, `docs/knowledge/platform-governance-cost-autoscaling.md` |
+| Crossplane self-service | `k8s/crossplane/`, `docs/knowledge/crossplane-developer-self-service.md` |
+| K8sGPT detective layer | `k8s/k8sgpt/`, `docs/knowledge/k8sgpt-detective-layer.md` |
+| Final demo and interview package | `docs/golden-path/`, `docs/final-architecture.md`, `docs/final-demo.md` |
+
+## Golden Path
 
 Start here:
 
-Roadmap:
+1. [Golden Path Index](docs/golden-path/README.md)
+2. [Local Development and Offline Validation](docs/golden-path/01-local-development.md)
+3. [EKS Foundation and GitOps Platform Path](docs/golden-path/02-eks-gitops-platform.md)
+4. [Release Flow with Helm, Kafka, Argo CD, and Argo Rollouts](docs/golden-path/03-release-flow.md)
+5. [Developer Self-Service Path](docs/golden-path/04-developer-self-service.md)
+6. [Final Operational Runbook and Incident Drill](docs/golden-path/05-operational-runbook.md)
+7. [Final Architecture](docs/final-architecture.md)
+8. [Final Demo](docs/final-demo.md)
+9. [Final Interview Pack](docs/final-interview-pack.md)
+10. [Final Evidence Matrix](docs/final-evidence-matrix.md)
 
-- `docs/cloud-platform-upgrade-roadmap.md` - Step 1 and Step 2 roadmap boundary.
+## Quick Validation
 
-Architecture:
+Run the repo-level checks from the project root:
 
-- `docs/cloud-platform-upgrade-step1-architecture.md` - Step 1 architecture, current limitations, target platform, migration path, scope, diagram, and incident drill.
-- `docs/cloud-platform-upgrade-step1-architecture.mmd` - Mermaid source for the Step 1 target architecture diagram.
+```powershell
+go test ./...
+make helm-cpemon-validate
+make k8sgpt-detective-layer-check
+make final-portfolio-check
+```
 
-Architecture decisions:
+Some checks require tools to be installed locally. Live Kubernetes checks
+require a real kubeconfig and cluster. The repository never claims a live EKS,
+Argo CD, Crossplane, or K8sGPT result unless a command can be run against a
+real cluster.
 
-- `ADR/cloud-platform-upgrade-from-yaml-first-mvp.md`
-- `ADR/cloud-platform-upgrade-eks-terraform-gitops-kafka.md`
-- `ADR/cloud-platform-upgrade-step2-crossplane-k8sgpt.md`
+## Demo Path
 
-Knowledge base:
+For a 15-minute interview demo:
 
-- `docs/knowledge/README.md` - reusable learning notes captured during the Cloud Platform Upgrade.
-- `docs/knowledge/cloud-platform-architecture-migration.md` - mental model for moving from a YAML-first MVP to a managed cloud platform operating model.
-- `docs/knowledge/terraform-remote-state-workflow.md` - mental model for Terraform state, locking, validation, plan, and review.
-- `docs/knowledge/ecr-github-oidc-terraform-actions.md` - mental model for ECR, GitHub OIDC, Terraform, and GitHub Actions.
-- `docs/knowledge/database-secret-configuration.md` - mental model for database and secret configuration decisions.
-- `docs/knowledge/interview/README.md` - interview Q&A sets built from each completed upgrade story.
+1. Explain the [final architecture](docs/final-architecture.md).
+2. Show the [evidence matrix](docs/final-evidence-matrix.md).
+3. Walk through the [golden path](docs/golden-path/README.md).
+4. Run local validation commands.
+5. Explain the release flow and canary rollback boundary.
+6. Walk the incident drill: heartbeat missing from API.
+7. Close with the [interview pack](docs/final-interview-pack.md).
 
-Jira and AI workflow templates:
+## Live Validation Boundary
 
-- `docs/cloud-platform-upgrade-jira-story-template.md` - reusable Jira Story template for the remaining upgrade stories.
-- `docs/ai/prompts/cloud-platform-upgrade-jira-task.md` - reusable prompt for generating consistent Jira task descriptions and execution comments.
+Implemented and offline-validated:
+
+* repository structure, manifests, Helm chart, docs, runbooks, ADRs, demos;
+* Go unit tests and repo validation scripts where tools are available;
+* GitOps manifests and Helm rendering paths;
+* K8sGPT, Crossplane, Kyverno, OpenCost, and Argo CD templates.
+
+Requires a real environment:
+
+* EKS apply/plan against a real AWS account;
+* Argo CD sync and health status;
+* Kafka produce/consume against a live broker;
+* Prometheus/Grafana runtime dashboards;
+* Crossplane provisioning against AWS;
+* K8sGPT `analyze` with installed CLI/operator and backend credentials.
+
+## Interview Summary
+
+Use this concise version:
+
+```text
+I upgraded a Kubernetes-first monitoring MVP into an EKS-oriented platform
+engineering project. I kept Terraform responsible for the foundation, used Helm
+and Argo CD for application delivery, introduced Kafka for durable event flow,
+added Argo Rollouts and Prometheus analysis for safer releases, used ESO for
+secret boundaries, added governance and cost visibility with Kyverno and
+OpenCost, exposed developer self-service patterns with Crossplane, and added
+K8sGPT as a read-only detective layer. The final repo includes diagrams,
+runbooks, ADRs, validation scripts, and an evidence matrix so every claim can
+be traced to code or documentation.
+```
