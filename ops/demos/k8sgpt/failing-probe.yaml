@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8sgpt-demo-failing-probe
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/name: k8sgpt-demo-failing-probe
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/demo: k8sgpt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: k8sgpt-demo-failing-probe
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: k8sgpt-demo-failing-probe
+        app.kubernetes.io/part-of: cpemon-mvp
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /this-path-does-not-exist
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi

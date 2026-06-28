@@ -1,0 +1,23 @@
+apiVersion: core.k8sgpt.ai/v1alpha1
+kind: K8sGPT
+metadata:
+  name: cpemon-detective
+  namespace: k8sgpt-operator-system
+  labels:
+    app.kubernetes.io/name: k8sgpt
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/environment: dev
+    cpemon.io/layer: detective-observability
+spec:
+  ai:
+    enabled: true
+    backend: openai
+    model: gpt-4o-mini
+    secret:
+      name: k8sgpt-openai
+      key: openai-api-key
+    anonymized: true
+    language: english
+  noCache: false
+  repository: ghcr.io/k8sgpt-ai/k8sgpt
+  version: v0.4.1

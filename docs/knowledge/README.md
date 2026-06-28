@@ -30,6 +30,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo Rollouts Canary Deployment](argo-rollouts-canary-deployment.md)
 - [Platform Governance, Cost Visibility, and Basic Autoscaling](platform-governance-cost-autoscaling.md)
 - [Crossplane Developer Self-Service Infrastructure Provisioning](crossplane-developer-self-service.md)
+- [K8sGPT Detective Layer](k8sgpt-detective-layer.md)
 - [Crossplane and Terraform Boundary Runbook](../../ops/runbooks/crossplane-terraform-boundary.md)
 - [Argo CD Crossplane Installation Runbook](../../ops/runbooks/argocd-crossplane-installation.md)
 - [Crossplane AWS Provider and IRSA Runbook](../../ops/runbooks/crossplane-aws-provider-irsa.md)
@@ -137,3 +138,4 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Argo Rollouts Canary Deployment Interview Q&A](interview/story-19-argo-rollouts-canary-deployment.md)
 - [Platform Governance, Cost Visibility, and Basic Autoscaling Interview Q&A](interview/story-20-platform-governance-cost-autoscaling.md)
 - [Crossplane Developer Self-Service Interview Q&A](interview/story-21-crossplane-developer-self-service.md)
+- [K8sGPT Detective Layer Interview Q&A](interview/story-22-k8sgpt-detective-layer.md)

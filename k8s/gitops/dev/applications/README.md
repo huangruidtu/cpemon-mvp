@@ -17,6 +17,8 @@ Planned Applications:
 | `kyverno-policies-dev` | `kyverno` | CPEmon Kyverno policies from `k8s/policies/kyverno` |
 | `opencost-dev` | `opencost` | OpenCost chart `2.5.23` with `k8s/addons/opencost/values.yaml` |
 | `crossplane-dev` | `crossplane-system` | Crossplane chart `2.3.2` with `k8s/addons/crossplane/values.yaml` |
+| `k8sgpt-dev` | `k8sgpt-operator-system` | K8sGPT operator chart `0.2.27` with `k8s/addons/k8sgpt/values.yaml` |
+| `k8sgpt-config-dev` | `k8sgpt-operator-system` | CPEmon K8sGPT config from `k8s/k8sgpt` |
 
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
@@ -201,3 +203,37 @@ This Application installs only the controller layer. AWS Provider packages,
 ProviderConfig, XRDs, Compositions, and developer claims are intentionally added
 in later applications so the Crossplane control plane can be reviewed and
 validated first.
+
+## `k8sgpt-dev`
+
+`k8sgpt-dev.yaml` deploys the K8sGPT operator:
+
+```text
+chart repo:     https://charts.k8sgpt.ai/
+chart:          k8sgpt-operator
+chart version:  0.2.27
+release:        k8sgpt
+values repo:    https://github.com/huangruidtu/cpemon-mvp.git
+values file:    k8s/addons/k8sgpt/values.yaml
+destination:    https://kubernetes.default.svc / k8sgpt-operator-system
+project:        cpemon
+```
+
+K8sGPT is introduced as a detective observability addon. It explains likely
+Kubernetes failure causes, but it does not replace Prometheus, Argo CD, kubectl,
+or operator judgment.
+
+## `k8sgpt-config-dev`
+
+`k8sgpt-config-dev.yaml` deploys CPEmon-specific K8sGPT configuration:
+
+```text
+repoURL:        https://github.com/huangruidtu/cpemon-mvp.git
+targetRevision: HEAD
+path:           k8s/k8sgpt
+destination:    https://kubernetes.default.svc / k8sgpt-operator-system
+project:        cpemon
+```
+
+This Application is separated from the operator installation so the CRD/control
+plane lifecycle and CPEmon diagnostic policy can be reviewed independently.

@@ -101,6 +101,16 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: k8sgpt-operator-system
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: k8sgpt-operator-system
+    cpemon.io/layer: detective-observability
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: ingress-nginx
   labels:
     app.kubernetes.io/part-of: cpemon-mvp
