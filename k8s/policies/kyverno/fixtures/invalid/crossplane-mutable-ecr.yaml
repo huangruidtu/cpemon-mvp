@@ -1,0 +1,25 @@
+apiVersion: platform.cpemon.io/v1alpha1
+kind: XCPemonECRRepository
+metadata:
+  name: invalid-crossplane-mutable-ecr
+  namespace: cpemon
+  labels:
+    app.kubernetes.io/name: cpemon-api
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/environment: dev
+    cpemon.io/owner: platform
+    cpemon.io/cost-center: learning
+  annotations:
+    cpemon.io/requested-by: platform-team
+    cpemon.io/jira: CCPU-225
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+    repositoryNameSuffix: mutable-example
+    imageTagMutability: MUTABLE
+    scanOnPush: false

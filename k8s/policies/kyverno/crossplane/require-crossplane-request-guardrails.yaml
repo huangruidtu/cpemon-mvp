@@ -1,0 +1,92 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: cpemon-crossplane-request-guardrails
+  labels:
+    app.kubernetes.io/part-of: cpemon
+    cpemon.io/policy-category: crossplane-self-service
+    cpemon.io/story: CCPU-225
+  annotations:
+    policies.kyverno.io/title: Require Crossplane Request Guardrails
+    policies.kyverno.io/category: CPEmon Platform Governance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Crossplane Developer Requests
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-standard-request-metadata
+      match:
+        any:
+          - resources:
+              kinds:
+                - platform.cpemon.io/v1alpha1/XCPemonBucket
+                - platform.cpemon.io/v1alpha1/XCPemonDynamoTable
+                - platform.cpemon.io/v1alpha1/XCPemonECRRepository
+              namespaces:
+                - cpemon
+      validate:
+        message: Crossplane developer requests must include app, environment, owner, and cost-center metadata.
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/part-of: cpemon
+              cpemon.io/environment: "?*"
+              cpemon.io/owner: "?*"
+              cpemon.io/cost-center: "?*"
+            annotations:
+              cpemon.io/requested-by: "?*"
+              cpemon.io/jira: "?*"
+    - name: restrict-request-parameters
+      match:
+        any:
+          - resources:
+              kinds:
+                - platform.cpemon.io/v1alpha1/XCPemonBucket
+                - platform.cpemon.io/v1alpha1/XCPemonDynamoTable
+                - platform.cpemon.io/v1alpha1/XCPemonECRRepository
+              namespaces:
+                - cpemon
+      validate:
+        message: Crossplane developer requests must use approved environment, region, resource class, and deletion policy values.
+        anyPattern:
+          - spec:
+              parameters:
+                environment: dev
+                region: eu-north-1
+                resourceClass: standard
+                deletionPolicy: Delete
+          - spec:
+              parameters:
+                environment: dev
+                region: eu-west-1
+                resourceClass: standard
+                deletionPolicy: Delete
+          - spec:
+              parameters:
+                environment: staging
+                region: eu-north-1
+                resourceClass: standard
+                deletionPolicy: Orphan
+          - spec:
+              parameters:
+                environment: prod
+                region: eu-north-1
+                resourceClass: critical
+                deletionPolicy: Orphan
+    - name: require-ecr-safety-defaults
+      match:
+        any:
+          - resources:
+              kinds:
+                - platform.cpemon.io/v1alpha1/XCPemonECRRepository
+              namespaces:
+                - cpemon
+      validate:
+        message: ECR self-service repositories must use immutable tags and scan-on-push.
+        pattern:
+          spec:
+            parameters:
+              imageTagMutability: IMMUTABLE
+              scanOnPush: true

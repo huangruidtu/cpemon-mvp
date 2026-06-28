@@ -196,3 +196,22 @@ Because they have different owners and failure modes. Provider issues are IAM
 or control-plane problems, platform API issues are schema/composition problems,
 and request issues are developer intent problems. Separate Argo CD Applications
 make that operational boundary visible.
+
+## Q31: What did CCPU-225 add?
+
+It added Kyverno guardrails for Crossplane developer requests. The policy
+requires ownership and cost metadata, restricts environment/region/resource
+class/deletion-policy combinations, and forces ECR requests to use immutable
+tags plus scan-on-push.
+
+## Q32: Why does Crossplane self-service need Kyverno?
+
+Because an abstraction without admission control can still be misused. XRD
+schemas define the API shape, but Kyverno enforces organizational policy at
+admission time: labels, cost ownership, approved regions, deletion behavior,
+and safe ECR defaults.
+
+## Q33: What invalid cases are documented?
+
+The fixtures cover missing cost-center metadata, an unapproved AWS region, and
+an unsafe ECR repository with mutable tags and scan-on-push disabled.

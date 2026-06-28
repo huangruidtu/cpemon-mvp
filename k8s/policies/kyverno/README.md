@@ -25,6 +25,7 @@ first, then review and sync policy behavior as a separate GitOps step.
 | `baseline/disallow-latest-image-tag.yaml` | Reject CPEmon Pods that use the mutable `:latest` image tag. |
 | `baseline/require-standard-labels.yaml` | Require standard `app.kubernetes.io/*` labels on CPEmon Pods. |
 | `baseline/require-non-root-containers.yaml` | Require non-root container settings for CPEmon Pods. |
+| `crossplane/require-crossplane-request-guardrails.yaml` | Require owner, cost, environment, region, deletion, and ECR safety guardrails for Crossplane developer requests. |
 
 ## Validation
 
@@ -33,6 +34,7 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-resource-policy.
 powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-image-tag-policy.ps1
 powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-labels-nonroot-policies.ps1
 powershell -ExecutionPolicy Bypass -File scripts/verify-kyverno-policy-fixtures.ps1
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-policy-guardrails.ps1
 ```
 
 ## Fixtures
@@ -44,7 +46,8 @@ k8s/policies/kyverno/fixtures
 ```
 
 They show the expected policy boundary for missing resources, `latest` images,
-missing labels, and root/privilege-escalating containers.
+missing labels, root/privilege-escalating containers, and invalid Crossplane
+developer requests.
 
 Live validation, after Kyverno is installed:
 

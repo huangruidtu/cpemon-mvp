@@ -370,3 +370,35 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-crossplane-wiring.ps1
 ```
+
+## CCPU-225: Crossplane Policy Guardrails
+
+Developer self-service needs admission control. The Crossplane API keeps the
+developer-facing schema small, but Kyverno enforces the request contract at the
+cluster boundary:
+
+```text
+k8s/policies/kyverno/crossplane/require-crossplane-request-guardrails.yaml
+```
+
+The policy requires:
+
+* standard app, environment, owner, and cost-center labels
+* request provenance annotations
+* approved environment, region, resourceClass, and deletionPolicy combinations
+* immutable image tags and scan-on-push for ECR repository requests
+
+Fixtures show the expected behavior:
+
+```text
+k8s/policies/kyverno/fixtures/valid/crossplane-bucket-request.yaml
+k8s/policies/kyverno/fixtures/invalid/crossplane-missing-cost-center.yaml
+k8s/policies/kyverno/fixtures/invalid/crossplane-unapproved-region.yaml
+k8s/policies/kyverno/fixtures/invalid/crossplane-mutable-ecr.yaml
+```
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-policy-guardrails.ps1
+```
