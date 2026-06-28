@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane-dev
+  namespace: argocd
+  annotations:
+    cpemon.io/sync-policy: manual
+    cpemon.io/sync-prune: "disabled"
+    cpemon.io/sync-self-heal: "disabled"
+  labels:
+    app.kubernetes.io/name: crossplane
+    app.kubernetes.io/part-of: cpemon-mvp
+    cpemon.io/environment: dev
+    cpemon.io/layer: platform-control-plane
+    cpemon.io/managed-by: argocd
+spec:
+  project: cpemon
+  sources:
+    - repoURL: https://charts.crossplane.io/stable
+      chart: crossplane
+      targetRevision: 2.3.2
+      helm:
+        releaseName: crossplane
+        valueFiles:
+          - $values/k8s/addons/crossplane/values.yaml
+    - repoURL: https://github.com/huangruidtu/cpemon-mvp.git
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crossplane-system
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

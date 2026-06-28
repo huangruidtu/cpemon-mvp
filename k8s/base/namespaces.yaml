@@ -91,6 +91,16 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: crossplane-system
+  labels:
+    app.kubernetes.io/part-of: cpemon-mvp
+    app.kubernetes.io/name: crossplane-system
+    cpemon.io/layer: platform-control-plane
+    cpemon.io/managed-by: gitops-ready-manifest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: ingress-nginx
   labels:
     app.kubernetes.io/part-of: cpemon-mvp

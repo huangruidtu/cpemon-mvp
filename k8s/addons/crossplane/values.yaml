@@ -1,0 +1,29 @@
+# Dev Crossplane Helm values.
+#
+# Crossplane is installed as platform control-plane infrastructure. Provider
+# packages, ProviderConfig, XRDs, Compositions, and developer claims are managed
+# in later GitOps applications so the control plane can be reviewed separately.
+
+replicas: 1
+
+resourcesCrossplane:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+resourcesRBACManager:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+podLabels:
+  app.kubernetes.io/part-of: cpemon-mvp
+  cpemon.io/layer: platform-control-plane
+  cpemon.io/managed-by: argocd
+  cpemon.io/environment: dev

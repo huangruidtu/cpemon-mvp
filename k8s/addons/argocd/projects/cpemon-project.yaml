@@ -18,6 +18,7 @@ spec:
     - https://argoproj.github.io/argo-helm
     - https://kyverno.github.io/kyverno/
     - https://opencost.github.io/opencost-helm-chart
+    - https://charts.crossplane.io/stable
   destinations:
     - namespace: cpemon
       server: https://kubernetes.default.svc
@@ -34,6 +35,8 @@ spec:
     - namespace: kyverno
       server: https://kubernetes.default.svc
     - namespace: opencost
+      server: https://kubernetes.default.svc
+    - namespace: crossplane-system
       server: https://kubernetes.default.svc
     - namespace: platform
       server: https://kubernetes.default.svc
@@ -54,6 +57,14 @@ spec:
       kind: APIService
     - group: kyverno.io
       kind: ClusterPolicy
+    - group: pkg.crossplane.io
+      kind: Provider
+    - group: pkg.crossplane.io
+      kind: Configuration
+    - group: apiextensions.crossplane.io
+      kind: Composition
+    - group: apiextensions.crossplane.io
+      kind: CompositeResourceDefinition
   namespaceResourceWhitelist:
     - group: "*"
       kind: "*"

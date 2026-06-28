@@ -31,6 +31,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Platform Governance, Cost Visibility, and Basic Autoscaling](platform-governance-cost-autoscaling.md)
 - [Crossplane Developer Self-Service Infrastructure Provisioning](crossplane-developer-self-service.md)
 - [Crossplane and Terraform Boundary Runbook](../../ops/runbooks/crossplane-terraform-boundary.md)
+- [Argo CD Crossplane Installation Runbook](../../ops/runbooks/argocd-crossplane-installation.md)
 - [Terraform and Crossplane Ownership Boundary ADR](../../ADR/cloud-platform-upgrade-crossplane-terraform-boundary.md)
 - [Argo CD Kyverno Installation Runbook](../../ops/runbooks/argocd-kyverno-installation.md)
 - [Kyverno Baseline Resource Policy Runbook](../../ops/runbooks/kyverno-resource-policy.md)

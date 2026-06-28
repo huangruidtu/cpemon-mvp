@@ -82,3 +82,32 @@ The correct framing is:
 The framework and ownership model are implemented first. Live AWS provisioning
 requires Crossplane, provider, IRSA, and an EKS cluster to be ready.
 ```
+
+## CCPU-217: Crossplane GitOps Installation
+
+Crossplane is installed as a GitOps-managed platform control-plane add-on:
+
+```text
+Application:   crossplane-dev
+Namespace:     crossplane-system
+Chart repo:    https://charts.crossplane.io/stable
+Chart:         crossplane
+Chart version: 2.3.2
+Values file:   k8s/addons/crossplane/values.yaml
+```
+
+The installation is intentionally separated from provider configuration,
+platform APIs, and developer claims:
+
+```text
+crossplane-dev -> provider config -> XRD/Composition -> developer claims
+```
+
+That ordering makes the control plane easier to troubleshoot. If Crossplane is
+not healthy, provider and claim failures are noise.
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-crossplane-installation.ps1
+```

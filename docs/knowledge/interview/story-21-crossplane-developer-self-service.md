@@ -44,3 +44,21 @@ I would say Terraform owns the platform foundation, and Crossplane exposes
 selected app-level capabilities through safe Kubernetes APIs. Developers submit
 claims through GitOps, while platform engineers own the abstractions and
 guardrails.
+
+## Q8: What did CCPU-217 add?
+
+It added Crossplane as a GitOps-managed platform add-on. The repository now has
+a `crossplane-system` namespace, Crossplane Helm values, a `crossplane-dev`
+Argo CD Application, an installation runbook, and an offline validation script.
+
+## Q9: Why separate Crossplane installation from ProviderConfig and claims?
+
+The controller must be healthy before providers, XRDs, Compositions, or claims
+can reconcile. Separating those layers makes debugging easier and gives each
+piece its own review and validation boundary.
+
+## Q10: What should you not claim after CCPU-217?
+
+Do not claim real AWS provisioning. This task only adds the GitOps installation
+path for the Crossplane control plane. AWS provisioning needs provider
+installation, ProviderConfig, IRSA, claims, and a live EKS/AWS environment.

@@ -16,6 +16,7 @@ Planned Applications:
 | `kyverno-dev` | `kyverno` | Kyverno chart `3.8.1` with `k8s/addons/kyverno/values.yaml` |
 | `kyverno-policies-dev` | `kyverno` | CPEmon Kyverno policies from `k8s/policies/kyverno` |
 | `opencost-dev` | `opencost` | OpenCost chart `2.5.23` with `k8s/addons/opencost/values.yaml` |
+| `crossplane-dev` | `crossplane-system` | Crossplane chart `2.3.2` with `k8s/addons/crossplane/values.yaml` |
 
 This story starts with plain Application manifests. A root app-of-apps
 Application is intentionally deferred.
@@ -180,3 +181,23 @@ project:        cpemon
 OpenCost is platform visibility infrastructure. It is added before chargeback
 or budget workflows so operators can first see namespace and workload cost
 signals.
+
+## `crossplane-dev`
+
+`crossplane-dev.yaml` deploys the Crossplane platform control plane:
+
+```text
+chart repo:     https://charts.crossplane.io/stable
+chart:          crossplane
+chart version:  2.3.2
+release:        crossplane
+values repo:    https://github.com/huangruidtu/cpemon-mvp.git
+values file:    k8s/addons/crossplane/values.yaml
+destination:    https://kubernetes.default.svc / crossplane-system
+project:        cpemon
+```
+
+This Application installs only the controller layer. AWS Provider packages,
+ProviderConfig, XRDs, Compositions, and developer claims are intentionally added
+in later applications so the Crossplane control plane can be reviewed and
+validated first.
