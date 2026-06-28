@@ -433,3 +433,29 @@ Local validation:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-connection-outputs.ps1
 ```
+
+## CCPU-227: Offline Validation for Crossplane Manifests
+
+The story now has a single repository-level validation entry point:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-story.ps1
+```
+
+This script runs the individual checks for ownership boundary, Crossplane
+installation, AWS provider IRSA, platform API conventions, S3, DynamoDB, ECR,
+developer requests, Argo CD wiring, Kyverno guardrails, and application
+consumption docs.
+
+The important boundary:
+
+```text
+offline validation proves repository consistency
+live validation proves controller health, IRSA, AWS reconciliation, and admission behavior
+```
+
+Documentation:
+
+```text
+ops/runbooks/crossplane-offline-validation.md
+```

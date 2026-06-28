@@ -235,3 +235,21 @@ store, but they come from a different lifecycle.
 Because no live AWS reconciliation has been proven in this task. The placeholder
 documents the expected shape without pretending that real bucket, table, or
 repository outputs already exist.
+
+## Q37: What did CCPU-227 add?
+
+It added a story-level offline validation script, `verify-crossplane-story.ps1`,
+plus a runbook explaining what offline validation proves and what still requires
+live EKS/AWS validation.
+
+## Q38: What does offline validation prove?
+
+It proves repository consistency: expected files exist, scripts pass, Argo CD
+Applications point at the right paths, XRDs and Compositions are present,
+developer examples are wired, guardrails exist, and documentation is indexed.
+
+## Q39: What does offline validation not prove?
+
+It does not prove Crossplane controller health, provider package health, IRSA
+trust policy correctness, actual AWS resource creation, connection secret
+emission, or live Kyverno admission behavior.
