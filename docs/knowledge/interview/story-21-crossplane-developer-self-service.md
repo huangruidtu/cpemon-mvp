@@ -287,3 +287,16 @@ IRSA, schemas, Compositions, policies, lifecycle, and validation.
 Crossplane adds a new control plane and operational responsibility, but it gives
 developers a safer self-service API while preserving platform ownership of cloud
 provider details.
+
+## Q46: What did CCPU-230 add?
+
+It added the final Crossplane story checklist and live validation boundary. The
+checklist links the implemented framework, validation commands, live
+prerequisites, and final interview summary.
+
+## Q47: What is implemented versus not yet claimed?
+
+Implemented: repository framework, manifests, examples, Argo CD wiring, Kyverno
+guardrails, runbooks, ADRs, knowledge notes, interview notes, and offline
+validation. Not claimed: live AWS provisioning, live IRSA role assumption, live
+connection secret emission, or live Kyverno admission results.

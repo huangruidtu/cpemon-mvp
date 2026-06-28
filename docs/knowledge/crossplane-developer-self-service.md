@@ -504,3 +504,21 @@ Live validation proves real reconciliation.
 ```
 
 That is the interview-ready arc for this story.
+
+## CCPU-230: Final Checklist and Live Validation Boundary
+
+The story is closed by:
+
+```text
+ops/runbooks/crossplane-story-final-checklist.md
+```
+
+This checklist collects implemented artifacts, offline validation commands, live
+validation prerequisites, and the final interview summary.
+
+The final boundary remains explicit:
+
+```text
+Implemented: repository framework, docs, examples, Argo CD wiring, policy, validation.
+Not claimed: live AWS provisioning, live IRSA assumption, live connection secrets.
+```

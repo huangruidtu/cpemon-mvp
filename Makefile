@@ -247,6 +247,9 @@ crossplane-lifecycle-runbook-check:
 crossplane-adr-knowledge-interview-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-adr-knowledge-interview.ps1
 
+crossplane-final-checklist-check:
+	powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-final-checklist.ps1
+
 argocd-installation-check:
 	powershell -ExecutionPolicy Bypass -File scripts/verify-argocd-installation.ps1
 

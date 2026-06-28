@@ -43,6 +43,7 @@ The goal is not to archive raw conversations. Each note should extract the durab
 - [Crossplane Connection Outputs and App Consumption Runbook](../../ops/runbooks/crossplane-connection-outputs-and-app-consumption.md)
 - [Crossplane Offline Validation Runbook](../../ops/runbooks/crossplane-offline-validation.md)
 - [Crossplane Lifecycle, Update, Deletion, and Rollback Runbook](../../ops/runbooks/crossplane-lifecycle-update-delete-rollback.md)
+- [Crossplane Developer Self-Service Final Checklist](../../ops/runbooks/crossplane-story-final-checklist.md)
 - [Terraform and Crossplane Ownership Boundary ADR](../../ADR/cloud-platform-upgrade-crossplane-terraform-boundary.md)
 - [Crossplane Developer Self-Service Platform API ADR](../../ADR/cloud-platform-upgrade-crossplane-developer-self-service.md)
 - [Crossplane Concepts for CPEmon](crossplane-concepts.md)
