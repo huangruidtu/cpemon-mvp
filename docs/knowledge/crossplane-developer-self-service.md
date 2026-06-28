@@ -147,3 +147,43 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-aws-provider-
 
 Live validation requires the real IAM role ARN, EKS OIDC provider, trust policy,
 provider pods, and an actual managed resource reconciliation.
+
+## CCPU-219: Platform API Conventions and Guardrails
+
+Before adding S3, DynamoDB, or ECR claims, the platform API contract is defined
+in:
+
+```text
+k8s/crossplane/platform-api-conventions.md
+ops/runbooks/crossplane-platform-api-conventions.md
+```
+
+The contract says developers submit small claims with approved fields:
+
+```yaml
+spec:
+  parameters:
+    environment: dev
+    owner: platform
+    costCenter: learning
+    region: eu-north-1
+    resourceClass: standard
+    deletionPolicy: Delete
+```
+
+The platform keeps control of `providerConfigRef`, encryption defaults, tags,
+connection secrets, and unsafe provider-specific settings through XRDs and
+Compositions.
+
+This distinction is the heart of developer self-service:
+
+```text
+developers choose from an approved contract
+platform engineers own the implementation behind that contract
+```
+
+Local validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-crossplane-platform-api-conventions.ps1
+```

@@ -80,3 +80,24 @@ the cloud permissions attached to a Kubernetes service account boundary.
 No. It proves the repository has the provider and authentication manifests.
 Live provisioning requires a real role ARN, trust policy, provider health, and a
 claim that successfully creates an AWS resource.
+
+## Q14: What did CCPU-219 add?
+
+It defined the Crossplane platform API conventions before adding concrete
+resource claims. The repository now documents API group naming, claim labels,
+developer-controlled fields, platform-controlled fields, resource classes,
+deletion policy expectations, and cost metadata.
+
+## Q15: Why define the platform API before writing S3 or DynamoDB claims?
+
+Because Crossplane is being used as a product-like platform API. If the API
+contract is not defined first, each resource type can drift into a different
+shape. Defining the contract first makes later XRDs, Compositions, policies,
+and interview explanations consistent.
+
+## Q16: What should developers be allowed to configure?
+
+Developers should configure approved business and sizing inputs such as
+environment, owner, cost center, region, resource class, and a small number of
+resource-specific parameters. They should not configure raw provider fields,
+IAM behavior, encryption defaults, or provider credentials.
